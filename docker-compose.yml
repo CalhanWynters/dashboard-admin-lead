@@ -1,0 +1,67 @@
+services:
+  mongodb:
+    image: mongo:8.0
+    container_name: mongodb-server
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpassword
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  postgresql:
+    image: postgres:18-alpine
+    container_name: postgres-server
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_USER: root
+      POSTGRES_DB: mydatabase
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d mydatabase"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  java_app:
+    build: .
+    container_name: java-application
+    ports:
+      - "8080:8080"
+    depends_on:
+      mongodb: { condition: service_healthy }
+      postgresql: { condition: service_healthy }
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/mydatabase
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: postgrespassword
+      SPRING_DATA_MONGODB_URI: mongodb://root:rootpassword@mongodb:27017/admin?authSource=admin
+
+  java_test:
+    image: maven:3.9.12-eclipse-temurin-25-alpine
+    volumes:
+      - .:/app
+    working_dir: /app
+    depends_on:
+      mongodb: { condition: service_healthy }
+      postgresql: { condition: service_healthy }
+    environment:
+      # Pass DB URLs to tests so they connect to the containers
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/mydatabase
+      SPRING_DATA_MONGODB_URI: mongodb://root:rootpassword@mongodb:27017/admin?authSource=admin
+    command: mvn test
+
+volumes:
+  mongo_data:
+  postgres_data:
