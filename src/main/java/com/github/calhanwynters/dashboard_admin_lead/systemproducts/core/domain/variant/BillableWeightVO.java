@@ -27,6 +27,7 @@ public record BillableWeightVO(WeightVO actualWeight, DimensionsVO dimensions, S
     }
 
     public enum ShippingRegion {
+        // Watchout! These values are subject to change based on company policies.
         DOMESTIC_US(new BigDecimal("139"), WeightUnitEnums.POUND),
         INTERNATIONAL_METRIC_AIR(new BigDecimal("6000"), WeightUnitEnums.KILOGRAM),
         INTERNATIONAL_METRIC_COURIER(new BigDecimal("5000"), WeightUnitEnums.KILOGRAM);
