@@ -5,16 +5,27 @@ import java.math.RoundingMode;
 import java.util.Objects;
 
 /**
- * Hardened Global Billable Weight Value Object for Java 25.
- * Standardizes domestic (US) and international (Metric) carrier math
- * based on 2025 global shipping mandates.
+ * Hardened Global Billable Weight VO for Java 25.
+ * Provides atomic profile snapshots for side-by-side regional comparisons.
  */
 public record BillableWeightVO(WeightVO actualWeight, DimensionsVO dimensions, ShippingRegion region) {
 
     /**
-     * Shipping Regions for 2025 Carrier Logic.
-     * Determines the divisor and rounding strategy for Dimensional (DIM) weight.
+     * Side-by-Side Profile Record.
+     * Uses Java 25 Compact Object Headers for minimal memory footprint in read-models.
      */
+    public record BillableProfile(
+            WeightVO domestic,
+            WeightVO internationalAir,
+            WeightVO internationalCourier
+    ) {
+        public BillableProfile {
+            Objects.requireNonNull(domestic);
+            Objects.requireNonNull(internationalAir);
+            Objects.requireNonNull(internationalCourier);
+        }
+    }
+
     public enum ShippingRegion {
         DOMESTIC_US(new BigDecimal("139"), WeightUnitEnums.POUND),
         INTERNATIONAL_METRIC_AIR(new BigDecimal("6000"), WeightUnitEnums.KILOGRAM),
@@ -27,37 +38,67 @@ public record BillableWeightVO(WeightVO actualWeight, DimensionsVO dimensions, S
             this.divisor = divisor;
             this.weightUnit = unit;
         }
+
+        public BigDecimal getDivisor() { return divisor; }
+        public WeightUnitEnums getWeightUnit() { return weightUnit; }
     }
 
     /**
      * Compact Constructor.
+     * Implements strict 2025 unit-alignment safety.
      */
     public BillableWeightVO {
-        Objects.requireNonNull(actualWeight, "Actual physical weight is required.");
-        Objects.requireNonNull(dimensions, "Package dimensions are required.");
-        Objects.requireNonNull(region, "Shipping region is required.");
+        // 1. Existence & Nullability
+        Objects.requireNonNull(actualWeight, "Actual weight is required.");
+        Objects.requireNonNull(dimensions, "Dimensions are required.");
+        Objects.requireNonNull(region, "Target shipping region is required.");
+
+        // 2. Cross-Field Consistency: 2025 Unit Alignment Safety
+        // Rejects mismatched units to prevent rounding exploits at the domestic/international boundary.
+        if (region == ShippingRegion.DOMESTIC_US && actualWeight.unit() != WeightUnitEnums.POUND) {
+            throw new IllegalArgumentException("Domestic US region requires weight declared in POUNDS.");
+        }
+
+        boolean isIntl = (region == ShippingRegion.INTERNATIONAL_METRIC_AIR || region == ShippingRegion.INTERNATIONAL_METRIC_COURIER);
+        if (isIntl && actualWeight.unit() == WeightUnitEnums.POUND) {
+            throw new IllegalArgumentException("International metric regions require Metric (KG/G) declarations.");
+        }
     }
 
     /**
-     * Calculates the true Billable Weight based on regional 2025 carrier standards.
-     * Implements mandatory Ceiling Rounding for both dimensions and final result.
+     * Atomic Operation: Generates all primary 2025 shipping profiles at once.
      */
+    public BillableProfile generateComparisonProfile() {
+        return new BillableProfile(
+                calculateFor(ShippingRegion.DOMESTIC_US),
+                calculateFor(ShippingRegion.INTERNATIONAL_METRIC_AIR),
+                calculateFor(ShippingRegion.INTERNATIONAL_METRIC_COURIER)
+        );
+    }
+
     public WeightVO calculateEffectiveWeight() {
-        // 1. Calculate Cubic Volume
-        // DimensionsVO already rounds dimensions UP to nearest whole unit (In/Cm)
-        // per August 18, 2025 mandates.
-        BigDecimal cubicVolume = (region == ShippingRegion.DOMESTIC_US)
+        return calculateFor(this.region);
+    }
+
+    /**
+     * Ad-hoc calculation for any region.
+     * Hardened against Fractional Weight Fraud via mandatory CEILING rounding.
+     */
+    public WeightVO calculateFor(ShippingRegion targetRegion) {
+        Objects.requireNonNull(targetRegion, "Calculation target region cannot be null.");
+
+        // Semantics: Use Imperial for US; Metric for International
+        BigDecimal cubicVolume = (targetRegion == ShippingRegion.DOMESTIC_US)
                 ? dimensions.calculateCubicInches()
                 : dimensions.calculateCubicCentimeters();
 
-        // 2. Calculate Dimensional (DIM) Weight
-        // 2025 Rule: Final billable weight is rounded UP to the next whole unit (Lb/Kg).
-        BigDecimal dimAmount = cubicVolume.divide(region.divisor, 0, RoundingMode.CEILING);
-        WeightVO dimWeight = new WeightVO(dimAmount, region.weightUnit);
+        // 2025 Carrier Compliance: Standardized Round-UP (Ceiling) to whole unit
+        // This ensures the Dimensional Weight is compliant with August 18, 2025 carrier rules.
+        BigDecimal dimAmount = cubicVolume.divide(targetRegion.getDivisor(), 0, RoundingMode.CEILING);
 
-        // 3. Comparison Logic
-        // WeightVO.compareTo automatically handles the cross-unit conversion safely.
-        // Returns the greater of Actual Weight vs. Dimensional Weight.
+        WeightVO dimWeight = new WeightVO(dimAmount, targetRegion.getWeightUnit());
+
+        // Comparison: Returns the greater of actual mass vs dimensional mass.
         return (actualWeight.compareTo(dimWeight) >= 0) ? actualWeight : dimWeight;
     }
 }

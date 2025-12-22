@@ -3,53 +3,60 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * Hardened Weight Value Object for Java 25.
- * Implements strict boundary checking and Arithmetic DoS resilience.
+ * 2025 Security Audit: Implements Arithmetic DoS protection and Lexical Whitelisting.
  */
 public record WeightVO(BigDecimal amount, WeightUnitEnums unit) implements Comparable<WeightVO> {
 
+    // Lexical Content: Whitelist for numeric inputs
+    private static final Pattern NUMERIC_PATTERN = Pattern.compile("^[0-9]+(\\.[0-9]{1,10})?$");
+
+    // Size & Boundary: Max string length for BigDecimal to prevent Regex/Parsing DoS
+    private static final int MAX_SERIALIZED_LENGTH = 32;
+
     /**
      * Compact Constructor.
-     * Logic is executed to ensure the object is "Always-Valid" before instantiation.
+     * Enforces "Always-Valid" state for 2025 Domain Standards.
      */
     public WeightVO {
         // 1. Existence & Nullability
         Objects.requireNonNull(amount, "Weight amount must not be null");
         Objects.requireNonNull(unit, "Weight unit must not be null");
 
-        // 2. Size & Boundary (Arithmetic DoS Protection)
-        // Prevents "Precision Bombing" where massive scales exhaust CPU cycles
+        // 2. Size & Boundary (String DoS Prevention)
+        // Checks string length before Regex matching to prevent CPU exhaustion
+        String plainAmount = amount.toPlainString();
+        if (plainAmount.length() > MAX_SERIALIZED_LENGTH) {
+            throw new IllegalArgumentException("Input numeric string length exceeds security boundary.");
+        }
+
+        // 3. Lexical Content & Syntax
+        if (!NUMERIC_PATTERN.matcher(plainAmount).matches()) {
+            throw new IllegalArgumentException("Weight amount contains illegal characters or invalid scale format.");
+        }
+
+        // 4. Semantics & Arithmetic DoS
         if (amount.scale() > WeightConstants.MAX_INPUT_SCALE) {
             throw new IllegalArgumentException("Numeric precision exceeds security safety boundary.");
         }
-
-        // 3. Semantics: Logical Ranges
         if (amount.signum() < 0) {
             throw new IllegalArgumentException("Weight amount cannot be negative.");
         }
 
-        // 4. Cross-Field Consistency: Immediate conversion to Grams for limit check
+        // 5. Cross-Field Consistency
+        // Validates that the amount/unit combination is logically consistent within system limits
         BigDecimal weightInGrams = unit.toGrams(amount);
-
         if (weightInGrams.compareTo(WeightConstants.MAX_GRAMS) > 0) {
-            throw new IllegalArgumentException(
-                    "Weight exceeds maximum system limit of %s grams."
-                            .formatted(WeightConstants.MAX_GRAMS.toPlainString())
-            );
+            throw new IllegalArgumentException("Total mass exceeds maximum system limit (100kg).");
         }
-
-        // Enforcement of MIN threshold if positive
         if (weightInGrams.signum() > 0 && weightInGrams.compareTo(WeightConstants.MIN_GRAMS) < 0) {
-            throw new IllegalArgumentException(
-                    "Weight is below minimum measurable threshold of %s grams."
-                            .formatted(WeightConstants.MIN_GRAMS.toPlainString())
-            );
+            throw new IllegalArgumentException("Total mass is below minimum measurable threshold.");
         }
 
-        // 5. Normalization (Canonical State)
-        // Ensures .equals() works for 1.0 vs 1.0000 in Java 25 Records
+        // 6. Normalization (Java 25 Canonical Record State)
         amount = amount.setScale(WeightConstants.NORMALIZATION_SCALE, RoundingMode.HALF_UP)
                 .stripTrailingZeros();
     }
@@ -80,7 +87,7 @@ public record WeightVO(BigDecimal amount, WeightUnitEnums unit) implements Compa
 
     @Override
     public int compareTo(WeightVO other) {
-        // Enforce shared scale for consistent comparison
+        // Use normalized gram comparison for cross-unit accuracy
         BigDecimal thisGrams = this.unit.toGrams(this.amount)
                 .setScale(WeightConstants.COMPARISON_SCALE, RoundingMode.HALF_UP);
         BigDecimal otherGrams = other.unit().toGrams(other.amount())
@@ -90,9 +97,7 @@ public record WeightVO(BigDecimal amount, WeightUnitEnums unit) implements Compa
 
     public WeightVO add(WeightVO other) {
         Objects.requireNonNull(other);
-        // Convert other to this unit before adding to maintain consistency
         BigDecimal otherAmount = other.unit().convertValueTo(other.amount(), this.unit);
         return new WeightVO(this.amount.add(otherAmount), this.unit);
     }
-
 }

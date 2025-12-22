@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 
 /**
  * Hardened Value Object for product care instructions.
- * Validated against the 2025 Domain Validation Rubric.
+ * Compliant with 2025 Domain Validation Rubric.
  */
 public record CareInstructionVO(String instructions) {
 
@@ -13,62 +13,57 @@ public record CareInstructionVO(String instructions) {
     private static final int MAX_LENGTH = 500;
 
     /**
-     * Lexical Whitelist (Java 25 Optimized):
-     * ^ and $ anchors ensure the ENTIRE string conforms to the whitelist.
-     * Includes support for newlines, bullet points, and basic punctuation.
-     * Prevents XSS (<, >) and SQLi (;) by exclusion.
+     * Java 25 Optimized Pattern:
+     * - Whitelists alphanumeric, spaces, and specific punctuation.
+     * - (?U) enables Unicode-aware character classes for 2025 i18n standards.
      */
-    private static final Pattern ALLOWED_CHARS_PATTERN =
-            Pattern.compile("^[a-zA-Z0-9 .,:;!\\-?\\n*•()\\[\\]]+$");
+    private static final Pattern VALID_CONTENT_PATTERN =
+            Pattern.compile("^(?U)[\\p{L}\\p{N} .,:!\\-?\\n*•()\\[\\]]+$");
 
     /**
      * Compact Constructor.
      */
     public CareInstructionVO {
         // 1. Existence & Nullability
-        Objects.requireNonNull(instructions, "Instructions cannot be null");
+        Objects.requireNonNull(instructions, "Care instructions cannot be null.");
 
-        // 2. Size & Boundary (DoS Mitigation)
-        // Reject massive raw payloads before expensive regex or normalization occurs.
-        if (instructions.length() > MAX_LENGTH * 2) {
-            throw new IllegalArgumentException("Input raw data exceeds safety buffer limits.");
+        // 2. Normalization & Pre-validation
+        // In a compact constructor, 'instructions' refers to the parameter, not the field.
+        instructions = instructions.strip();
+
+        // 3. Size & Boundary (DoS Mitigation)
+        if (instructions.length() > MAX_LENGTH * 1.5) {
+            throw new IllegalArgumentException("Input raw data exceeds safety buffer.");
         }
 
-        // 3. Normalization
-        // strip() is Unicode-aware (Standard for 2025 internationalization).
-        String normalized = instructions.strip();
-
-        // 4. Existence post-normalization
-        if (normalized.isBlank()) {
-            throw new IllegalArgumentException("Instructions cannot be empty or blank.");
+        if (instructions.isBlank()) {
+            throw new IllegalArgumentException("Instructions cannot be empty.");
         }
 
-        // 5. Lexical Content (Injection Prevention)
-        // CRITICAL: The pattern is now anchored to prevent partial-match bypasses.
-        if (!ALLOWED_CHARS_PATTERN.matcher(normalized).matches()) {
+        // 4. Lexical Content (Injection Prevention)
+        if (!VALID_CONTENT_PATTERN.matcher(instructions).matches()) {
             throw new IllegalArgumentException("Instructions contain forbidden characters.");
         }
 
-        // 6. Final Size check
-        int length = normalized.length();
+        // 5. Boundary Validation (Final Range)
+        int length = instructions.length();
         if (length < MIN_LENGTH || length > MAX_LENGTH) {
-            throw new IllegalArgumentException(
-                    "Instructions must be between %d and %d chars. Current: %d"
-                            .formatted(MIN_LENGTH, MAX_LENGTH, length)
-            );
+            throw new IllegalArgumentException("Length %d is outside allowed range [%d-%d]."
+                    .formatted(length, MIN_LENGTH, MAX_LENGTH));
         }
 
-        // 7. Semantics (Business Rule Validation)
-        // Validates that the data makes logical sense as an "Instruction".
-        if (!isFormattedCorrectly(normalized)) {
-            throw new IllegalArgumentException("Instructions must start with a bullet (*, -, •) or numbering (1.).");
+        // 6. Semantics (Business Rules)
+        if (!isValidFormat(instructions)) {
+            throw new IllegalArgumentException("Instructions must start with a bullet (-, *, •) or '1.'");
         }
 
-        // Assign the cleaned, validated value
-        instructions = normalized;
+        // SUCCESS: At the end of a compact constructor, the current value of the
+        // local variable 'instructions' is automatically assigned to the record field.
     }
 
-    private static boolean isFormattedCorrectly(String text) {
+    private static boolean isValidFormat(String text) {
+        if (text.length() < 3) return false;
+
         return text.startsWith("-") ||
                 text.startsWith("*") ||
                 text.startsWith("•") ||

@@ -5,45 +5,25 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 
 /**
- * Hardened Domain Constraints for Weight Management.
- * Updated for Java 25 to utilize JEP 519 (Compact Object Headers)
- * and JEP 502 (Stable Values) patterns for optimized memory density.
+ * Java 25 Stable Domain Constraints.
  */
 public final class WeightConstants {
 
-    // ---------------------------------------------------------
-    // 1. Existence & Nullability
-    // Handled at the Value Object layer via Objects.requireNonNull().
-    // ---------------------------------------------------------
-
-    // ---------------------------------------------------------
-    // 2. Size & Boundary (Prevention of Arithmetic DoS)
-    // ---------------------------------------------------------
-
-    /** Maximum logical limit: 100 kg. Prevents "Inventory Poisoning" attacks. */
+    // Size & Boundary: Logical limits for 2025 supply chain standards
     public static final BigDecimal MAX_GRAMS = new BigDecimal("100000.0");
-
-    /** Minimum logical limit: 1 milligram. Prevents zero-value or negative-value logic bypasses. */
     public static final BigDecimal MIN_GRAMS = new BigDecimal("0.001");
 
-    /**
-     * DoS Safety Boundary: Limits the scale of incoming BigDecimal inputs.
-     * Prevents "Precision Bombing" where an attacker sends a number with a scale
-     * of millions to exhaust CPU during arithmetic operations.
-     */
+    // Safety Boundary for Arithmetic DoS
     public static final int MAX_INPUT_SCALE = 10;
 
-    // ---------------------------------------------------------
-    // 3. Precision and Scaling (Syntax & Semantics)
-    // ---------------------------------------------------------
-
+    // Precision and Scaling
     public static final int COMPARISON_SCALE = 8;
     public static final int NORMALIZATION_SCALE = 4;
     public static final int INTERNAL_CALCULATION_SCALE = 8;
 
     /**
-     * High-precision context for internal unit conversions.
-     * Uses HALF_UP to prevent penny-shaving or weight-shaving rounding vulnerabilities.
+     * High-precision MathContext (16 digits).
+     * RoundingMode.HALF_UP prevents "Penny Shaving" vulnerabilities in weight distribution.
      */
     public static final MathContext INTERNAL_MATH_CONTEXT =
             new MathContext(16, RoundingMode.HALF_UP);

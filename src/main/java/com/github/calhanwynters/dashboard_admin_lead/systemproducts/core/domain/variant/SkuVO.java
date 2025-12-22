@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 /**
  * Hardened SKU Value Object for Java 25.
  * Enforces canonical uppercase format and DoS-resilient whitelisting.
+ * Validated against the 2025 Domain Validation Rubric.
  */
 public record SkuVO(String sku) {
 
@@ -14,48 +15,52 @@ public record SkuVO(String sku) {
 
     /**
      * Lexical Whitelist (Java 25 Optimized):
-     * ^ and $ anchors ensure the entire string is validated.
-     * Restricts to Alphanumeric, Hyphens, and Underscores.
+     * - (?U) enables Unicode property support.
+     * - Whitelists A-Z, 0-9, hyphen, and underscore.
      */
-    private static final Pattern ALLOWED_CHARS_PATTERN = Pattern.compile("^[A-Z0-9_-]+$");
+    private static final Pattern ALLOWED_CHARS_PATTERN =
+            Pattern.compile("^(?U)[A-Z0-9_-]+$");
 
     /**
-     * Compact Constructor for Domain Validation.
+     * Compact Constructor.
      */
     public SkuVO {
         // 1. Existence & Nullability
-        Objects.requireNonNull(sku, "SKU cannot be null");
+        Objects.requireNonNull(sku, "SKU cannot be null.");
 
-        // 2. Size & Boundary (DoS Mitigation)
-        // Rejects massive raw payloads before expensive regex or normalization occurs.
-        if (sku.length() > MAX_LENGTH * 2) {
-            throw new IllegalArgumentException("Input raw data exceeds safety buffer limits.");
+        // 2. Normalization (Immediate)
+        // 2025 Standard: Normalize before any size or lexical checks.
+        sku = sku.strip().toUpperCase();
+
+        // 3. Size & Boundary (DoS Mitigation)
+        // Rejecting early prevents complex regex execution on malicious payloads.
+        if (sku.length() > MAX_LENGTH + 10) {
+            throw new IllegalArgumentException("SKU raw length exceeds security buffer.");
         }
 
-        // 3. Normalization & Semantics
-        // strip() is Unicode-aware; toUpperCase() ensures canonical lookup format.
-        String normalized = sku.strip().toUpperCase();
-
-        if (normalized.isBlank()) {
-            throw new IllegalArgumentException("SKU cannot be empty or blank.");
+        if (sku.isBlank()) {
+            throw new IllegalArgumentException("SKU cannot be empty.");
         }
 
-        // 4. Size check post-normalization
-        int length = normalized.length();
+        // 4. Lexical Content (Injection Prevention)
+        if (!ALLOWED_CHARS_PATTERN.matcher(sku).matches()) {
+            throw new IllegalArgumentException("SKU contains forbidden characters.");
+        }
+
+        // 5. Final Range Check
+        int length = sku.length();
         if (length < MIN_LENGTH || length > MAX_LENGTH) {
-            throw new IllegalArgumentException(
-                    "SKU must be between %d and %d chars. Current: %d"
-                            .formatted(MIN_LENGTH, MAX_LENGTH, length)
-            );
+            throw new IllegalArgumentException("SKU length %d is outside range [%d-%d]."
+                    .formatted(length, MIN_LENGTH, MAX_LENGTH));
         }
 
-        // 5. Lexical Content (Injection Prevention)
-        // Ensures no special characters, spaces, or lower-case letters.
-        if (!ALLOWED_CHARS_PATTERN.matcher(normalized).matches()) {
-            throw new IllegalArgumentException("SKU contains forbidden characters. Use uppercase letters, numbers, hyphens, and underscores only.");
+        // 6. Semantics (Business Logic)
+        // Prevention of "Floating Separators" (e.g., "-SKU-")
+        if (sku.startsWith("-") || sku.startsWith("_") ||
+                sku.endsWith("-") || sku.endsWith("_")) {
+            throw new IllegalArgumentException("SKU cannot start or end with a separator.");
         }
 
-        // 6. Data Assignment
-        sku = normalized;
+        // Final value is automatically assigned to the record field.
     }
 }
