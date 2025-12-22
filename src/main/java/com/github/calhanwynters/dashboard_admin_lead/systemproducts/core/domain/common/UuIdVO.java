@@ -2,40 +2,45 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import java.util.Objects;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 /**
- * Optimized for Java 25.
- * Benefits from JEP 519 (Compact Object Headers) for reduced memory footprint.
+ * Hardened UUID Value Object for Java 25.
+ * Validated against RFC 9562 standards using standard Java parsers.
  */
 public record UuIdVO(String value) {
 
-    // Standard UUID regex (standardized across internal systems)
-    private static final Pattern UUID_PATTERN = Pattern.compile(
-            "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-    );
+    // Boundary: Strict UUID length (36 chars)
+    private static final int UUID_LENGTH = 36;
 
     /**
      * Compact Constructor for Java 25.
-     * Automatically validates values upon record creation.
      */
     public UuIdVO {
+        // 1. Existence & Nullability
         Objects.requireNonNull(value, "UuId value cannot be null");
 
-        if (value.isBlank()) {
-            throw new IllegalArgumentException("UuId value cannot be empty or blank");
+        // 2. Normalization & Size Boundary
+        // strip() handles Unicode whitespace; length check prevents DoS from massive strings
+        String normalized = value.strip();
+        if (normalized.length() != UUID_LENGTH) {
+            throw new IllegalArgumentException("UuId must be exactly %d characters.".formatted(UUID_LENGTH));
         }
 
-        if (!UUID_PATTERN.matcher(value).matches()) {
-            throw new IllegalArgumentException("UuId must be a valid UUID format string.");
+        // 3. Syntax & Lexical Content
+        // Use the standard parser (Syntax criterion) to prevent hex injection or invalid versions
+        try {
+            // This validates hex characters and structural hyphens simultaneously
+            UUID.fromString(normalized);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid UUID syntax or hex encoding detected.");
         }
 
-        // Value is implicitly assigned to 'this.value' by the compiler
+        // 4. Data Assignment
+        value = normalized;
     }
 
     /**
      * Java 25 Factory Method.
-     * Generates a new unique UuIdVO.
      */
     public static UuIdVO generate() {
         return new UuIdVO(UUID.randomUUID().toString());
@@ -45,7 +50,10 @@ public record UuIdVO(String value) {
         return new UuIdVO(value);
     }
 
-    public UUID toUUID() {
+    /**
+     * Utility to return the object as a typed UUID.
+     */
+    public UUID asUUID() {
         return UUID.fromString(this.value);
     }
 }

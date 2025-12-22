@@ -12,4 +12,4 @@ docker compose up --build
 docker ps
 
 # To run Maven tests:
-ocker compose run --rm java_test
+docker compose run --rm java_test

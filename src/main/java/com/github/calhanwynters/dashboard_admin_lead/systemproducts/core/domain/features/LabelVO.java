@@ -4,43 +4,58 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
- * Updated for Java 25.
- * Benefits from JEP 519 (Compact Object Headers) for reduced memory overhead.
+ * Hardened Label Value Object for Java 25.
+ * Validated against Unicode-aware lexical standards and DoS boundaries.
  */
 public record LabelVO(String value) {
 
-    // Whitelist pattern: Letters, numbers, spaces, and hyphens.
-    private static final Pattern ALLOWED_CHARS_PATTERN = Pattern.compile("[a-zA-Z0-9 -]+");
     private static final int MAX_LENGTH = 20;
 
     /**
-     * Compact constructor for Java 25.
+     * Lexical Whitelist (Java 25 Optimized):
+     * ^ : Start anchor
+     * [a-zA-Z0-9] : ASCII Alphanumeric
+     * (?: [a-zA-Z0-9-]+)* : Allow internal spaces and hyphens, but not at start/end
+     * $ : End anchor
+     * This prevents leading/trailing space bypasses and double-space injection.
+     */
+    private static final Pattern ALLOWED_CHARS_PATTERN =
+            Pattern.compile("^[a-zA-Z0-9](?:[a-zA-Z0-9 -]*[a-zA-Z0-9])?$");
+
+    /**
+     * Compact constructor for Domain Validation.
      */
     public LabelVO {
+        // 1. Existence & Nullability
         Objects.requireNonNull(value, "Label value cannot be null");
 
-        // 1. Use strip() instead of trim()
-        // strip() is the modern standard (since Java 11, prioritized in 2025)
-        // as it is Unicode-aware and more performant for basic normalization.
-        String normalized = value.strip();
+        // 2. Pre-Check Size (DoS Mitigation)
+        // Rejects massive strings before processing regex to prevent ReDoS.
+        if (value.length() > MAX_LENGTH * 2) {
+            throw new IllegalArgumentException("Input raw data exceeds safety buffer limits.");
+        }
 
-        // 2. Syntax & Size Validation
+        // 3. Normalization
+        // strip() handles Unicode whitespace. replaceAll collapses multiple internal spaces.
+        String normalized = value.strip().replaceAll("\\s{2,}", " ");
+
+        // 4. Content Existence check
         if (normalized.isBlank()) {
-            throw new IllegalArgumentException("Label value cannot be empty or blank");
+            throw new IllegalArgumentException("Label value cannot be empty or blank.");
         }
 
+        // 5. Size & Boundary
         if (normalized.length() > MAX_LENGTH) {
-            throw new IllegalArgumentException("Label value cannot exceed " + MAX_LENGTH + " characters.");
+            throw new IllegalArgumentException("Label value cannot exceed %d characters.".formatted(MAX_LENGTH));
         }
 
-        // 3. Cybersecurity (Lexical Content): Whitelisting
-        // In Java 25, Pattern matching is heavily optimized via JIT intrinsics.
+        // 6. Lexical Content (Injection & Syntax Prevention)
+        // Ensures no special characters like <, >, &, or SQL control chars.
         if (!ALLOWED_CHARS_PATTERN.matcher(normalized).matches()) {
-            throw new IllegalArgumentException("Label contains forbidden characters.");
+            throw new IllegalArgumentException("Label contains forbidden characters or invalid spacing.");
         }
 
-        // 4. Update the implicit parameter
-        // The compiler automatically performs this.value = value at the end.
+        // 7. Assignment
         value = normalized;
     }
 }

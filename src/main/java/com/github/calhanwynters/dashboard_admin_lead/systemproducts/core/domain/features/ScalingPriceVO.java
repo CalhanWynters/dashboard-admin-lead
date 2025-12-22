@@ -7,9 +7,8 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
- * Value Object for stepped pricing, updated for Java 25.
- * Includes security and data-integrity validations.
- * In the Feature Entity, place as a list for varying currencies for easy regional config based runtime.
+ * Hardened Scaling Price VO for Java 25.
+ * Implements strict arithmetic boundaries and cross-field consistency.
  */
 public record ScalingPriceVO(
         String unit,
@@ -20,43 +19,59 @@ public record ScalingPriceVO(
         int precision,
         Currency currency
 ) {
-    // Lexical content: Restrict units to alphanumeric characters to prevent injection/encoding issues
+    // 1. Lexical Content: Fully anchored whitelist
     private static final Pattern UNIT_PATTERN = Pattern.compile("^[a-zA-Z0-9\\-/]{1,20}$");
 
+    // 2. Size Boundaries: Protect against Arithmetic DoS
+    private static final int MAX_ARITHMETIC_SCALE = 100;
+    private static final BigDecimal MAX_PRICE_LIMIT = new BigDecimal("1000000000.00");
+
     /**
-     * Compact Constructor for Java 25.
-     * Validates semantics, size, and lexical content.
+     * Compact Constructor.
      */
     public ScalingPriceVO {
-        // 1. Lexical Content & Syntax (Format)
+        // --- Existence & Nullability ---
         Objects.requireNonNull(unit, "Unit is required");
-        if (!UNIT_PATTERN.matcher(unit).matches()) {
-            throw new IllegalArgumentException("Unit contains invalid characters or exceeds 20 chars");
-        }
-
-        // 2. Semantics (Does the data make sense?)
+        Objects.requireNonNull(baseThreshold, "Base threshold is required");
+        Objects.requireNonNull(basePrice, "Base price is required");
         Objects.requireNonNull(incrementStep, "Increment step is required");
+        Objects.requireNonNull(pricePerStep, "Price per step is required");
         Objects.requireNonNull(currency, "Currency is required");
 
+        // --- Lexical Content & Size ---
+        if (!UNIT_PATTERN.matcher(unit).matches()) {
+            throw new IllegalArgumentException("Unit contains invalid characters or length");
+        }
+
+        // --- Arithmetic DoS Mitigation ---
+        // Verify scale to prevent CPU exhaustion on division
+        if (baseThreshold.scale() > MAX_ARITHMETIC_SCALE || incrementStep.scale() > MAX_ARITHMETIC_SCALE) {
+            throw new IllegalArgumentException("Numeric scale exceeds safety limits");
+        }
+
+        // --- Semantics & Boundary ---
         if (incrementStep.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Increment step must be positive (e.g., blocks of 3)");
+            throw new IllegalArgumentException("Increment step must be strictly positive");
+        }
+        if (baseThreshold.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Threshold cannot be negative");
         }
         if (precision < 0 || precision > 10) {
             throw new IllegalArgumentException("Precision must be between 0 and 10");
         }
 
-        // 3. Size (Reasonable limits to prevent memory/overflow issues)
-        if (basePrice.abs().longValue() > 1_000_000_000L || pricePerStep.abs().longValue() > 1_000_000_000L) {
-            throw new IllegalArgumentException("Price values exceed reasonable business limits");
+        // --- Cross-Field Consistency ---
+        // Ensure price values don't exceed logical system limits
+        if (basePrice.abs().compareTo(MAX_PRICE_LIMIT) > 0 ||
+                pricePerStep.abs().compareTo(MAX_PRICE_LIMIT) > 0) {
+            throw new IllegalArgumentException("Price values exceed system boundary limits");
         }
 
-        // Note: 'Origin' (Legitimate sender) is typically verified by @PreAuthorize or JWT
-        // at the Controller/Service level before this VO is instantiated.
+        // Final Normalization: Enforce canonical scale for the Record state
+        basePrice = basePrice.setScale(precision, RoundingMode.HALF_UP);
+        pricePerStep = pricePerStep.setScale(precision, RoundingMode.HALF_UP);
     }
 
-    /**
-     * Factory method to default precision based on Currency.
-     */
     public static ScalingPriceVO of(String unit, BigDecimal threshold, BigDecimal base,
                                     BigDecimal step, BigDecimal stepPrice, Currency currency) {
         return new ScalingPriceVO(unit, threshold, base, step, stepPrice,
@@ -64,22 +79,24 @@ public record ScalingPriceVO(
     }
 
     /**
-     * Calculates the stepped price.
-     * Implements "Scale-at-the-end" best practice to preserve precision.
+     * Calculates the stepped price with precision safety.
      */
     public BigDecimal calculate(BigDecimal quantityRequested) {
-        // Guard against negative quantity semantics
-        BigDecimal qty = quantityRequested == null ? BigDecimal.ZERO : quantityRequested.max(BigDecimal.ZERO);
+        // Existence: Handle null quantity as zero
+        BigDecimal qty = (quantityRequested == null) ? BigDecimal.ZERO : quantityRequested;
 
-        if (qty.compareTo(baseThreshold) <= 0) {
-            return basePrice.setScale(precision, RoundingMode.HALF_UP);
+        // Semantics: Logical range check
+        if (qty.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Quantity cannot be negative");
         }
 
+        if (qty.compareTo(baseThreshold) <= 0) {
+            return basePrice;
+        }
+
+        // Arithmetic Safety: Ensure the calculation doesn't create infinite decimals
         BigDecimal overage = qty.subtract(baseThreshold);
-
-        // Round UP to the nearest whole block (CEILING)
         BigDecimal numberOfSteps = overage.divide(incrementStep, 0, RoundingMode.CEILING);
-
         BigDecimal incrementalCost = numberOfSteps.multiply(pricePerStep);
 
         return basePrice.add(incrementalCost).setScale(precision, RoundingMode.HALF_UP);
