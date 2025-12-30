@@ -16,7 +16,7 @@ public record LastModifiedVO(OffsetDateTime value) {
     private static final OffsetDateTime MIN_SYSTEM_DATE = OffsetDateTime.parse("2025-01-01T00:00:00Z");
 
     // Boundary: Safety buffer for clock drift (e.g., 5 minutes)
-    private static final long CLOCK_DRIFT_BUFFER_MINUTES = 5;
+    private static final long CLOCK_DRIFT_BUFFER_SECONDS = 30;
 
     public LastModifiedVO {
         // 1. Existence & Nullability
@@ -35,8 +35,7 @@ public record LastModifiedVO(OffsetDateTime value) {
         }
 
         // Logical check: Future date with Drift Buffer
-        // In 2025, distributed systems must account for minor clock skew (NTP drift)
-        if (value.isAfter(now.plusMinutes(CLOCK_DRIFT_BUFFER_MINUTES))) {
+        if (value.isAfter(now.plusSeconds(CLOCK_DRIFT_BUFFER_SECONDS))) {
             throw new IllegalArgumentException("Date cannot be in the future (beyond clock skew buffer).");
         }
     }

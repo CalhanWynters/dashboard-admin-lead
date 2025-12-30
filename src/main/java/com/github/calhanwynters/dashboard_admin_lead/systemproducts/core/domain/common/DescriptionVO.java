@@ -53,7 +53,7 @@ public record DescriptionVO(String text) {
         int finalLength = normalized.length();
         if (finalLength < MIN_LENGTH || finalLength > MAX_LENGTH) {
             throw new IllegalArgumentException(
-                    "Description must be between %d and %d characters. Current: %d"
+                    "Description must be at least %d and at most %d characters. Current: %d"
                             .formatted(MIN_LENGTH, MAX_LENGTH, finalLength)
             );
         }
@@ -66,5 +66,16 @@ public record DescriptionVO(String text) {
 
         // 7. Data Assignment
         text = normalized;
+    }
+
+    // -- Behavior Methods --
+    // Truncating strings
+    public DescriptionVO truncate(int maxLength) {
+        if (text.length() <= maxLength) {
+            return this;
+        }
+        // Return a new text object with the truncated string
+        String truncated = text.substring(0, maxLength - 3) + "...";
+        return new DescriptionVO(truncated);
     }
 }

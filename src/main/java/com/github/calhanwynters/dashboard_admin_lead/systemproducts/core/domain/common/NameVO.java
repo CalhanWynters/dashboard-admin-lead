@@ -31,7 +31,7 @@ public record NameVO(String value) {
         Objects.requireNonNull(value, "Name value cannot be null");
 
         // 2. Pre-Check Size (DoS mitigation: Stop processing if massive)
-        if (value.length() > MAX_LENGTH * 2) {
+        if (value.length() > MAX_LENGTH + 10) {
             throw new IllegalArgumentException("Input exceeds safety buffer limits.");
         }
 
