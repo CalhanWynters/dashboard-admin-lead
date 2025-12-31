@@ -35,6 +35,10 @@ Output Requirements:
 - Extreme Input Testing
 
 
+
+
+
+
 * Consider Taint Analysis from input sources
 * Encourage the use of read-once format
 

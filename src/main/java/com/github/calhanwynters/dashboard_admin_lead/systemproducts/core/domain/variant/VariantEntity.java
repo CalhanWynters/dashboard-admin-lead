@@ -9,7 +9,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
  * BillableWeightVO billableWeightInputs, // This includes actualWeight, dimensions, and region to be used for calculating a profile onto snapshot.
  * StatusEnums variantStatus,
  * VersionVO variantVersion,
- * LastModifiedVO lastModified,
+ * LastModifiedVO getLastModified,
  * Set<PriceVO> basePrice, // This will include different currencies for regional configuration.
  * Set<PriceVO> currentPrice, // This will include different currencies for regional configuration.
  * Set<FeatureAbstractClass> features

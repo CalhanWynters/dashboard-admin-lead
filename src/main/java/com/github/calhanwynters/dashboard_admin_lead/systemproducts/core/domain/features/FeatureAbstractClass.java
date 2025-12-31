@@ -1,19 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.features;
 
 
-/*
- * IdVO featureId
- * UuIdVO featureUuId
- * NameVO featureName
- * LabelVO featureLabel
- * DescriptionVO featureDescription
- * StatusEnums featureStatus
- * VersionVO featureVersion
- * LastModifiedVO lastModified
- * Boolean isUnique
- */
-
-
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
 
 import java.util.Objects;
@@ -46,18 +33,30 @@ public abstract class FeatureAbstractClass {
         this.featureDescription = Objects.requireNonNull(featureDescription, "Feature Description must not be null");
         this.featureStatus = Objects.requireNonNull(featureStatus, "Feature Status must not be null");
         this.featureVersion = Objects.requireNonNull(featureVersion, "Feature Version must not be null");
-        this.lastModified = Objects.requireNonNull(lastModified); // A boolean value to turn true if feature is unique for use on only 1 variant.
-        this.isUnique = isUnique;
+        this.lastModified = Objects.requireNonNull(lastModified, "Last Modified indicator must not be null"); // A boolean value to turn true if feature is unique for use on only 1 variant.
+        this.isUnique = Objects.requireNonNull(isUnique, "isUnique flag must not be null");
     }
 
     public PkIdVO getFeatureId() {return featureId;}
     public UuIdVO getFeatureUuId() {return featureUuId;}
-    public NameVO featureName() {return featureName;}
-    public LabelVO featureLabel() {return featureLabel;}
-    public DescriptionVO featureDescription() {return featureDescription;}
-    public StatusEnums featureStatus() {return featureStatus;}
-    public VersionVO featureVersion() {return featureVersion;}
-    public LastModifiedVO lastModified() {return lastModified;}
-    public Boolean isUnique() {return isUnique;}
+    public NameVO getFeatureName() {return featureName;}
+    public LabelVO getFeatureLabel() {return featureLabel;}
+    public DescriptionVO getFeatureDescription() {return featureDescription;}
+    public StatusEnums getFeatureStatus() {return featureStatus;}
+    public VersionVO getFeatureVersion() {return featureVersion;}
+    public LastModifiedVO getLastModified() {return lastModified;}
+    public Boolean getIsUnique() {return isUnique;}
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof FeatureAbstractClass that)) return false;
+        return Objects.equals(getFeatureUuId(), that.getFeatureUuId());
+    }
+
+    @Override
+    public final int hashCode() {
+        return Objects.hash(getFeatureUuId());
+    }
 
 }
