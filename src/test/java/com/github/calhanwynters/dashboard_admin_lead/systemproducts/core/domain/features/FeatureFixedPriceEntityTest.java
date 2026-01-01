@@ -1,6 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.features;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.exceptions.DomainValidationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class FeatureFixedPriceEntityTest {
 
@@ -56,6 +58,23 @@ public class FeatureFixedPriceEntityTest {
             assertThat(usdPrice.price()).isEqualByComparingTo("0.00");
             assertThat(usdPrice.currency()).isEqualTo(USD);
         }
+
+        @Test
+        @DisplayName("Should throw DomainValidationException when price is explicitly set to zero")
+        void build_WithZeroPrice_ShouldThrowException() {
+            PriceVO zeroPrice = new PriceVO(BigDecimal.ZERO, 2, USD);
+
+            // This checks the new validation you added in validatePrice()
+            DomainValidationException exception = assertThrows(DomainValidationException.class, () -> {
+                // Assume createBaseBuilder() is available in your test class
+                createBaseBuilder()
+                        .addPrice(USD, zeroPrice)
+                        .build();
+            });
+
+            assertThat(exception.getMessage()).contains("Invalid price: USD requires a positive value.");
+        }
+
 
         @Test
         @DisplayName("Boundary: building with isUnique(true) and one price succeeds")

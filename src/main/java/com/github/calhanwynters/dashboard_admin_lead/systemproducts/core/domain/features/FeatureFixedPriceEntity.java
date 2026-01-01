@@ -1,6 +1,8 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.features;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.exceptions.DomainValidationException;
+
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -41,6 +43,14 @@ public class FeatureFixedPriceEntity extends FeatureAbstractClass {
     private PriceVO validatePrice(Currency currency, PriceVO price) {
         Objects.requireNonNull(currency, "Currency key in price map must not be null");
         Objects.requireNonNull(price, "Price value for currency " + currency + " must not be null");
+
+        if (price.price().compareTo(BigDecimal.ZERO) <= 0) {
+            // DomainValidationException is a custom checked or unchecked exception
+            // that the API layer knows to treat as a 400 Bad Request (not a 500 error).
+            throw new DomainValidationException(
+                    String.format("Invalid price: %s requires a positive value.", currency)
+            );
+        }
 
         if (!price.currency().equals(currency)) {
             throw new IllegalStateException(
