@@ -41,13 +41,14 @@ class FeatureScalingPriceEntityTest {
         validSchemes = new HashMap<>();
         // Using ScalingPriceVO.of factory to initialize standard test data
         var standardVo = ScalingPriceVO.of(
-                "units",
-                new BigDecimal("10.00"), // baseThreshold
+                "units",                  // unit (matches UNIT_PATTERN)
+                new BigDecimal("10.00"),  // baseThreshold
                 new BigDecimal("100.00"), // basePrice
                 new BigDecimal("5.00"),   // incrementStep
                 new BigDecimal("20.00"),  // pricePerStep
-                USD
+                USD                       // currency
         );
+
         validSchemes.put(USD, standardVo);
     }
 
@@ -76,32 +77,33 @@ class FeatureScalingPriceEntityTest {
         assertThrows(DomainValidationException.class, () -> createEntity(mismatchMap));
     }
 
-    /*
 
     @Test
-    @DisplayName("A.3: Immutability - Internal state must be isolated from external changes")
-    void shouldProtectInternalStateByDefensiveCopy() {
-        Map<Currency, ScalingPriceVO> sourceMap = new HashMap<>(validSchemes);
+    @DisplayName("A.3: Immutability - Entity must use defensive copy of Map")
+    void shouldProtectInternalState() {
+        // Arrange: Create a mutable source
+        Map<Currency, ScalingPriceVO> sourceMap = new HashMap<>();
+        var vo = ScalingPriceVO.of("units", BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ONE, BigDecimal.ONE, USD);
+        sourceMap.put(USD, vo);
+
+        // Act: Create entity
         var entity = createEntity(sourceMap);
 
-        // Modify original map
+        // Assert: Clear original map immediately
         sourceMap.clear();
 
-        // Entity must still function using its internal copy
+        // Verify: The entity must still have the data in its internal snapshot
         assertDoesNotThrow(() -> {
-            BigDecimal price = entity.calculatePrice(USD, BigDecimal.TEN);
-            assertEquals(0, new BigDecimal("100.00").compareTo(price));
-        });
-        assertTrue(entity.supportsCurrency(USD));
+            BigDecimal result = entity.calculatePrice(USD, BigDecimal.TEN);
+            assertNotNull(result);
+            assertEquals(0, BigDecimal.TEN.compareTo(result));
+        }, "Entity should have captured a snapshot of the map during construction.");
     }
-
-     */
-
 
 
     // --- B. Semantic & Boundary Testing ---
 
-    /*
+
     @ParameterizedTest(name = "Quantity {0} -> Expect Price {1}")
     @CsvSource({
             "10.0,    100.00", // Exact threshold: returns basePrice
@@ -121,7 +123,6 @@ class FeatureScalingPriceEntityTest {
                 "Calculation mismatch for quantity: " + qty);
     }
 
-     */
 
     @Test
     @DisplayName("B.4: Missing Currency - Throw if currency not in Map")
@@ -135,7 +136,7 @@ class FeatureScalingPriceEntityTest {
 
     // --- C. Extreme & Invalid Input Testing (Security) ---
 
-    /*
+
     @Test
     @DisplayName("C.1: Negative Input - Quantities must be non-negative")
     void shouldFailOnNegativeQuantity() {
@@ -143,7 +144,7 @@ class FeatureScalingPriceEntityTest {
         assertThrows(IllegalArgumentException.class, () -> entity.calculatePrice(USD, new BigDecimal("-1.0")));
     }
 
-     */
+
 
     @Test
     @DisplayName("C.2: Arithmetic DoS - Prevent scales exceeding 100")

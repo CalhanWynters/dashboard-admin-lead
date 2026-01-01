@@ -15,25 +15,28 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
                                       DescriptionVO featureDescription, StatusEnums featureStatus, VersionVO featureVersion,
                                       LastModifiedVO lastModified, boolean isUnique, Map<Currency, ScalingPriceVO> schemes) {
 
-        // Validation logic can now happen BEFORE the super constructor call in Java 25
+        // --- PROLOGUE (Before super) ---
+        // Validate existence before parent initialization
         if (schemes == null || schemes.isEmpty()) {
             throw new DomainValidationException("FeatureScalingPriceEntity requires at least one pricing scheme.");
         }
 
-        // Integrity Check: Validate currency consistency before state is set
-        schemes.forEach((currency, vo) -> {
+        // Defensive Copy: Capture unmodifiable snapshot in prologue to prevent external mutations
+        Map<Currency, ScalingPriceVO> snapshot = Map.copyOf(schemes);
+
+        // Integrity Check: Use the snapshot to ensure cross-field consistency
+        snapshot.forEach((currency, vo) -> {
             if (!currency.equals(vo.currency())) {
                 throw new DomainValidationException("Mismatch: Key " + currency + " does not match VO currency " + vo.currency());
             }
         });
 
-        // Safe defensive copy
-        Map<Currency, ScalingPriceVO> immutableSchemes = Map.copyOf(schemes);
-
-        // Finally call the super constructor
+        // 2. Execute super constructor
         super(featureId, featureUuId, featureName, featureLabel, featureDescription, featureStatus, featureVersion, lastModified, isUnique);
 
-        this.scalingPriceSchemes = immutableSchemes;
+        // --- EPILOGUE (After super) ---
+        // 3. Assign the validated snapshot to the final field
+        this.scalingPriceSchemes = snapshot;
     }
 
     public static FeatureScalingPriceEntity create(PkIdVO id, UuIdVO uuid, NameVO name, LabelVO label, DescriptionVO desc,
@@ -43,20 +46,29 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
     }
 
     /**
-     * Calculates the price using the hardened arithmetic logic of the VO.
-     * Logic here is minimal because the entity trusts the VO's self-validation.
+     * FIXED: Implementation avoids eager evaluation.
+     * Manual null check ensures the exception is ONLY thrown if the key is missing.
      */
     public BigDecimal calculatePrice(Currency requestedCurrency, BigDecimal quantity) {
-        return scalingPriceSchemes.getOrDefault(
-                Objects.requireNonNull(requestedCurrency, "Currency cannot be null"),
-                throwMissingCurrencyException(requestedCurrency)
-        ).calculate(quantity);
+        Objects.requireNonNull(requestedCurrency, "Currency cannot be null");
+
+        // Perform lookup
+        ScalingPriceVO scheme = scalingPriceSchemes.get(requestedCurrency);
+
+        // Lazy Throw: Only execute exception logic if the scheme is not found
+        if (scheme == null) {
+            throw createMissingCurrencyException(requestedCurrency);
+        }
+
+        return scheme.calculate(quantity);
     }
 
-    private ScalingPriceVO throwMissingCurrencyException(Currency currency) {
-        throw new DomainValidationException("Pricing not defined for currency: " + currency.getCurrencyCode());
+    /**
+     * Factory method for the exception to maintain clean stack traces.
+     */
+    private DomainValidationException createMissingCurrencyException(Currency currency) {
+        return new DomainValidationException("Pricing not defined for currency: " + currency.getCurrencyCode());
     }
-
 
     public Map<Currency, ScalingPriceVO> getScalingPriceSchemes() {
         return scalingPriceSchemes;
