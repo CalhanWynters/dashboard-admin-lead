@@ -5,125 +5,107 @@ import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.
 
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
- * Specialized entity for features with fixed monetary costs across multiple currencies.
- * Optimized for 2025 DDD standards with defensive building and immutable state.
+ * Hardened Fixed Price Entity for Java 25 (2026).
+ * Rejects all defaults and requires explicit, non-zero monetary intent.
  */
 public class FeatureFixedPriceEntity extends FeatureAbstractClass {
 
     private final Map<Currency, PriceVO> fixedPrices;
 
     private FeatureFixedPriceEntity(Builder builder) {
-        super(
-                builder.featureId,
-                builder.featureUuId,
-                builder.featureName,
-                builder.featureLabel,
-                builder.featureDescription,
-                builder.featureStatus,
-                builder.featureVersion,
-                builder.lastModified,
-                builder.isUnique
-        );
-
-        if (builder.fixedPrices == null || builder.fixedPrices.isEmpty()) {
-            this.fixedPrices = Map.of(Currency.getInstance("USD"), new PriceVO(BigDecimal.ZERO));
-        } else {
-            // Ensure the internal map is truly immutable and validated
-            this.fixedPrices = Map.copyOf(builder.fixedPrices.entrySet().stream()
-                    .collect(Collectors.toMap(
-                            Map.Entry::getKey,
-                            entry -> validatePrice(entry.getKey(), entry.getValue())
-                    )));
-        }
-    }
-
-    private PriceVO validatePrice(Currency currency, PriceVO price) {
-        Objects.requireNonNull(currency, "Currency key in price map must not be null");
-        Objects.requireNonNull(price, "Price value for currency " + currency + " must not be null");
-
-        if (price.price().compareTo(BigDecimal.ZERO) <= 0) {
-            // DomainValidationException is a custom checked or unchecked exception
-            // that the API layer knows to treat as a 400 Bad Request (not a 500 error).
-            throw new DomainValidationException(
-                    String.format("Invalid price: %s requires a positive value.", currency)
-            );
-        }
-
-        if (!price.currency().equals(currency)) {
-            throw new IllegalStateException(
-                    String.format("Currency mismatch: Map key is %s but PriceVO is %s",
-                            currency, price.currency())
-            );
-        }
-        return price;
+        super(builder);
+        // Map.copyOf creates a natively immutable, memory-optimized collection in Java 25
+        this.fixedPrices = processAndValidatePrices(builder.fixedPrices);
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
+    private Map<Currency, PriceVO> processAndValidatePrices(Map<Currency, PriceVO> inputPrices) {
+        // Final invariant check: The Builder already validates this, but the constructor
+        // acts as the ultimate gatekeeper for the Entity state.
+        if (inputPrices == null || inputPrices.isEmpty()) {
+            throw new DomainValidationException(
+                    "Pricing data is missing. You must intentionally define a price."
+            );
+        }
+        return Map.copyOf(inputPrices);
+    }
+
     public Map<Currency, PriceVO> getFixedPrices() {
-        return fixedPrices; // Map.copyOf was used in constructor, so this is safe
+        return fixedPrices;
     }
 
     public Optional<PriceVO> getPriceForCurrency(Currency currency) {
-        Objects.requireNonNull(currency, "Currency lookup parameter must not be null");
         return Optional.ofNullable(fixedPrices.get(currency));
     }
 
-    public static class Builder {
-        private PkIdVO featureId;
-        private UuIdVO featureUuId;
-        private NameVO featureName;
-        private LabelVO featureLabel;
-        private DescriptionVO featureDescription;
-        private StatusEnums featureStatus;
-        private VersionVO featureVersion;
-        private LastModifiedVO lastModified;
-        private Boolean isUnique = false;
-        private Map<Currency, PriceVO> fixedPrices = new HashMap<>();
+    /**
+     * Builder for FeatureFixedPriceEntity.
+     */
+    public static class Builder extends FeatureAbstractClass.Builder<Builder> {
+        private final Map<Currency, PriceVO> fixedPrices = new HashMap<>();
 
-        public Builder featureId(PkIdVO id) { this.featureId = id; return this; }
-        public Builder featureUuId(UuIdVO uuid) { this.featureUuId = uuid; return this; }
-        public Builder featureName(NameVO name) { this.featureName = name; return this; }
-        public Builder featureLabel(LabelVO label) { this.featureLabel = label; return this; }
-        public Builder featureDescription(DescriptionVO ds) { this.featureDescription = ds; return this; }
-        public Builder featureStatus(StatusEnums st) { this.featureStatus = st; return this; }
-        public Builder featureVersion(VersionVO v) { this.featureVersion = v; return this; }
-        public Builder lastModified(LastModifiedVO lm) { this.lastModified = lm; return this; }
-        public Builder isUnique(Boolean unique) { this.isUnique = unique; return this; }
+        @Override
+        protected Builder self() {
+            return this;
+        }
 
         public Builder addPrice(Currency currency, PriceVO price) {
-            this.fixedPrices.put(currency, price);
+            if (currency != null && price != null) {
+                this.fixedPrices.put(currency, price);
+            }
             return this;
         }
 
         public Builder fixedPrices(Map<Currency, PriceVO> prices) {
-            this.fixedPrices = prices;
+            this.fixedPrices.clear();
+            if (prices != null) {
+                this.fixedPrices.putAll(prices);
+            }
             return this;
         }
 
+        @Override
         public FeatureFixedPriceEntity build() {
-            validate();
+            performCrossFieldValidation();
             return new FeatureFixedPriceEntity(this);
         }
 
-        private void validate() {
-            if (featureName == null || featureLabel == null) {
-                throw new IllegalStateException("Naming VOs are required for Fixed Price entities.");
-            }
-
-            // Cross-Field Consistency:
-            // If a feature is unique (variant-specific), it must not contain multiple currency global mappings.
-            if (Boolean.TRUE.equals(isUnique) && fixedPrices.size() > 1) {
-                throw new IllegalStateException(
-                        "Unique (variant-specific) features cannot have multi-currency price lists."
+        /**
+         * Enforces 2026 "Fail-Fast" domain invariants.
+         */
+        private void performCrossFieldValidation() {
+            // 1. Intentionality Guard: No pricing means the feature cannot exist.
+            if (this.fixedPrices.isEmpty()) {
+                throw new DomainValidationException(
+                        "Validation Error: A FeatureFixedPriceEntity must define at least one price scheme."
                 );
             }
-        }
 
+            // 2. Business Rule Guard: Rejects accidental $0.00 and fractional pennies.
+            this.fixedPrices.forEach((currency, vo) -> {
+                // Ensure the map key matches the internal VO currency
+                if (!currency.equals(vo.currency())) {
+                    throw new DomainValidationException(
+                            "Currency Mismatch: Map key [%s] does not match PriceVO currency [%s]"
+                                    .formatted(currency.getCurrencyCode(), vo.currency().getCurrencyCode())
+                    );
+                }
+
+                // Explicit Zero-Price Rejection (Prevents the "Free Product" bug)
+                if (vo.price().compareTo(BigDecimal.ZERO) == 0) {
+                    throw new DomainValidationException(
+                            "Business Rule Violation: Fixed price for currency [%s] cannot be zero. Use a different feature type for free products."
+                                    .formatted(currency.getCurrencyCode())
+                    );
+                }
+
+                // Note: Scale/Precision validation is already handled by the PriceVO constructor.
+            });
+        }
     }
 }

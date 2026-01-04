@@ -9,6 +9,8 @@ import java.util.Objects;
  * Hardened Price Value Object for Java 25.
  * Implements strict scale boundaries and Cross-Field currency consistency.
  */
+
+
 public record PriceVO(BigDecimal price, int precision, Currency currency) {
 
     // Boundary: Prevent Arithmetic DoS by limiting max decimal digits
@@ -17,14 +19,23 @@ public record PriceVO(BigDecimal price, int precision, Currency currency) {
     private static final BigDecimal MAX_PRICE = new BigDecimal("100000000.00");
 
     /**
-     * Flexible Constructor (JEP 513) for default USD pricing.
+     * Explicit constructor for creating a PriceVO with a specific price and currency,
+     * using the default precision of that currency. The precision field in this case
+     * becomes synonymous with the currency's default fraction digits.
      */
-    public PriceVO(BigDecimal price) {
-        this(price, Currency.getInstance("USD").getDefaultFractionDigits(), Currency.getInstance("USD"));
+    public PriceVO(BigDecimal price, Currency currency) {
+        this(price, currency.getDefaultFractionDigits(), currency);
     }
 
     /**
-     * Compact Constructor for Domain Validation.
+     * Flexible Constructor (JEP 513) for default USD pricing (uses the explicit constructor).
+     */
+    public PriceVO(BigDecimal price) {
+        this(price, Currency.getInstance("USD"));
+    }
+
+    /**
+     * Compact Constructor for Domain Validation and Normalization.
      */
     public PriceVO {
         // 1. Existence & Nullability
@@ -44,25 +55,36 @@ public record PriceVO(BigDecimal price, int precision, Currency currency) {
             throw new IllegalArgumentException("Price exceeds maximum logical system boundary.");
         }
 
-        // 4. Cross-Field Consistency
-        // In 2025, a VO must ensure provided precision is compatible with currency standards
-        // or specifically tailored for the domain (e.g., fuel pricing with 3 decimals).
+        // 4. Cross-Field Consistency (Currency Precision Check)
         int minFractionDigits = currency.getDefaultFractionDigits();
         if (precision < minFractionDigits) {
             throw new IllegalArgumentException(
-                    "Precision %d is insufficient for currency %s (minimum %d)"
+                    "Explicit precision %d is insufficient for currency %s (minimum %d)"
                             .formatted(precision, currency.getCurrencyCode(), minFractionDigits)
             );
         }
 
+        // --- STRICT INPUT VALIDATION AGAINST CURRENCY PRECISION ---
+        // Prevents fractional pennies ($10.123 USD is rejected, not rounded)
+        int actualInputScale = price.stripTrailingZeros().scale();
+        if (actualInputScale > minFractionDigits) {
+            throw new IllegalArgumentException(
+                    "Input price scale (%d) exceeds currency %s allowed precision (%d). Fractional pennies not allowed."
+                            .formatted(actualInputScale, currency.getCurrencyCode(), minFractionDigits)
+            );
+        }
+        // ----------------------------------------------------------------
+
         // 5. Normalization (Enforcing Canonical Form)
-        // Ensures .equals() works correctly between 10 and 10.00
+        // Normalizes the price using the specified precision.
+        // This only rounds if the *provided* precision is higher than the *actual* input scale
+        // (e.g., input $10.00 with precision 2). The previous validation ensures we don't truncate data.
         price = price.setScale(precision, RoundingMode.HALF_UP);
     }
 
     @Override
     public String toString() {
-        // Standardized 2025 formatting
-        return "%s %s".formatted(currency.getSymbol(), price.toPlainString());
+        // Using getCurrencyCode() is generally safer than getSymbol() for admin/logging purposes
+        return "%s %s".formatted(currency.getCurrencyCode(), price.toPlainString());
     }
 }

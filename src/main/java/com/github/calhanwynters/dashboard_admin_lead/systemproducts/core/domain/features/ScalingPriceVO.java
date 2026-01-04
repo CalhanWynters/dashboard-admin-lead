@@ -7,8 +7,8 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
- * Hardened Scaling Price VO for Java 25.
- * Implements strict arithmetic boundaries and cross-field consistency.
+ * Hardened Scaling Price VO for Java 25 (2026).
+ * Enforces strict ISO-4217 scale compliance for both base and incremental prices.
  */
 public record ScalingPriceVO(
         String unit,
@@ -21,14 +21,10 @@ public record ScalingPriceVO(
 ) {
     // 1. Lexical Content: Fully anchored whitelist
     private static final Pattern UNIT_PATTERN = Pattern.compile("^[a-zA-Z0-9\\-/]{1,20}$");
-
     // 2. Size Boundaries: Protect against Arithmetic DoS
     private static final int MAX_ARITHMETIC_SCALE = 100;
     private static final BigDecimal MAX_PRICE_LIMIT = new BigDecimal("1000000000.00");
 
-    /**
-     * Compact Constructor.
-     */
     public ScalingPriceVO {
         // --- Existence & Nullability ---
         Objects.requireNonNull(unit, "Unit is required");
@@ -56,20 +52,42 @@ public record ScalingPriceVO(
         if (baseThreshold.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Threshold cannot be negative");
         }
-        if (precision < 0 || precision > 10) {
-            throw new IllegalArgumentException("Precision must be between 0 and 10");
-        }
 
         // --- Cross-Field Consistency ---
-        // Ensure price values don't exceed logical system limits
-        if (basePrice.abs().compareTo(MAX_PRICE_LIMIT) > 0 ||
-                pricePerStep.abs().compareTo(MAX_PRICE_LIMIT) > 0) {
+        // Strict Currency Scale Validation (Fractional Penny Check)
+        int standardScale = currency.getDefaultFractionDigits();
+
+        // Validate Precision Component
+        if (precision < standardScale || precision > 10) {
+            throw new IllegalArgumentException("Precision %d is invalid for %s (min %d, max 10)"
+                    .formatted(precision, currency.getCurrencyCode(), standardScale));
+        }
+
+        // Validate Base Price
+        if (basePrice.stripTrailingZeros().scale() > standardScale) {
+            throw new IllegalArgumentException("Base price scale exceeds %s limit of %d digits"
+                    .formatted(currency.getCurrencyCode(), standardScale));
+        }
+
+        // Validate Step Price
+        if (pricePerStep.stripTrailingZeros().scale() > standardScale) {
+            throw new IllegalArgumentException("Price per step scale exceeds %s limit of %d digits"
+                    .formatted(currency.getCurrencyCode(), standardScale));
+        }
+
+        // 5. Logical System Boundaries
+        if (basePrice.abs().compareTo(MAX_PRICE_LIMIT) > 0 || pricePerStep.abs().compareTo(MAX_PRICE_LIMIT) > 0) {
             throw new IllegalArgumentException("Price values exceed system boundary limits");
         }
 
-        // Final Normalization: Enforce canonical scale for the Record state
-        basePrice = basePrice.setScale(precision, RoundingMode.HALF_UP);
-        pricePerStep = pricePerStep.setScale(precision, RoundingMode.HALF_UP);
+        if (basePrice.compareTo(BigDecimal.ZERO) <= 0 && pricePerStep.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Scaling price must have a positive base price or step price.");
+        }
+
+        // 6. Final Normalization to Canonical Form
+        // We use UNNECESSARY because the validation above guarantees no data loss
+        basePrice = basePrice.setScale(precision, RoundingMode.UNNECESSARY);
+        pricePerStep = pricePerStep.setScale(precision, RoundingMode.UNNECESSARY);
     }
 
     public static ScalingPriceVO of(String unit, BigDecimal threshold, BigDecimal base,
@@ -78,9 +96,6 @@ public record ScalingPriceVO(
                 currency.getDefaultFractionDigits(), currency);
     }
 
-    /**
-     * Calculates the stepped price with precision safety.
-     */
     public BigDecimal calculate(BigDecimal quantityRequested) {
         // Existence: Handle null quantity as zero
         BigDecimal qty = (quantityRequested == null) ? BigDecimal.ZERO : quantityRequested;
@@ -96,9 +111,11 @@ public record ScalingPriceVO(
 
         // Arithmetic Safety: Ensure the calculation doesn't create infinite decimals
         BigDecimal overage = qty.subtract(baseThreshold);
+        // Calculation logic: Ceiling division for partial steps
         BigDecimal numberOfSteps = overage.divide(incrementStep, 0, RoundingMode.CEILING);
         BigDecimal incrementalCost = numberOfSteps.multiply(pricePerStep);
 
-        return basePrice.add(incrementalCost).setScale(precision, RoundingMode.HALF_UP);
+        // Result is strictly scaled to the currency's standard to prevent fractional penny output
+        return basePrice.add(incrementalCost).setScale(precision, RoundingMode.UNNECESSARY);
     }
 }

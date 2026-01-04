@@ -1,75 +1,95 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.features;
 
-
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
-
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.exceptions.DomainValidationException;
+import java.util.*;
 import java.math.BigDecimal;
-import java.util.Currency;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
-public class FeatureTieredPriceEntity extends FeatureAbstractClass{
+/**
+ * Tiered Price Entity - Java 25 / 2026 Production Ready.
+ * Enforces intentional pricing by rejecting defaults and ensuring cross-field consistency.
+ */
+public class FeatureTieredPriceEntity extends FeatureAbstractClass {
 
     private final Map<Currency, TieredPriceVO> tieredPriceSchemes;
 
-    public FeatureTieredPriceEntity(
-            PkIdVO featureId,
-            UuIdVO featureUuId,
-            NameVO featureName,
-            LabelVO featureLabel,
-            DescriptionVO featureDescription,
-            StatusEnums featureStatus,
-            VersionVO featureVersion,
-            LastModifiedVO lastModified,
-            Boolean isUnique,
-            Map<Currency, TieredPriceVO> tieredPriceSchemes
-    ) {
-        super(featureId, featureUuId, featureName, featureLabel,
-                featureDescription, featureStatus, featureVersion,
-                lastModified, isUnique);
-
-        // Validate and initialize price schemes
-        this.tieredPriceSchemes = validateAndInitializePriceSchemes(tieredPriceSchemes);
+    private FeatureTieredPriceEntity(Builder builder) {
+        super(builder);
+        // Validates and freezes the map into a truly immutable state
+        this.tieredPriceSchemes = processAndValidateSchemes(builder.tieredPriceSchemes);
     }
 
-    // Validation method for price schemes
-    private Map<Currency, TieredPriceVO> validateAndInitializePriceSchemes(
-            Map<Currency, TieredPriceVO> inputSchemes) {
+    public static Builder builder() {
+        return new Builder();
+    }
 
-        // If no schemes provided, create a default USD scheme
+    private Map<Currency, TieredPriceVO> processAndValidateSchemes(Map<Currency, TieredPriceVO> inputSchemes) {
+        // 1. REJECT empty or null schemes to prevent "Automatic Defaults"
         if (inputSchemes == null || inputSchemes.isEmpty()) {
-            Currency usd = Currency.getInstance("USD");
-            TieredPriceVO defaultScheme = new TieredPriceVO(
-                    "default",
-                    List.of(
-                            new TieredPriceVO.PriceTier(BigDecimal.ZERO, BigDecimal.ZERO),
-                            new TieredPriceVO.PriceTier(BigDecimal.ONE, BigDecimal.TEN)
-                    ),
-                    usd
+            throw new DomainValidationException(
+                    "Pricing schemes are missing. You must intentionally define at least one currency and price."
             );
-            return Map.of(usd, defaultScheme);
         }
 
-        // Validate each scheme
+        // 2. Cross-Field Consistency Check
+        inputSchemes.forEach((currency, vo) -> {
+            if (!currency.equals(vo.currency())) {
+                throw new DomainValidationException("Mismatch: Map key [%s] does not match TieredPriceVO internal currency [%s]"
+                        .formatted(currency.getCurrencyCode(), vo.currency().getCurrencyCode()));
+            }
+        });
+
+        // 3. Immutability: Map.copyOf is the preferred 2026 way to freeze a map
         return Map.copyOf(inputSchemes);
     }
 
-    // Retrieve all tiered price schemes
+    /**
+     * Returns the pricing schemes. Since Map.copyOf was used, this is already unmodifiable.
+     */
     public Map<Currency, TieredPriceVO> getTieredPriceSchemes() {
-        return Map.copyOf(tieredPriceSchemes);
+        return tieredPriceSchemes;
     }
 
-    // Get tiered price scheme for a specific currency
     public Optional<TieredPriceVO> getTieredPriceForCurrency(Currency currency) {
         return Optional.ofNullable(tieredPriceSchemes.get(currency));
     }
 
-    // Calculate price for a specific currency and quantity
     public Optional<BigDecimal> calculatePrice(Currency currency, BigDecimal quantity) {
         return getTieredPriceForCurrency(currency)
                 .map(scheme -> scheme.calculate(quantity));
     }
 
+    /**
+     * Builder for FeatureTieredPriceEntity.
+     */
+    public static class Builder extends FeatureAbstractClass.Builder<Builder> {
 
+        private final Map<Currency, TieredPriceVO> tieredPriceSchemes = new HashMap<>();
+
+        @Override
+        protected Builder self() {
+            return this;
+        }
+
+        public Builder addTieredScheme(Currency currency, TieredPriceVO scheme) {
+            this.tieredPriceSchemes.put(
+                    Objects.requireNonNull(currency, "Currency must be provided"),
+                    Objects.requireNonNull(scheme, "TieredPriceVO scheme must be provided")
+            );
+            return this;
+        }
+
+        public Builder tieredPriceSchemes(Map<Currency, TieredPriceVO> schemes) {
+            this.tieredPriceSchemes.clear();
+            if (schemes != null) {
+                this.tieredPriceSchemes.putAll(schemes);
+            }
+            return this;
+        }
+
+        @Override
+        public FeatureTieredPriceEntity build() {
+            return new FeatureTieredPriceEntity(this);
+        }
+    }
 }
