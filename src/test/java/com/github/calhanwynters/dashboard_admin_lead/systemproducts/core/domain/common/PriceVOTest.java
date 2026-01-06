@@ -12,7 +12,7 @@ import java.util.Currency;
 
 import static org.assertj.core.api.Assertions.*;
 
-/*
+
 
 
 @DisplayName("PriceVO Invariant and Validation Tests")
@@ -20,6 +20,7 @@ class PriceVOTest {
 
     // Helper for Jackson serialization tests
     private final ObjectMapper objectMapper = new ObjectMapper();
+
 
     @Nested
     @DisplayName("Invariant Validation: Negative Prices & Boundaries")
@@ -39,6 +40,7 @@ class PriceVOTest {
                     .hasMessageContaining("Price cannot be negative.");
         }
 
+
         @Test
         @DisplayName("GIVEN a price exceeding $100M USD WHEN creating PriceVO THEN IllegalArgumentException is thrown")
         void givenPriceExceedingBoundary_whenCreatingPriceVO_thenThrowIllegalArgumentException() {
@@ -51,6 +53,9 @@ class PriceVOTest {
                     .hasMessageContaining("Price exceeds maximum logical system boundary.");
         }
 
+
+
+
         @Test
         @DisplayName("GIVEN an explicit precision exceeding 10 WHEN creating PriceVO THEN IllegalArgumentException is thrown")
         void givenPrecisionExceedingMax_whenCreatingPriceVO_thenThrowIllegalArgumentException() {
@@ -62,7 +67,10 @@ class PriceVOTest {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Precision must be between 0 and 10");
         }
+
+
     }
+
 
     @Nested
     @DisplayName("Cross-Field Consistency: Fractional Pennies & Currency Rules")
@@ -96,6 +104,7 @@ class PriceVOTest {
             assertThat(vo.precision()).isEqualTo(2);
             assertThat(vo.currency()).isEqualTo(USD);
         }
+
     }
 
     @Nested
@@ -118,9 +127,11 @@ class PriceVOTest {
         }
     }
 
+
     @Nested
     @DisplayName("Currency Flexibility (Parameterized)")
     class CurrencyFlexibilityTests {
+
 
         @ParameterizedTest(name = "Test {0} with input {1}, expected scale {2}")
         @CsvSource({
@@ -224,4 +235,4 @@ class PriceVOTest {
         }
     }
 }
-*/
+

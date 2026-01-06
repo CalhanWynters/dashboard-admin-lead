@@ -13,7 +13,6 @@ import java.util.Currency;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/*
 
 @DisplayName("ScalingPriceVO High-Integrity Financial Test Suite")
 class ScalingPriceVOTest {
@@ -159,4 +158,3 @@ class ScalingPriceVOTest {
         }
     }
 }
-*/

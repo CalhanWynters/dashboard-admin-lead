@@ -102,7 +102,10 @@ public record TieredPriceVO(
                 .sorted(Comparator.comparing(PriceTier::threshold))
                 .toList();
 
-        long uniqueThresholds = validatedTiers.stream().map(PriceTier::threshold).distinct().count();
+        long uniqueThresholds = validatedTiers.stream()
+                .map(tier -> tier.threshold().stripTrailingZeros()) // Normalize scale
+                .distinct()
+                .count();
         if (uniqueThresholds != validatedTiers.size()) {
             throw new IllegalArgumentException("Tiers must have unique thresholds.");
         }

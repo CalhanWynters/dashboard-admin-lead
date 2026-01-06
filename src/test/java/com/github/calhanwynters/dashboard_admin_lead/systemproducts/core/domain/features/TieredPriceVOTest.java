@@ -20,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Standards: Java 25, AssertJ, Given_When_Then naming.
  */
 
-/*
 @DisplayName("TieredPriceVO & PriceTier Specification")
 class TieredPriceVOTest {
 
@@ -91,6 +90,7 @@ class TieredPriceVOTest {
                     .hasMessageContaining("same currency");
         }
 
+
         @Test
         void Given_DuplicateThresholds_When_ConstructingVO_Then_ThrowIAE() {
             // Given (Distinct scales representing same value)
@@ -102,6 +102,8 @@ class TieredPriceVOTest {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("unique thresholds");
         }
+
+
 
         @Test
         void Given_UnsortedTiers_When_ConstructingVO_Then_InternalListIsSorted() {
@@ -200,5 +202,3 @@ class TieredPriceVOTest {
         }
     }
 }
-
- */

@@ -7,47 +7,42 @@ import java.util.Objects;
 
 /**
  * Hardened Price Value Object for Java 25.
- * Implements strict scale boundaries and Cross-Field currency consistency.
+ * Implements strict scale boundaries and ensures Cross-Field currency consistency.
  */
-
-
 public record PriceVO(BigDecimal price, int precision, Currency currency) {
 
-    // Boundary: Prevent Arithmetic DoS by limiting max decimal digits
-    private static final int MAX_PRECISION = 10;
-    // Boundary: Logical upper limit for a single product price ($100M)
-    private static final BigDecimal MAX_PRICE = new BigDecimal("100000000.00");
+    private static final int MAX_PRECISION = 10; // Maximum allowed decimal digits
+    private static final BigDecimal MAX_PRICE = new BigDecimal("100000000.00"); // Logical upper limit for product price
 
     /**
-     * Explicit constructor for creating a PriceVO with a specific price and currency,
-     * using the default precision of that currency. The precision field in this case
-     * becomes synonymous with the currency's default fraction digits.
+     * Create a PriceVO using a specific price and currency,
+     * defaulting to the currency's default fraction digits for precision.
      */
     public PriceVO(BigDecimal price, Currency currency) {
-        this(price, currency.getDefaultFractionDigits(), currency);
+        Objects.requireNonNull(currency, "Currency must not be null");
+        this(price, currency.getDefaultFractionDigits(), currency); // Delegating to the compact constructor
     }
 
     /**
-     * Flexible Constructor (JEP 513) for default USD pricing (uses the explicit constructor).
+     * Flexible constructor for default USD pricing.
      */
     public PriceVO(BigDecimal price) {
-        this(price, Currency.getInstance("USD"));
+        this(price, Currency.getInstance("USD")); // Default currency is USD
     }
 
     /**
-     * Compact Constructor for Domain Validation and Normalization.
+     * Validates input data and normalizes price.
      */
     public PriceVO {
-        // 1. Existence & Nullability
         Objects.requireNonNull(price, "Price cannot be null");
         Objects.requireNonNull(currency, "Currency must not be null");
 
-        // 2. Size & Boundary (Prevention of Arithmetic DoS)
+        // Validate precision range
         if (precision < 0 || precision > MAX_PRECISION) {
             throw new IllegalArgumentException("Precision must be between 0 and %d".formatted(MAX_PRECISION));
         }
 
-        // 3. Semantics: Range Validation
+        // Validate price range
         if (price.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Price cannot be negative.");
         }
@@ -55,7 +50,7 @@ public record PriceVO(BigDecimal price, int precision, Currency currency) {
             throw new IllegalArgumentException("Price exceeds maximum logical system boundary.");
         }
 
-        // 4. Cross-Field Consistency (Currency Precision Check)
+        // Validate currency precision
         int minFractionDigits = currency.getDefaultFractionDigits();
         if (precision < minFractionDigits) {
             throw new IllegalArgumentException(
@@ -64,8 +59,7 @@ public record PriceVO(BigDecimal price, int precision, Currency currency) {
             );
         }
 
-        // --- STRICT INPUT VALIDATION AGAINST CURRENCY PRECISION ---
-        // Prevents fractional pennies ($10.123 USD is rejected, not rounded)
+        // Validate input scale against currency precision
         int actualInputScale = price.stripTrailingZeros().scale();
         if (actualInputScale > minFractionDigits) {
             throw new IllegalArgumentException(
@@ -73,18 +67,13 @@ public record PriceVO(BigDecimal price, int precision, Currency currency) {
                             .formatted(actualInputScale, currency.getCurrencyCode(), minFractionDigits)
             );
         }
-        // ----------------------------------------------------------------
 
-        // 5. Normalization (Enforcing Canonical Form)
-        // Normalizes the price using the specified precision.
-        // This only rounds if the *provided* precision is higher than the *actual* input scale
-        // (e.g., input $10.00 with precision 2). The previous validation ensures we don't truncate data.
+        // Normalize the price using the specified precision
         price = price.setScale(precision, RoundingMode.HALF_UP);
     }
 
     @Override
     public String toString() {
-        // Using getCurrencyCode() is generally safer than getSymbol() for admin/logging purposes
         return "%s %s".formatted(currency.getCurrencyCode(), price.toPlainString());
     }
 }
