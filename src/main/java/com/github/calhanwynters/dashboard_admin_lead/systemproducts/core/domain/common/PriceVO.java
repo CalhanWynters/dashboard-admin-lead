@@ -71,6 +71,9 @@ public record PriceVO(BigDecimal price, int precision, Currency currency) {
         // Normalize the price using the specified precision
         price = price.setScale(precision, RoundingMode.HALF_UP);
     }
+    public Currency currency() {
+        return currency; // Assuming this method is implicitly available from the record.
+    }
 
     @Override
     public String toString() {

@@ -22,6 +22,14 @@ public record DescriptionVO(String text) {
     private static final Set<String> FORBIDDEN_WORDS = Set.of("forbiddenword1", "forbiddenword2");
 
     /**
+     * Static factory method to satisfy Domain Architecture tests.
+     * Maps to the canonical constructor.
+     */
+    public static DescriptionVO from(String text) {
+        return new DescriptionVO(text);
+    }
+
+    /**
      * Compact Constructor for Domain Validation.
      * Logic is executed before the record is instantiated.
      */

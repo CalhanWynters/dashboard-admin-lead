@@ -25,6 +25,8 @@ public abstract class FeatureAbstractClass {
     private final LastModifiedVO lastModified;
     private final Set<UuIdVO> incompatibleFeatures;
 
+
+
     protected FeatureAbstractClass(Builder<?> builder) {
         // 1. Fail-fast validation before state assignment
         validate(builder);
@@ -96,6 +98,7 @@ public abstract class FeatureAbstractClass {
         public T featureStatus(StatusEnums featureStatus) { this.featureStatus = featureStatus; return self(); }
         public T featureVersion(VersionVO featureVersion) { this.featureVersion = featureVersion; return self(); }
         public T lastModified(LastModifiedVO lastModified) { this.lastModified = lastModified; return self(); }
+
 
         /**
          * Bulk setter for incompatible features.

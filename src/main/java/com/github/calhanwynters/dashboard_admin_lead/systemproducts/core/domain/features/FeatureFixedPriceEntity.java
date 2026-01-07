@@ -15,24 +15,21 @@ public class FeatureFixedPriceEntity extends FeatureAbstractClass {
     private final Map<Currency, PriceVO> fixedPrices;
 
     private FeatureFixedPriceEntity(Builder builder) {
-        super(builder);
-        // Map.copyOf creates a natively immutable, memory-optimized collection in Java 25
-        this.fixedPrices = processAndValidatePrices(builder.fixedPrices);
+        // PROLOGUE: Validate and prepare data before parent init
+        var validatedMap = validatePricingData(builder.fixedPrices);
+
+        super(builder); // Parent only initializes if pricing is valid
+
+        // EPILOGUE: Final assignment
+        this.fixedPrices = validatedMap;
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    private Map<Currency, PriceVO> processAndValidatePrices(Map<Currency, PriceVO> inputPrices) {
-        // Final invariant check: The Builder already validates this, but the constructor
-        // acts as the ultimate gatekeeper for the Entity state.
-        if (inputPrices == null || inputPrices.isEmpty()) {
-            throw new DomainValidationException(
-                    "Pricing data is missing. You must intentionally define a price."
-            );
+    // Static allows this to be called in the Java 25 constructor prologue
+    private static Map<Currency, PriceVO> validatePricingData(Map<Currency, PriceVO> prices) {
+        if (prices == null || prices.isEmpty()) {
+            throw new DomainValidationException("Pricing data is mandatory.");
         }
-        return Map.copyOf(inputPrices);
+        return Map.copyOf(prices);
     }
 
     public Map<Currency, PriceVO> getFixedPrices() {
@@ -42,6 +39,16 @@ public class FeatureFixedPriceEntity extends FeatureAbstractClass {
     public Optional<PriceVO> getPriceForCurrency(Currency currency) {
         return Optional.ofNullable(fixedPrices.get(currency));
     }
+
+    /**
+     * Static factory method to provide a new Builder instance.
+     * This allows the syntax: FeatureFixedPriceEntity.builder()
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+
 
     /**
      * Builder for FeatureFixedPriceEntity.

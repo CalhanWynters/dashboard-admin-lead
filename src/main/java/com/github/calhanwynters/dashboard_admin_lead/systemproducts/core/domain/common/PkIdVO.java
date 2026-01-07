@@ -13,6 +13,14 @@ public record PkIdVO(Long value) {
     private static final long MAX_PK_VALUE = Long.MAX_VALUE - 1000;
 
     /**
+     * Overloaded factory method to satisfy test architecture.
+     * This allows PkIdVO.fromString(101L) to function correctly.
+     */
+    public static PkIdVO fromString(long value) {
+        return new PkIdVO(value);
+    }
+
+    /**
      * Compact Constructor.
      */
     public PkIdVO {

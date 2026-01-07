@@ -24,6 +24,13 @@ public record NameVO(String value) {
             Pattern.compile("^[\\p{L}\\p{N} .,:;!\\-?'\"()]+$");
 
     /**
+     * Static factory method to satisfy the API expected by unit tests.
+     */
+    public static NameVO from(String value) {
+        return new NameVO(value);
+    }
+
+    /**
      * Compact Constructor.
      */
     public NameVO {

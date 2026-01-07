@@ -23,6 +23,13 @@ public record LabelVO(String value) {
             Pattern.compile("^[a-zA-Z0-9](?:[a-zA-Z0-9 -]*[a-zA-Z0-9])?$");
 
     /**
+     * Static factory method to satisfy Domain Architecture tests.
+     */
+    public static LabelVO from(String value) {
+        return new LabelVO(value);
+    }
+
+    /**
      * Compact constructor for Domain Validation.
      */
     public LabelVO {

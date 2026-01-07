@@ -17,6 +17,25 @@ public record VersionVO(int value) {
     public static final VersionVO INITIAL = new VersionVO(MIN_VERSION);
 
     /**
+     * Static factory method to satisfy Domain Architecture tests.
+     * Maps semantic strings (e.g., "1.0.0") to the internal version integer.
+     */
+    public static VersionVO from(String versionString) {
+        if (versionString == null || versionString.isBlank()) {
+            throw new IllegalArgumentException("Version string cannot be null or blank.");
+        }
+
+        // Logic to extract major version from "1.0.0" style strings
+        try {
+            String majorPart = versionString.split("\\.")[0];
+            int major = Integer.parseInt(majorPart);
+            return new VersionVO(major);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid version format: " + versionString);
+        }
+    }
+
+    /**
      * Compact Constructor for Domain Validation.
      */
     public VersionVO {
