@@ -14,40 +14,18 @@ import java.util.HashMap;
  */
 public class FeatureScalingPriceEntity extends FeatureAbstractClass {
 
-    private final Map<Currency, ScalingPriceVO> scalingPriceSchemes;
+    // --- 1. PUBLIC BUILDER API ---
 
-    private FeatureScalingPriceEntity(Builder builder) {
-        super(builder);
-        // Map.copyOf ensures the internal state is immutable and non-null
-        this.scalingPriceSchemes = Map.copyOf(builder.scalingPriceSchemes);
-    }
-
+    /**
+     * Static factory method to provide a new Builder instance.
+     */
     public static Builder builder() {
         return new Builder();
     }
 
-    public BigDecimal calculatePrice(Currency requestedCurrency, BigDecimal quantity) {
-        Objects.requireNonNull(requestedCurrency, "Currency cannot be null");
-
-        ScalingPriceVO scheme = scalingPriceSchemes.get(requestedCurrency);
-        if (scheme == null) {
-            throw new DomainValidationException("Pricing not defined for currency: " + requestedCurrency.getCurrencyCode());
-        }
-
-        return scheme.calculate(quantity);
-    }
-
-    public Map<Currency, ScalingPriceVO> getScalingPriceSchemes() {
-        return scalingPriceSchemes;
-    }
-
-    public boolean supportsCurrency(Currency currency) {
-        return scalingPriceSchemes.containsKey(currency);
-    }
-
     /**
      * Builder for ScalingPriceEntity.
-     * Inherits all 9 core feature fields from FeatureAbstractClass.Builder.
+     * Inherits all core feature fields from FeatureAbstractClass.Builder.
      */
     public static class Builder extends FeatureAbstractClass.Builder<Builder> {
         private Map<Currency, ScalingPriceVO> scalingPriceSchemes = new HashMap<>();
@@ -71,31 +49,32 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
 
         @Override
         public FeatureScalingPriceEntity build() {
-            validateScalingLogic();
+            // Keep validation call here to ensure builder-level safety
+            validateScalingLogic(this.scalingPriceSchemes);
             return new FeatureScalingPriceEntity(this);
         }
 
-        private void validateScalingLogic() {
-            if (scalingPriceSchemes.isEmpty()) {
+        /**
+         * Logic moved to a static helper to support the Java 25 Constructor Prologue.
+         */
+        private static void validateScalingLogic(Map<Currency, ScalingPriceVO> schemes) {
+            if (schemes.isEmpty()) {
                 throw new DomainValidationException("FeatureScalingPriceEntity requires at least one pricing scheme.");
             }
 
-            scalingPriceSchemes.forEach((currency, vo) -> {
-                // Cross-Field Consistency
+            schemes.forEach((currency, vo) -> {
                 if (!currency.equals(vo.currency())) {
                     throw new DomainValidationException(
                             String.format("Mismatch: Key [%s] does not match VO currency [%s]", currency, vo.currency())
                     );
                 }
 
-                // NEW: Bulletproof Guard against Explicit Free Products
-                // This ensures the base/minimum price in the scheme is positive.
                 if (vo.basePrice().compareTo(BigDecimal.ZERO) <= 0) {
                     throw new DomainValidationException(
                             "Scaling base price for currency [%s] must be greater than zero.".formatted(currency)
                     );
                 }
-                // This ensures the pricePerStep in the scheme is positive.
+
                 if (vo.pricePerStep().compareTo(BigDecimal.ZERO) <= 0) {
                     throw new DomainValidationException(
                             "Scaling step price for currency [%s] must be greater than zero.".formatted(currency)
@@ -103,5 +82,40 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
                 }
             });
         }
+    }
+
+    // --- 2. STATE & CONSTRUCTOR ---
+
+    private final Map<Currency, ScalingPriceVO> scalingPriceSchemes;
+
+    private FeatureScalingPriceEntity(Builder builder) {
+        // PROLOGUE: Validate data state before parent initialization (Java 25)
+        Builder.validateScalingLogic(builder.scalingPriceSchemes);
+
+        super(builder);
+
+        // EPILOGUE: Final immutable assignment
+        this.scalingPriceSchemes = Map.copyOf(builder.scalingPriceSchemes);
+    }
+
+    // --- 3. PUBLIC DOMAIN LOGIC ---
+
+    public BigDecimal calculatePrice(Currency requestedCurrency, BigDecimal quantity) {
+        Objects.requireNonNull(requestedCurrency, "Currency cannot be null");
+
+        ScalingPriceVO scheme = scalingPriceSchemes.get(requestedCurrency);
+        if (scheme == null) {
+            throw new DomainValidationException("Pricing not defined for currency: " + requestedCurrency.getCurrencyCode());
+        }
+
+        return scheme.calculate(quantity);
+    }
+
+    public Map<Currency, ScalingPriceVO> getScalingPriceSchemes() {
+        return scalingPriceSchemes;
+    }
+
+    public boolean supportsCurrency(Currency currency) {
+        return scalingPriceSchemes.containsKey(currency);
     }
 }

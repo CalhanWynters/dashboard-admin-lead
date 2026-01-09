@@ -6,33 +6,71 @@ import org.junit.jupiter.api.*;
 import java.math.BigDecimal;
 import java.util.*;
 
+import static java.util.Collections.fill;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
 
 @DisplayName("FeatureFixedPriceEntity High-Integrity Domain Tests")
 class FeatureFixedPriceEntityTest {
 
+    // --- Test Data Factories ---
+    private static final UuIdVO VALID_UUID = UuIdVO.generate();
+    private static final UuIdVO VARIANT_UUID = UuIdVO.generate();
+    private static final PkIdVO VALID_PK = PkIdVO.of(101L);
+    private static final NameVO VALID_NAME = NameVO.from("Core Engine");
+    private static final LabelVO VALID_LABEL = LabelVO.from("CORE-01");
+    private static final DescriptionVO VALID_DESC = DescriptionVO.from("Primary logic processor");
+    private static final StatusEnums VALID_STATUS = StatusEnums.ACTIVE;
+    private static final VersionVO VALID_VERSION = VersionVO.from("1.0.0");
+    private static final LastModifiedVO VALID_MODIFIED = LastModifiedVO.now();
+
     private static final Currency USD = Currency.getInstance("USD");
     private static final Currency JPY = Currency.getInstance("JPY");
 
+    protected <B extends FeatureAbstractClass.Builder<B>> B fill(B builder) {
+        return builder
+                .featureId(VALID_PK)
+                .featureUuId(VALID_UUID)
+                .featureName(VALID_NAME)
+                .featureLabel(VALID_LABEL)
+                .featureDescription(VALID_DESC)
+                .featureStatus(VALID_STATUS)
+                .featureVersion(VALID_VERSION)
+                .lastModified(VALID_MODIFIED);
+    }
+
     @Nested
-    @DisplayName("Constructor Prologue (Java 25 JEP 513)")
+    @DisplayName("1. Constructor Prologue Logic (Java 25 JEP 513)")
     class ConstructorPrologueTests {
-
         @Test
-        @DisplayName("should reject empty prices via fluent builder validation")
+        @DisplayName("should fail validation in prologue when prices are missing")
         void should_reject_empty_prices() {
-            // 1. Get the builder and use parent methods fluently
-            // No casting required! .featureName() now returns FeatureFixedPriceEntity.Builder
-            FeatureFixedPriceEntity.Builder builder = FeatureFixedPriceEntity.builder()
-                    .featureName(new NameVO("Standard Support"));
+            // Under JEP 513, the 'prologue' (pre-super() calls) handles this validation.
+            // We simulate this by checking if the builder's build() triggers the Prologue exception.
+            var builder = FeatureFixedPriceEntity.builder().featureName(new NameVO("Standard Support"));
 
-            // 2. Verify that build fails when cross-field rules are violated
             assertThatThrownBy(builder::build)
                     .isInstanceOf(DomainValidationException.class)
                     .hasMessageContaining("must define at least one price scheme");
         }
+    }
 
+    @Nested
+    @DisplayName("2. Fluent Builder & Recursive Generics")
+    class BuilderTests {
+        @Test
+        @DisplayName("Should support full fluent chain with subclass-specific methods")
+        void testRecursiveGenericBuilder() {
+            // The fill() method returns B, allowing immediate chaining of .addPrice()
+            FeatureFixedPriceEntity entity = fill(FeatureFixedPriceEntity.builder())
+                    .featVariantId(VARIANT_UUID)
+                    .addPrice(USD, new PriceVO(new BigDecimal("99.99"), USD))
+                    .build();
+
+            assertThat(entity).isNotNull();
+            assertThat(entity.getPriceForCurrency(USD)).isPresent();
+        }
     }
 
     @Nested
@@ -54,30 +92,28 @@ class FeatureFixedPriceEntityTest {
                     .hasMessageContaining("cannot be zero");
         }
 
-
         @Test
         @DisplayName("should reject currency mismatch between key and PriceVO")
         void should_reject_currency_mismatch() {
-            // Create the builder for the FeatureFixedPriceEntity
-            FeatureFixedPriceEntity.Builder builder = FeatureFixedPriceEntity.builder();
+            // 1. Arrange: Use the recursive generic fill() to populate mandatory base fields
+            FeatureFixedPriceEntity.Builder builder = fill(FeatureFixedPriceEntity.builder());
 
-            // Create a PriceVO for USD
-            PriceVO usdPrice = new PriceVO(new BigDecimal("10.00"), Currency.getInstance("USD"));
+            // 2. Prepare valid and invalid currency/price pairs
+            Currency usd = Currency.getInstance("USD");
+            Currency jpy = Currency.getInstance("JPY");
+            PriceVO usdPrice = new PriceVO(new BigDecimal("10.00"), usd);
 
-            // Adding the USD price should work
-            builder.addPrice(Currency.getInstance("USD"), usdPrice);
+            // 3. Act & Assert: Adding a valid price should pass silently
+            builder.addPrice(usd, usdPrice);
 
-            // Now attempt to build the entity which should validate all prices
-            // including the next price addition which refers to JPY
-            assertThatThrownBy(() -> {
-                builder.addPrice(Currency.getInstance("JPY"), usdPrice);
-                builder.build(); // Trigger the build to validate
-            })
+            // 4. Act & Assert: Adding a mismatched currency must fail fast
+            // We expect the DomainValidationException to occur immediately in .addPrice()
+            assertThatThrownBy(() -> builder.addPrice(jpy, usdPrice))
                     .isInstanceOf(DomainValidationException.class)
-                    .hasMessageContaining("Currency Mismatch");
+                    .hasMessageContaining("Currency Mismatch")
+                    .hasMessageContaining("Key: JPY")
+                    .hasMessageContaining("PriceVO: USD");
         }
-
-
 
         @Test
         @DisplayName("should respect currency scale (e.g., no fractional pennies for JPY)")
@@ -93,98 +129,76 @@ class FeatureFixedPriceEntityTest {
     @DisplayName("Immutability & Defensive Copying")
     class ImmutabilityTests {
 
-
         @Test
         @DisplayName("should be immune to mutation of the source map AND return an immutable view")
         void should_perform_defensive_copying_and_enforce_immutability() {
+            // 1. Arrange: Create mutable source to verify internal state isolation
             Map<Currency, PriceVO> mutableMap = new HashMap<>();
-            mutableMap.put(Currency.getInstance("USD"), new PriceVO(new BigDecimal("49.99"), Currency.getInstance("USD")));
+            mutableMap.put(USD, new PriceVO(new BigDecimal("49.99"), USD));
 
-            // Create a builder instance, set all necessary attributes, and pass the mutableMap
-            FeatureFixedPriceEntity entity = FeatureFixedPriceEntity.builder()
-                    .featureUuId(UuIdVO.generate())
-                    .featureName(new NameVO("Default Feature"))
-                    .featureId(PkIdVO.of(1L))
-                    .featureLabel(new LabelVO("Test Label"))
-                    .featureDescription(new DescriptionVO("A default feature"))
-                    .featureStatus(StatusEnums.ACTIVE)
-                    .featureVersion(VersionVO.from("1.0.0"))
-                    .lastModified(LastModifiedVO.now())
-                    .fixedPrices(mutableMap) // Use mutableMap for initial fixedPrices
+            // Use fill() to satisfy Abstract Class mandatory fields fluently
+            FeatureFixedPriceEntity entity = fill(FeatureFixedPriceEntity.builder())
+                    .fixedPrices(mutableMap)
                     .build();
 
-            // 1. Mutation of Source Guard
-            mutableMap.clear(); // Clear the original map
-            assertThat(entity.getFixedPrices()).hasSize(1); // Ensure the entity still has the price
+            // 2. Act: Mutation of Source Guard
+            mutableMap.clear();
 
-            // 2. Mutation of Output Guard (2026 Standard)
-            // Ensures the getter doesn't leak a mutable reference
+            // 3. Assert Source Guard: Entity must retain its state (Defensive Copying)
+            assertThat(entity.getFixedPrices())
+                    .as("Check that entity performed a defensive copy of the source map")
+                    .hasSize(1)
+                    .containsEntry(USD, new PriceVO(new BigDecimal("49.99"), USD));
+
+            // 4. Act & Assert: Output Guard (2026 Standard)
             Map<Currency, PriceVO> pricesFromEntity = entity.getFixedPrices();
-            assertThrows(UnsupportedOperationException.class, () ->
-                    pricesFromEntity.put(Currency.getInstance("USD"), new PriceVO(BigDecimal.ZERO, Currency.getInstance("USD")))
-            );
+
+            assertThatThrownBy(() -> pricesFromEntity.put(JPY, new PriceVO(BigDecimal.TEN, JPY)))
+                    .as("The getter must return an unmodifiable view to prevent external mutation")
+                    .isInstanceOf(UnsupportedOperationException.class);
         }
-
-
 
         @Test
         @DisplayName("should return unmodifiable collections from getters")
         void should_return_unmodifiable_collections() {
-            FeatureFixedPriceEntity entity = createValidEntity();
+            // 1. Arrange: Inline creation using fill() + specific state
+            FeatureFixedPriceEntity entity = fill(FeatureFixedPriceEntity.builder())
+                    .addPrice(USD, new PriceVO(new BigDecimal("19.99"), USD))
+                    .build();
 
-            assertThatThrownBy(() -> entity.getFixedPrices().put(JPY, new PriceVO(BigDecimal.TEN, JPY)))
+            // 2. Act & Assert: Verify domain boundary protection via unmodifiable view
+            assertThatThrownBy(() ->
+                    entity.getFixedPrices().put(JPY, new PriceVO(BigDecimal.TEN, JPY))
+            )
+                    .as("The domain entity must not leak mutable state via getters")
                     .isInstanceOf(UnsupportedOperationException.class);
         }
     }
+
 
     @Nested
     @DisplayName("Base Class Invariants")
     class BaseClassTests {
 
-
         @Test
         @DisplayName("should prevent a feature from being incompatible with itself")
         void should_prevent_self_incompatibility() {
-            UuIdVO selfId = UuIdVO.generate(); // Generate self ID
-            Set<UuIdVO> incompatibles = Set.of(selfId); // Set of incompatible features
+            // 1. Arrange: Define the identity to be used for the collision
+            UuIdVO selfId = UuIdVO.generate();
 
-            // Setup builder with all mandatory fields + the self-incompatibility
-            FeatureFixedPriceEntity.Builder builder = FeatureFixedPriceEntity.builder()
-                    .featureUuId(selfId) // Feature UUID
-                    .featureName(new NameVO("Default Feature")) // Feature name
-                    .featureId(PkIdVO.of(1L)) // Example PK ID
-                    .featureLabel(new LabelVO("Test Label")) // Mandatory field
-                    .featureDescription(new DescriptionVO("A default feature")) // Mandatory field
-                    .featureStatus(StatusEnums.ACTIVE) // Mandatory field
-                    .featureVersion(VersionVO.from("1.0.0")) // Mandatory field
-                    .lastModified(LastModifiedVO.now()) // Mandatory field
-                    .addPrice(USD, new PriceVO(BigDecimal.TEN, USD)) // Mandatory child state
-                    .addIncompatibleFeature(selfId); // Pass self ID directly (if method supports single ID)
+            // 2. Act: Use fill() for mandatory base fields, then override the UUID
+            // and add the incompatible self-reference.
+            FeatureFixedPriceEntity.Builder builder = fill(FeatureFixedPriceEntity.builder())
+                    .featureUuId(selfId) // Overrides the default UUID from fill()
+                    .addPrice(USD, new PriceVO(BigDecimal.TEN, USD))
+                    .addIncompatibleFeature(selfId);
 
-            // Validate that instantiation throws an exception
+            // 3. Assert: Validation must trigger during the 'Constructor Prologue' (build phase)
             assertThatThrownBy(builder::build)
+                    .as("Business Rule: A feature cannot be marked as incompatible with itself")
                     .isInstanceOf(DomainValidationException.class)
                     .hasMessageContaining("cannot be marked as incompatible with itself");
         }
-
-
-    }
-
-    private FeatureFixedPriceEntity createValidEntity() {
-        // 1. Rename .withId to .featureUuId (assuming UuIdVO is for the UUID identifier)
-        // 2. Add all other *mandatory* fields from FeatureAbstractClass (PkIdVO, LabelVO, StatusEnums, etc.)
-
-        return FeatureFixedPriceEntity.builder()
-                .featureUuId(UuIdVO.generate()) // Corrected syntax: added parentheses ()
-                .featureName(new NameVO("Default Feature")) // Corrected name from withName
-                .featureId(PkIdVO.of(1L)) // Example: assuming you need this PK ID
-                .featureLabel(new LabelVO("Test Label")) // Mandatory Field
-                .featureDescription(new DescriptionVO("A default feature")) // Mandatory Field
-                .featureStatus(StatusEnums.ACTIVE) // Mandatory Field
-                .featureVersion(VersionVO.from("1.0.0")) // Mandatory Field
-                .lastModified(LastModifiedVO.now()) // Mandatory Field
-                .addPrice(USD, new PriceVO(new BigDecimal("19.99"), USD))
-                .build();
     }
 
 }
