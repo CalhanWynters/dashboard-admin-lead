@@ -25,7 +25,6 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
 
     /**
      * Builder for ScalingPriceEntity.
-     * Inherits all core feature fields from FeatureAbstractClass.Builder.
      */
     public static class Builder extends FeatureAbstractClass.Builder<Builder> {
         private Map<Currency, ScalingPriceVO> scalingPriceSchemes = new HashMap<>();
@@ -49,38 +48,9 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
 
         @Override
         public FeatureScalingPriceEntity build() {
-            // Keep validation call here to ensure builder-level safety
-            validateScalingLogic(this.scalingPriceSchemes);
+            // Behavioral Fail-Fast: Validates logic before entering the constructor
+            validateAndFreezeScalingData(this.scalingPriceSchemes);
             return new FeatureScalingPriceEntity(this);
-        }
-
-        /**
-         * Logic moved to a static helper to support the Java 25 Constructor Prologue.
-         */
-        private static void validateScalingLogic(Map<Currency, ScalingPriceVO> schemes) {
-            if (schemes.isEmpty()) {
-                throw new DomainValidationException("FeatureScalingPriceEntity requires at least one pricing scheme.");
-            }
-
-            schemes.forEach((currency, vo) -> {
-                if (!currency.equals(vo.currency())) {
-                    throw new DomainValidationException(
-                            String.format("Mismatch: Key [%s] does not match VO currency [%s]", currency, vo.currency())
-                    );
-                }
-
-                if (vo.basePrice().compareTo(BigDecimal.ZERO) <= 0) {
-                    throw new DomainValidationException(
-                            "Scaling base price for currency [%s] must be greater than zero.".formatted(currency)
-                    );
-                }
-
-                if (vo.pricePerStep().compareTo(BigDecimal.ZERO) <= 0) {
-                    throw new DomainValidationException(
-                            "Scaling step price for currency [%s] must be greater than zero.".formatted(currency)
-                    );
-                }
-            });
         }
     }
 
@@ -89,16 +59,51 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
     private final Map<Currency, ScalingPriceVO> scalingPriceSchemes;
 
     private FeatureScalingPriceEntity(Builder builder) {
-        // PROLOGUE: Validate data state before parent initialization (Java 25)
-        Builder.validateScalingLogic(builder.scalingPriceSchemes);
+        // PROLOGUE: Validate and Freeze data before parent init (Java 25 JEP 482)
+        var validatedMap = validateAndFreezeScalingData(builder.scalingPriceSchemes);
 
         super(builder);
 
-        // EPILOGUE: Final immutable assignment
-        this.scalingPriceSchemes = Map.copyOf(builder.scalingPriceSchemes);
+        // EPILOGUE: Final atomic assignment
+        this.scalingPriceSchemes = validatedMap;
     }
 
-    // --- 3. PUBLIC DOMAIN LOGIC ---
+    // --- 3. INTERNAL VALIDATION LOGIC ---
+
+    /**
+     * Recommended 2026 Static Helper: Validates business rules and returns an immutable copy.
+     */
+    private static Map<Currency, ScalingPriceVO> validateAndFreezeScalingData(Map<Currency, ScalingPriceVO> schemes) {
+        if (schemes == null || schemes.isEmpty()) {
+            throw new DomainValidationException("FeatureScalingPriceEntity requires at least one pricing scheme.");
+        }
+
+        schemes.forEach((currency, vo) -> {
+            // Cross-Field Consistency
+            if (!currency.equals(vo.currency())) {
+                throw new DomainValidationException(
+                        "Mismatch: Key [%s] does not match VO currency [%s]".formatted(currency, vo.currency())
+                );
+            }
+
+            // Business Rule: Non-Zero/Negative Intent
+            if (vo.basePrice().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new DomainValidationException(
+                        "Scaling base price for currency [%s] must be greater than zero.".formatted(currency)
+                );
+            }
+
+            if (vo.pricePerStep().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new DomainValidationException(
+                        "Scaling step price for currency [%s] must be greater than zero.".formatted(currency)
+                );
+            }
+        });
+
+        return Map.copyOf(schemes);
+    }
+
+    // --- 4. PUBLIC ACCESSORS & UTILITY ---
 
     public BigDecimal calculatePrice(Currency requestedCurrency, BigDecimal quantity) {
         Objects.requireNonNull(requestedCurrency, "Currency cannot be null");

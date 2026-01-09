@@ -2,7 +2,6 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.exceptions.DomainValidationException;
-
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -10,21 +9,14 @@ import java.util.*;
  * Hardened Fixed Price Entity for Java 25 (2026).
  * Rejects all defaults and requires explicit, non-zero monetary intent.
  */
-
 public class FeatureFixedPriceEntity extends FeatureAbstractClass {
 
     // --- 1. PUBLIC BUILDER API ---
 
-    /**
-     * Static factory method to provide a new Builder instance.
-     */
     public static Builder builder() {
         return new Builder();
     }
-    /**
-     * Builder for FeatureFixedPriceEntity.
-     * Overrides build() to return the concrete subtype.
-     */
+
     public static class Builder extends FeatureAbstractClass.Builder<Builder> {
         private final Map<Currency, PriceVO> fixedPrices = new HashMap<>();
 
@@ -34,9 +26,7 @@ public class FeatureFixedPriceEntity extends FeatureAbstractClass {
         }
 
         public Builder addPrice(Currency currency, PriceVO price) {
-            if (currency == null || price == null) {
-                return this;
-            }
+            if (currency == null || price == null) return this;
 
             if (!currency.equals(price.currency())) {
                 throw new DomainValidationException("Currency Mismatch: Key [%s] does not match PriceVO currency [%s]"
@@ -54,17 +44,14 @@ public class FeatureFixedPriceEntity extends FeatureAbstractClass {
 
         public Builder fixedPrices(Map<Currency, PriceVO> prices) {
             this.fixedPrices.clear();
-            if (prices != null) {
-                prices.forEach(this::addPrice);
-            }
+            if (prices != null) prices.forEach(this::addPrice);
             return this;
         }
 
         @Override
         public FeatureFixedPriceEntity build() {
-            if (this.fixedPrices.isEmpty()) {
-                throw new DomainValidationException("Validation Error: A FeatureFixedPriceEntity must define at least one price scheme.");
-            }
+            // Early fail-fast validation before entering the constructor
+            validateAndFreezeFixedPrices(this.fixedPrices);
             return new FeatureFixedPriceEntity(this);
         }
     }
@@ -74,25 +61,29 @@ public class FeatureFixedPriceEntity extends FeatureAbstractClass {
     private final Map<Currency, PriceVO> fixedPrices;
 
     private FeatureFixedPriceEntity(Builder builder) {
-        // PROLOGUE: Java 25 validation before super()
-        var validatedMap = validatePricingData(builder.fixedPrices);
+        // PROLOGUE: Standardized "Return and Assign" pattern (Java 25)
+        var validatedPrices = validateAndFreezeFixedPrices(builder.fixedPrices);
 
         super(builder);
 
-        // EPILOGUE: Final assignment
-        this.fixedPrices = validatedMap;
+        // EPILOGUE: Final atomic assignment
+        this.fixedPrices = validatedPrices;
     }
 
     // --- 3. INTERNAL VALIDATION LOGIC ---
 
-    private static Map<Currency, PriceVO> validatePricingData(Map<Currency, PriceVO> prices) {
+    /**
+     * Recommended 2026 Static Helper: Validates and returns an immutable copy.
+     */
+    private static Map<Currency, PriceVO> validateAndFreezeFixedPrices(Map<Currency, PriceVO> prices) {
         if (prices == null || prices.isEmpty()) {
-            throw new DomainValidationException("Pricing data is mandatory.");
+            throw new DomainValidationException("Must define at least one price scheme.");
         }
+        // Return a frozen, immutable map for thread-safety
         return Map.copyOf(prices);
     }
 
-    // --- 4. PUBLIC ACCESSORS ---
+    // --- 4. PUBLIC ACCESSORS & UTILITY ---
 
     public Map<Currency, PriceVO> getFixedPrices() {
         return fixedPrices;
@@ -102,4 +93,3 @@ public class FeatureFixedPriceEntity extends FeatureAbstractClass {
         return Optional.ofNullable(fixedPrices.get(currency));
     }
 }
-

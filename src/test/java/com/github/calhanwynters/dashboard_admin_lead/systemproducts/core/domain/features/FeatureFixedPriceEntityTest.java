@@ -43,6 +43,7 @@ class FeatureFixedPriceEntityTest {
     @Nested
     @DisplayName("1. Constructor Prologue Logic (Java 25 JEP 513)")
     class ConstructorPrologueTests {
+
         @Test
         @DisplayName("should fail validation in prologue when prices are missing")
         void should_reject_empty_prices() {
@@ -52,13 +53,16 @@ class FeatureFixedPriceEntityTest {
 
             assertThatThrownBy(builder::build)
                     .isInstanceOf(DomainValidationException.class)
-                    .hasMessageContaining("must define at least one price scheme");
+                    .hasMessageContaining("Must define at least one price scheme.");
         }
+
+
     }
 
     @Nested
     @DisplayName("2. Fluent Builder & Recursive Generics")
     class BuilderTests {
+
         @Test
         @DisplayName("Should support full fluent chain with subclass-specific methods")
         void testRecursiveGenericBuilder() {
@@ -71,23 +75,27 @@ class FeatureFixedPriceEntityTest {
             assertThat(entity).isNotNull();
             assertThat(entity.getPriceForCurrency(USD)).isPresent();
         }
+
+
     }
+
 
     @Nested
     @DisplayName("Builder Business Rules & Hardened PriceVO")
     class BuilderValidationTests {
 
+
         @Test
         @DisplayName("should reject zero prices via PriceVO/Builder logic")
         void should_reject_zero_prices() {
-            var usd = Currency.getInstance("USD");
+            // 1. Initialize builder with valid data first
+            FeatureFixedPriceEntity.Builder builder = fill(FeatureFixedPriceEntity.builder());
 
-            // Demonstrate fluency: Parent method -> Child method -> Action
-            FeatureFixedPriceEntity.Builder builder = FeatureFixedPriceEntity.builder()
-                    .featureName(new NameVO("Premium Feature"))
-                    .addPrice(usd, new PriceVO(BigDecimal.ZERO, usd));
-
-            assertThatThrownBy(builder::build)
+            // 2. Wrap the specific action that triggers the violation
+            assertThatThrownBy(() -> {
+                builder.addPrice(USD, new PriceVO(BigDecimal.ZERO, USD));
+                builder.build(); // Ensure validation is caught whether in addPrice or build
+            })
                     .isInstanceOf(DomainValidationException.class)
                     .hasMessageContaining("cannot be zero");
         }
@@ -111,8 +119,8 @@ class FeatureFixedPriceEntityTest {
             assertThatThrownBy(() -> builder.addPrice(jpy, usdPrice))
                     .isInstanceOf(DomainValidationException.class)
                     .hasMessageContaining("Currency Mismatch")
-                    .hasMessageContaining("Key: JPY")
-                    .hasMessageContaining("PriceVO: USD");
+                    .hasMessageContaining("Key [JPY]")
+                    .hasMessageContaining("PriceVO currency [USD]");
         }
 
         @Test
@@ -123,6 +131,7 @@ class FeatureFixedPriceEntityTest {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("exceeds currency JPY allowed precision (0)");
         }
+
     }
 
     @Nested
@@ -173,12 +182,15 @@ class FeatureFixedPriceEntityTest {
                     .as("The domain entity must not leak mutable state via getters")
                     .isInstanceOf(UnsupportedOperationException.class);
         }
+
+
     }
 
 
     @Nested
     @DisplayName("Base Class Invariants")
     class BaseClassTests {
+
 
         @Test
         @DisplayName("should prevent a feature from being incompatible with itself")
@@ -199,6 +211,9 @@ class FeatureFixedPriceEntityTest {
                     .isInstanceOf(DomainValidationException.class)
                     .hasMessageContaining("cannot be marked as incompatible with itself");
         }
+
+
     }
 
 }
+

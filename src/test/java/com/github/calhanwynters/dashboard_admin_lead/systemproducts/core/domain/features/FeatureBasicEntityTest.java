@@ -68,7 +68,7 @@ class FeatureBasicEntityTest {
 
             assertThatThrownBy(builder::build)
                     .isExactlyInstanceOf(DomainValidationException.class)
-                    .hasMessageContaining("cannot be marked as incompatible with itself");
+                    .hasMessageContaining("cannot be marked as incompatible with itself.");
         }
     }
 
