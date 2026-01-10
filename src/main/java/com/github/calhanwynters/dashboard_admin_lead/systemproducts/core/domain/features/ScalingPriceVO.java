@@ -97,25 +97,27 @@ public record ScalingPriceVO(
     }
 
     public BigDecimal calculate(BigDecimal quantityRequested) {
-        // Existence: Handle null quantity as zero
         BigDecimal qty = (quantityRequested == null) ? BigDecimal.ZERO : quantityRequested;
 
-        // Semantics: Logical range check
         if (qty.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Quantity cannot be negative");
         }
 
         if (qty.compareTo(baseThreshold) <= 0) {
-            return basePrice;
+            return basePrice.setScale(precision, RoundingMode.UNNECESSARY);
         }
 
-        // Arithmetic Safety: Ensure the calculation doesn't create infinite decimals
         BigDecimal overage = qty.subtract(baseThreshold);
-        // Calculation logic: Ceiling division for partial steps
         BigDecimal numberOfSteps = overage.divide(incrementStep, 0, RoundingMode.CEILING);
-        BigDecimal incrementalCost = numberOfSteps.multiply(pricePerStep);
 
-        // Result is strictly scaled to the currency's standard to prevent fractional penny output
-        return basePrice.add(incrementalCost).setScale(precision, RoundingMode.UNNECESSARY);
+        // 1. Calculate raw cost
+        BigDecimal rawIncrementalCost = numberOfSteps.multiply(pricePerStep);
+
+        // 2. Normalize cost to target precision BEFORE addition
+        BigDecimal scaledIncrementalCost = rawIncrementalCost.setScale(precision, RoundingMode.UNNECESSARY);
+
+        // 3. Final Addition (operands now have matching scales)
+        return basePrice.add(scaledIncrementalCost).setScale(precision, RoundingMode.UNNECESSARY);
     }
+
 }

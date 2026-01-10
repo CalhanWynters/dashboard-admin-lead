@@ -79,29 +79,42 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
         }
 
         schemes.forEach((currency, vo) -> {
-            // Cross-Field Consistency
+            // 1. Cross-Field Consistency: Key must match VO currency
             if (!currency.equals(vo.currency())) {
                 throw new DomainValidationException(
                         "Mismatch: Key [%s] does not match VO currency [%s]".formatted(currency, vo.currency())
                 );
             }
 
-            // Business Rule: Non-Zero/Negative Intent
-            if (vo.basePrice().compareTo(BigDecimal.ZERO) <= 0) {
+            // 2. Precision Sync: Ensure the VO precision matches ISO-4217 standard
+            if (vo.precision() != currency.getDefaultFractionDigits()) {
                 throw new DomainValidationException(
-                        "Scaling base price for currency [%s] must be greater than zero.".formatted(currency)
+                        "Precision mismatch for %s: VO has %d but currency requires %d"
+                                .formatted(currency, vo.precision(), currency.getDefaultFractionDigits())
                 );
             }
 
-            if (vo.pricePerStep().compareTo(BigDecimal.ZERO) <= 0) {
+            // 3. Field Accessor Alignment: Changed from stepPrice to pricePerStep
+            // Business Rule: Revenue Integrity (Prevent "Accidental Free Product")
+            boolean hasBaseCharge = vo.basePrice().compareTo(BigDecimal.ZERO) > 0;
+            boolean hasStepCharge = vo.pricePerStep().compareTo(BigDecimal.ZERO) > 0;
+
+            if (!hasBaseCharge && !hasStepCharge) {
                 throw new DomainValidationException(
-                        "Scaling step price for currency [%s] must be greater than zero.".formatted(currency)
+                        "Scaling price for [%s] must have a positive base price OR step price."
+                                .formatted(currency)
                 );
+            }
+
+            // 4. Safety: Reject negative values
+            if (vo.basePrice().compareTo(BigDecimal.ZERO) < 0 || vo.pricePerStep().compareTo(BigDecimal.ZERO) < 0) {
+                throw new DomainValidationException("Negative prices are forbidden in domain logic.");
             }
         });
 
         return Map.copyOf(schemes);
     }
+
 
     // --- 4. PUBLIC ACCESSORS & UTILITY ---
 
@@ -113,8 +126,12 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
             throw new DomainValidationException("Pricing not defined for currency: " + requestedCurrency.getCurrencyCode());
         }
 
+        // Debugging output
+        System.out.printf("Calculating price for currency: %s, Quantity: %s%n", requestedCurrency.getCurrencyCode(), quantity);
+
         return scheme.calculate(quantity);
     }
+
 
     public Map<Currency, ScalingPriceVO> getScalingPriceSchemes() {
         return scalingPriceSchemes;

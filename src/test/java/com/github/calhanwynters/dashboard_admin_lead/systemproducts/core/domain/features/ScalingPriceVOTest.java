@@ -122,6 +122,7 @@ class ScalingPriceVOTest {
         }
     }
 
+
     @Nested
     @DisplayName("Calculation Logic (Base, Steps, & Ceiling Rounding)")
     class CalculationTests {

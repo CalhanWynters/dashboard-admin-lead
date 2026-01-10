@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
 
-/*
+
 class FeatureScalingPriceEntityTest {
 
     // --- Test Data Factories ---
@@ -42,7 +42,8 @@ class FeatureScalingPriceEntityTest {
                 .featureStatus(VALID_STATUS)
                 .featureVersion(VALID_VERSION)
                 .lastModified(VALID_MODIFIED)
-                .addScalingScheme(EUR, createValidScalingPriceVO(100.0, 10.0, EUR))
+                .addScalingScheme(EUR, createValidScalingPriceVO(0.0, 100.0, 1.0, 10.0, EUR))
+
                 .build();
 
         assertAll(
@@ -58,14 +59,15 @@ class FeatureScalingPriceEntityTest {
 
         @ParameterizedTest(name = "Currency {0} handles decimals correctly")
         @CsvSource({
-                "EUR, 120, 140.00",
-                "JPY, 120, 140",
-                "BHD, 120, 140.000"
+                "EUR, 120, 140.00", // EUR: Expected price has 2 decimal places
+                "JPY, 120, 140",    // JPY: Expected price has 0 decimal places
+                "BHD, 120, 140.000" // BHD: Expected price has 3 decimal places
         })
         void calculatePriceAcrossCurrencies(String currencyCode, double quantity, String expectedPriceStr) {
             Currency currency = Currency.getInstance(currencyCode);
-            BigDecimal expectedPrice = new BigDecimal(expectedPriceStr);
+            BigDecimal expectedPrice = new BigDecimal(expectedPriceStr).setScale(currency.getDefaultFractionDigits(), RoundingMode.HALF_UP);
 
+            // Build the entity with a valid scaling price
             var entity = FeatureScalingPriceEntity.builder()
                     .featureId(VALID_PK)
                     .featureUuId(VALID_UUID)
@@ -75,16 +77,25 @@ class FeatureScalingPriceEntityTest {
                     .featureStatus(VALID_STATUS)
                     .featureVersion(VALID_VERSION)
                     .lastModified(VALID_MODIFIED)
-                    .addScalingScheme(currency, createValidScalingPriceVO(100.0, 20.0, currency))
+                    .addScalingScheme(currency, createValidScalingPriceVO(100.0, 100.0, 10.0, 20.0, currency))
                     .build();
 
+            // Calculate the price
             BigDecimal result = entity.calculatePrice(currency, BigDecimal.valueOf(quantity));
 
+            // Debugging output for comparison
+            System.out.printf("Currency: %s, Quantity: %.2f, Expected Price: %s, Calculated Price: %s%n",
+                    currencyCode, quantity, expectedPrice, result);
+
+            // Assertions
             assertAll(
-                    () -> assertEquals(0, expectedPrice.compareTo(result)),
-                    () -> assertEquals(currency.getDefaultFractionDigits(), result.scale())
+                    () -> assertEquals(0, expectedPrice.compareTo(result),
+                            String.format("Expected price %s does not match calculated price %s for currency %s", expectedPrice, result, currencyCode)),
+                    () -> assertEquals(currency.getDefaultFractionDigits(), result.scale(),
+                            String.format("The scale of the calculated price %s is incorrect for currency %s", result, currencyCode))
             );
         }
+
 
         @Test
         @DisplayName("Should throw exception for unregistered currency")
@@ -98,17 +109,20 @@ class FeatureScalingPriceEntityTest {
                     .featureStatus(VALID_STATUS)
                     .featureVersion(VALID_VERSION)
                     .lastModified(VALID_MODIFIED)
-                    .addScalingScheme(EUR, createValidScalingPriceVO(10.0, 1.0, EUR))
+                    .addScalingScheme(EUR, createValidScalingPriceVO(0.0, 100.0, 1.0, 10.0, EUR))
                     .build();
 
             assertThrows(DomainValidationException.class, () ->
                     entity.calculatePrice(Currency.getInstance("JPY"), BigDecimal.ONE));
         }
+
+
     }
 
     @Nested
     @DisplayName("Invariant Protection: Invalid Inputs")
     class InvariantTests {
+
         @Test
         void selfIncompatibilityTest() {
             var builder = FeatureScalingPriceEntity.builder()
@@ -120,12 +134,13 @@ class FeatureScalingPriceEntityTest {
                     .featureStatus(VALID_STATUS)
                     .featureVersion(VALID_VERSION)
                     .lastModified(VALID_MODIFIED)
-                    .addScalingScheme(EUR, createValidScalingPriceVO(10.0, 1.0, EUR))
+                    .addScalingScheme(EUR, createValidScalingPriceVO(0.0, 100.0, 1.0, 10.0, EUR))
                     .incompatibleFeatures(Set.of(VALID_UUID));
 
             // Now correctly fails build due to domain invariant, not null checks
             assertThrows(DomainValidationException.class, builder::build);
         }
+
 
         @Test
         void currencyKeyMismatchTest() {
@@ -145,13 +160,14 @@ class FeatureScalingPriceEntityTest {
 
             assertThrows(DomainValidationException.class, builder::build);
         }
+
     }
 
     @Test
     @DisplayName("Immutability: Internal state must remain unchanged")
     void defensiveCopyTest() {
         Map<Currency, ScalingPriceVO> mutableSchemes = new HashMap<>();
-        mutableSchemes.put(EUR, createValidScalingPriceVO(50.0, 5.0, EUR));
+        mutableSchemes.put(EUR, createValidScalingPriceVO(10.0, 50.0, 5.0, 20.0, EUR));
 
         var entity = FeatureScalingPriceEntity.builder()
                 .featureId(VALID_PK)
@@ -172,7 +188,7 @@ class FeatureScalingPriceEntityTest {
     @Test
     @DisplayName("Identity: Entities with same UuId are equal even if names differ")
     void identityEqualityTest() {
-        var scheme = createValidScalingPriceVO(10.0, 1.0, EUR);
+        var scheme = createValidScalingPriceVO(10.0, 50.0, 5.0, 20.0, EUR);
 
         var entity1 = FeatureScalingPriceEntity.builder()
                 .featureId(PkIdVO.of(101L))
@@ -204,15 +220,26 @@ class FeatureScalingPriceEntityTest {
         );
     }
 
-    private ScalingPriceVO createValidScalingPriceVO(double basePrice, double stepPrice, Currency currency) {
-        return ScalingPriceVO.of(
+
+
+    private ScalingPriceVO createValidScalingPriceVO(
+            double threshold,
+            double basePrice,
+            double step,
+            double stepPrice,
+            Currency currency) {
+
+        int scale = currency.getDefaultFractionDigits();
+        return new ScalingPriceVO(
                 "unit-usage",
-                BigDecimal.ZERO,
-                BigDecimal.valueOf(basePrice).setScale(currency.getDefaultFractionDigits(), RoundingMode.UNNECESSARY),
-                BigDecimal.valueOf(1.0),
-                BigDecimal.valueOf(stepPrice).setScale(currency.getDefaultFractionDigits(), RoundingMode.UNNECESSARY),
+                BigDecimal.valueOf(threshold),
+                BigDecimal.valueOf(basePrice).setScale(scale, RoundingMode.HALF_UP),
+                BigDecimal.valueOf(step),
+                BigDecimal.valueOf(stepPrice).setScale(scale, RoundingMode.HALF_UP),
+                scale,
                 currency
         );
     }
+
+
 }
-*/
