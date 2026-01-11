@@ -5,15 +5,12 @@ import java.math.RoundingMode;
 import java.util.Objects;
 
 /**
- * Hardened Global Billable Weight VO for Java 25.
- * Provides atomic profile snapshots for side-by-side regional comparisons.
+Not used.... Good for future reference!
  */
+/*
 public record BillableWeightVO(WeightVO actualWeight, DimensionsVO dimensions, ShippingRegion region) {
 
-    /**
-     * Side-by-Side Profile Record.
-     * Uses Java 25 Compact Object Headers for minimal memory footprint in read-models.
-     */
+
     public record BillableProfile(
             WeightVO domestic,
             WeightVO internationalAir,
@@ -44,10 +41,7 @@ public record BillableWeightVO(WeightVO actualWeight, DimensionsVO dimensions, S
         public WeightUnitEnums getWeightUnit() { return weightUnit; }
     }
 
-    /**
-     * Compact Constructor.
-     * Implements strict 2025 unit-alignment safety.
-     */
+
     public BillableWeightVO {
         // 1. Existence & Nullability
         Objects.requireNonNull(actualWeight, "Actual weight is required.");
@@ -66,9 +60,7 @@ public record BillableWeightVO(WeightVO actualWeight, DimensionsVO dimensions, S
         }
     }
 
-    /**
-     * Atomic Operation: Generates all primary 2025 shipping profiles at once.
-     */
+
     public BillableProfile generateComparisonProfile() {
         return new BillableProfile(
                 calculateFor(ShippingRegion.DOMESTIC_US),
@@ -81,10 +73,6 @@ public record BillableWeightVO(WeightVO actualWeight, DimensionsVO dimensions, S
         return calculateFor(this.region);
     }
 
-    /**
-     * Ad-hoc calculation for any region.
-     * Hardened against Fractional Weight Fraud via mandatory CEILING rounding.
-     */
     public WeightVO calculateFor(ShippingRegion targetRegion) {
         Objects.requireNonNull(targetRegion, "Calculation target region cannot be null.");
 
@@ -103,3 +91,4 @@ public record BillableWeightVO(WeightVO actualWeight, DimensionsVO dimensions, S
         return (actualWeight.compareTo(dimWeight) >= 0) ? actualWeight : dimWeight;
     }
 }
+*/
