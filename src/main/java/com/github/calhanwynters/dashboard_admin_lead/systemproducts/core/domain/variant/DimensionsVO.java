@@ -5,32 +5,85 @@ import java.math.RoundingMode;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**
  * Hardened Dimensions Value Object for 2025 Global Shipping.
  * Enforces mandatory August 18, 2025 Round-Up rules and Arithmetic Security.
  */
-public record DimensionsVO(BigDecimal length, BigDecimal width, BigDecimal height) {
+// public record DimensionsVO(BigDecimal length, BigDecimal width, BigDecimal height) {
 
     /**
      * Lexical Whitelist: Restricts input to positive decimals only.
      * Prevents scientific notation (e.g., 1E10) or hidden injection characters.
      */
+    /*
     private static final Pattern NUMERIC_PATTERN = Pattern.compile("^[0-9]+(\\.[0-9]{1,10})?$");
+
+     */
 
     /**
      * Size & Boundary: Max physical safety cap for standard logistics.
      */
+    /*
     private static final BigDecimal MAX_DIMENSION = new BigDecimal("300.0");
+
+     */
 
     /**
      * DoS Safety: Max string length of numeric input to prevent Regex/CPU exhaustion.
      */
+    /*
     private static final int MAX_INPUT_STR_LENGTH = 16;
+
+     */
 
     /**
      * Compact Constructor.
      * Logic is finalized as of late 2025 for strict Carrier Compliance.
      */
+    /*
     public DimensionsVO {
         // 1. Existence & Nullability
         Objects.requireNonNull(length, "Length is required");
@@ -73,17 +126,25 @@ public record DimensionsVO(BigDecimal length, BigDecimal width, BigDecimal heigh
         }
     }
 
+     */
+
     /**
      * Semantic logic for US/Domestic (Imperial).
      */
+    /*
     public BigDecimal calculateCubicInches() {
         return length.multiply(width).multiply(height);
     }
 
+     */
+
     /**
      * Semantic logic for International (Metric).
      */
+    /*
     public BigDecimal calculateCubicCentimeters() {
         return length.multiply(width).multiply(height);
     }
-}
+
+     */
+// }

@@ -11,6 +11,11 @@ public record CareInstructionVO(String instructions) {
 
     private static final int MIN_LENGTH = 5;
     private static final int MAX_LENGTH = 500;
+    private static final Pattern HYPHEN_PREFIX = Pattern.compile("^-");
+    private static final Pattern ASTERISK_PREFIX = Pattern.compile("^\\*");
+    private static final Pattern BULLET_DOT_PREFIX = Pattern.compile("^•");
+    private static final Pattern NUMBER_PREFIX = Pattern.compile("^(?:[1-9]|1[0-5])\\.");
+
 
     /**
      * Java 25 Optimized Pattern:
@@ -54,7 +59,7 @@ public record CareInstructionVO(String instructions) {
 
         // 6. Semantics (Business Rules)
         if (!isValidFormat(instructions)) {
-            throw new IllegalArgumentException("Instructions must start with a bullet (-, *, •) or '1.'");
+            throw new IllegalArgumentException("Instructions must start with a bullet (-, *, •) or a number (1-15).");
         }
 
         // SUCCESS: At the end of a compact constructor, the current value of the
@@ -62,11 +67,32 @@ public record CareInstructionVO(String instructions) {
     }
 
     private static boolean isValidFormat(String text) {
-        if (text.length() < 3) return false;
+        if (text == null || text.isBlank()) return false;
 
-        return text.startsWith("-") ||
-                text.startsWith("*") ||
-                text.startsWith("•") ||
-                text.startsWith("1.");
+        String[] lines = text.split("\\R");
+        String firstLine = lines[0].strip();
+
+        // 1. Detect the SPECIFIC style used in the first line
+        Pattern activeStyle = null;
+        if (HYPHEN_PREFIX.matcher(firstLine).find()) activeStyle = HYPHEN_PREFIX;
+        else if (ASTERISK_PREFIX.matcher(firstLine).find()) activeStyle = ASTERISK_PREFIX;
+        else if (BULLET_DOT_PREFIX.matcher(firstLine).find()) activeStyle = BULLET_DOT_PREFIX;
+        else if (NUMBER_PREFIX.matcher(firstLine).find()) activeStyle = NUMBER_PREFIX;
+
+        if (activeStyle == null) return false;
+
+        // 2. Enforce that SAME style for all subsequent lines
+        for (int i = 1; i < lines.length; i++) {
+            String line = lines[i].strip();
+            if (line.isEmpty()) continue;
+
+            // If a line uses a different bullet or number format, it fails
+            if (!activeStyle.matcher(line).find()) return false;
+        }
+
+        return true;
     }
+
+
+
 }
