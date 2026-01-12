@@ -2,6 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * Hardened Value Object for product care instructions.
@@ -22,77 +23,53 @@ public record CareInstructionVO(String instructions) {
      * - Whitelists alphanumeric, spaces, and specific punctuation.
      * - (?U) enables Unicode-aware character classes for 2025 i18n standards.
      */
+    // \p{S} includes \p{So} (Degree Sign), \p{Sc} (Currency), and \p{Sm} (Math symbols)
     private static final Pattern VALID_CONTENT_PATTERN =
-            Pattern.compile("^(?U)[\\p{L}\\p{N} .,:!\\-?\\n*•()\\[\\]]+$");
+            Pattern.compile("^(?U)[\\p{L}\\p{N} °.,:!\\n\\r*•()\\[\\]\\-?]+$");
+
 
     /**
      * Compact Constructor.
      */
     public CareInstructionVO {
-        // 1. Existence & Nullability
         Objects.requireNonNull(instructions, "Care instructions cannot be null.");
+        instructions = instructions.replace("\r\n", "\n").replace("\r", "\n").strip();
 
-        // 2. Normalization & Pre-validation
-        // In a compact constructor, 'instructions' refers to the parameter, not the field.
-        instructions = instructions.strip();
+        // Size & Lexical Checks
+        if (instructions.length() > MAX_LENGTH * 1.5) throw new IllegalArgumentException("Input raw data exceeds safety buffer.");
+        if (instructions.isBlank()) throw new IllegalArgumentException("Instructions cannot be empty.");
+        if (!VALID_CONTENT_PATTERN.matcher(instructions).matches()) throw new IllegalArgumentException("Instructions contain forbidden characters.");
 
-        // 3. Size & Boundary (DoS Mitigation)
-        if (instructions.length() > MAX_LENGTH * 1.5) {
-            throw new IllegalArgumentException("Input raw data exceeds safety buffer.");
-        }
-
-        if (instructions.isBlank()) {
-            throw new IllegalArgumentException("Instructions cannot be empty.");
-        }
-
-        // 4. Lexical Content (Injection Prevention)
-        if (!VALID_CONTENT_PATTERN.matcher(instructions).matches()) {
-            throw new IllegalArgumentException("Instructions contain forbidden characters.");
-        }
-
-        // 5. Boundary Validation (Final Range)
         int length = instructions.length();
         if (length < MIN_LENGTH || length > MAX_LENGTH) {
-            throw new IllegalArgumentException("Length %d is outside allowed range [%d-%d]."
-                    .formatted(length, MIN_LENGTH, MAX_LENGTH));
+            throw new IllegalArgumentException("Length %d is outside allowed range [%d-%d].".formatted(length, MIN_LENGTH, MAX_LENGTH));
         }
 
-        // 6. Semantics (Business Rules)
-        if (!isValidFormat(instructions)) {
-            throw new IllegalArgumentException("Instructions must start with a bullet (-, *, •) or a number (1-15).");
-        }
-
-        // SUCCESS: At the end of a compact constructor, the current value of the
-        // local variable 'instructions' is automatically assigned to the record field.
+        // Semantic Check: Only call the method that throws specific exceptions
+        validateSemantics(instructions);
     }
 
-    private static boolean isValidFormat(String text) {
-        if (text == null || text.isBlank()) return false;
 
+    private static void validateSemantics(String text) {
+        // Use \\R to handle all OS-specific line breaks (Unix \n, Windows \r\n)
         String[] lines = text.split("\\R");
-        String firstLine = lines[0].strip();
+        if (lines.length == 0) return;
 
-        // 1. Detect the SPECIFIC style used in the first line
-        Pattern activeStyle = null;
-        if (HYPHEN_PREFIX.matcher(firstLine).find()) activeStyle = HYPHEN_PREFIX;
-        else if (ASTERISK_PREFIX.matcher(firstLine).find()) activeStyle = ASTERISK_PREFIX;
-        else if (BULLET_DOT_PREFIX.matcher(firstLine).find()) activeStyle = BULLET_DOT_PREFIX;
-        else if (NUMBER_PREFIX.matcher(firstLine).find()) activeStyle = NUMBER_PREFIX;
+        // Step A: Determine the style from line 1
+        Pattern style = Stream.of(HYPHEN_PREFIX, ASTERISK_PREFIX, BULLET_DOT_PREFIX, NUMBER_PREFIX)
+                .filter(p -> p.matcher(lines[0].strip()).find())
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Instructions must start with a valid bullet (-, *, •) or a number (1-15)."));
 
-        if (activeStyle == null) return false;
-
-        // 2. Enforce that SAME style for all subsequent lines
+        // Step B: Consistency check for subsequent lines
         for (int i = 1; i < lines.length; i++) {
             String line = lines[i].strip();
-            if (line.isEmpty()) continue;
-
-            // If a line uses a different bullet or number format, it fails
-            if (!activeStyle.matcher(line).find()) return false;
+            if (!line.isEmpty() && !style.matcher(line).find()) {
+                throw new IllegalArgumentException(
+                        "Prefix style mismatch: Line %d does not match the style established in line 1."
+                                .formatted(i + 1));
+            }
         }
-
-        return true;
     }
-
-
-
 }
