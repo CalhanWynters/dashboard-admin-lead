@@ -1,150 +1,59 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.variant;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
- * Hardened Dimensions Value Object for 2025 Global Shipping.
- * Enforces mandatory August 18, 2025 Round-Up rules and Arithmetic Security.
+ * DimensionsVO: A system-agnostic record for storing physical dimensions.
+ * Optimized for 2026 data integrity and resource exhaustion protection.
  */
-// public record DimensionsVO(BigDecimal length, BigDecimal width, BigDecimal height) {
+public record DimensionsVO(BigDecimal length, BigDecimal width, BigDecimal height, DimensionUnitEnums sizeUnit) {
 
-    /**
-     * Lexical Whitelist: Restricts input to positive decimals only.
-     * Prevents scientific notation (e.g., 1E10) or hidden injection characters.
-     */
-    /*
+    // Prevents scientific notation bypasses and ensures a clean decimal format
     private static final Pattern NUMERIC_PATTERN = Pattern.compile("^[0-9]+(\\.[0-9]{1,10})?$");
 
-     */
+    // Safety cap to prevent "Infinite Volume" or database numeric overflows
+    // Set to a high value (e.g., 10,000) just to catch clear data entry errors
+    private static final BigDecimal ABSOLUTE_MAX_LIMIT = new BigDecimal("10000.0");
 
-    /**
-     * Size & Boundary: Max physical safety cap for standard logistics.
-     */
-    /*
-    private static final BigDecimal MAX_DIMENSION = new BigDecimal("300.0");
-
-     */
-
-    /**
-     * DoS Safety: Max string length of numeric input to prevent Regex/CPU exhaustion.
-     */
-    /*
+    // Prevents Arithmetic DoS attacks by limiting string parsing length
     private static final int MAX_INPUT_STR_LENGTH = 16;
 
-     */
-
-    /**
-     * Compact Constructor.
-     * Logic is finalized as of late 2025 for strict Carrier Compliance.
-     */
-    /*
     public DimensionsVO {
         // 1. Existence & Nullability
         Objects.requireNonNull(length, "Length is required");
         Objects.requireNonNull(width, "Width is required");
         Objects.requireNonNull(height, "Height is required");
+        Objects.requireNonNull(sizeUnit, "Unit of measure is required");
 
-        // 2. Lexical & Size Boundaries (Arithmetic DoS Prevention)
-        validateDimension("Length", length);
-        validateDimension("Width", width);
-        validateDimension("Height", height);
+        // 2. Syntactic & Physical Boundary Validation
+        validateField("Length", length);
+        validateField("Width", width);
+        validateField("Height", height);
 
-        // 3. 2025 Carrier Compliance: Immediate Round-Up to next whole unit (Ceiling)
-        // This ensures the record stores the 'Billable' state immediately.
-        length = length.setScale(0, RoundingMode.CEILING);
-        width = width.setScale(0, RoundingMode.CEILING);
-        height = height.setScale(0, RoundingMode.CEILING);
-
-        // 4. Semantics: Logical Range Check (Positive non-zero only)
+        // 3. Semantic Logical Check: Dimensions must exist in physical space
         if (length.signum() <= 0 || width.signum() <= 0 || height.signum() <= 0) {
-            throw new IllegalArgumentException("Dimensions must be positive whole units.");
+            throw new IllegalArgumentException("Dimensions must be positive values greater than zero.");
         }
     }
 
-    private void validateDimension(String fieldName, BigDecimal value) {
+    private void validateField(String fieldName, BigDecimal value) {
         String plain = value.toPlainString();
 
-        // Prevents processing of excessively long numeric strings
+        // Security: Prevent processing of excessively long strings
         if (plain.length() > MAX_INPUT_STR_LENGTH) {
-            throw new IllegalArgumentException(fieldName + " input string exceeds security length boundary.");
+            throw new IllegalArgumentException(fieldName + " input exceeds security length boundary.");
         }
 
-        // Whitelists characters to prevent scientific notation bypasses or non-numeric injection
+        // Lexical: Ensure characters match expected numeric format
         if (!NUMERIC_PATTERN.matcher(plain).matches()) {
             throw new IllegalArgumentException(fieldName + " contains illegal characters or invalid format.");
         }
 
-        // Logic check: Prevention of "Infinite Volume" or "Negative Volume" attacks
-        if (value.compareTo(MAX_DIMENSION) > 0) {
-            throw new IllegalArgumentException(fieldName + " exceeds maximum physical safety limit of " + MAX_DIMENSION);
+        // Absolute Safety: Prevent values that could break downstream math/storage
+        if (value.compareTo(ABSOLUTE_MAX_LIMIT) > 0) {
+            throw new IllegalArgumentException(fieldName + " exceeds absolute system limit of " + ABSOLUTE_MAX_LIMIT);
         }
     }
-
-     */
-
-    /**
-     * Semantic logic for US/Domestic (Imperial).
-     */
-    /*
-    public BigDecimal calculateCubicInches() {
-        return length.multiply(width).multiply(height);
-    }
-
-     */
-
-    /**
-     * Semantic logic for International (Metric).
-     */
-    /*
-    public BigDecimal calculateCubicCentimeters() {
-        return length.multiply(width).multiply(height);
-    }
-
-     */
-// }
+}

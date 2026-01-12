@@ -55,11 +55,18 @@ public record SkuVO(String sku) {
         }
 
         // 6. Semantics (Business Logic)
-        // Prevention of "Floating Separators" (e.g., "-SKU-")
-        if (sku.startsWith("-") || sku.startsWith("_") ||
-                sku.endsWith("-") || sku.endsWith("_")) {
+        // Prevention of "Floating Separators"
+        if (sku.startsWith("-") || sku.startsWith("_") || sku.endsWith("-") || sku.endsWith("_")) {
             throw new IllegalArgumentException("SKU cannot start or end with a separator.");
         }
+
+        // Prevention of "Consecutive Separators" (Anti-Fragmentation)
+        // Ensures SKU is clean for barcode generation and URL pathing.
+        if (sku.contains("--") || sku.contains("__") || sku.contains("-_") || sku.contains("_-")) {
+            throw new IllegalArgumentException("SKU cannot contain consecutive or mixed separators.");
+        }
+
+
 
         // Final value is automatically assigned to the record field.
     }

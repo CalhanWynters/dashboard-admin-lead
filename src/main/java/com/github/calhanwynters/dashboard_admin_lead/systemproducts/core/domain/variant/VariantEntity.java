@@ -5,8 +5,10 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
  * PkIdVO variantId
  * UuIdVO variantUuId
  * NameVO variantName
+ * SkuVO sKu
  * CareInstructionsVO careInstruction,
- * BillableWeightVO billableWeightInputs, // This includes actualWeight, dimensions, and region to be used for calculating a profile onto snapshot.
+ * WeightVO(BigDecimal amount, WeightUnitEnums weightUnit)
+ * DimensionVO(BigDecimal length, BigDecimal width, BigDecimal height, DimensionUnitEnums sizeUnit)
  * StatusEnums variantStatus,
  * VersionVO variantVersion,
  * LastModifiedVO getLastModified,
