@@ -15,6 +15,12 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
  * Set<PriceVO> basePrice, // This will include different currencies for regional configuration.
  * Set<PriceVO> currentPrice, // This will include different currencies for regional configuration.
  * Set<FeatureAbstractClass> features
+ *
+ *
+ *
+ *
+ *
+ * !!!!!!! ADD UPC Number field!!!!!!!!!
  */
 public class VariantEntity {
 }
