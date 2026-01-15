@@ -1,89 +1,93 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.product;
 
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Hardened Image URL Value Object for Java 25.
- * Audited against the 2025 Domain Validation Rubric.
+ * Hardened Image URL Value Object for 2026 Edition.
+ * Audited for SSRF prevention and DoS resilience via DomainGuard.
  */
 public record ImageUrlVO(String url) {
 
     private static final int MAX_URL_LENGTH = 2048;
     private static final Set<String> ALLOWED_SCHEMES = Set.of("http", "https");
 
-    // Lexical Whitelist: 2025 Standard for URL path/query safety.
-    // Enhanced: Disallows '@' to prevent User-Info SSRF obfuscation (e.g., 127.0.0.1)
+    // Lexical Whitelist: Disallows '@' to prevent User-Info SSRF obfuscation
     private static final Pattern URL_SAFE_PATTERN =
             Pattern.compile("^[a-zA-Z0-9:/\\-._~%?#\\[\\]!$&'()*+,;=]+$");
 
-    // Structural SSRF Block: Static patterns for private IPs and localhost.
+    // Structural SSRF Block: Restricted internal network patterns
     private static final Pattern INTERNAL_HOST_PATTERN = Pattern.compile(
             "^(localhost|127\\.|192\\.168\\.|10\\.|172\\.(1[6-9]|2[0-9]|3[0-1])\\.|169\\.254\\.|0\\.0\\.0\\.0).*",
             Pattern.CASE_INSENSITIVE
     );
 
     /**
-     * Compact Constructor.
-     * Validates and normalizes state using Java 25 finalized patterns.
+     * Compact Constructor enforcing URL invariants and SSRF boundaries.
      */
     public ImageUrlVO {
-        // 1. Existence & Nullability
-        Objects.requireNonNull(url, "URL cannot be null");
+        // 1. Existence and initial content (Throws VAL-010)
+        DomainGuard.notBlank(url, "Image URL");
 
         // 2. Normalization
         String normalized = url.strip();
 
-        // 3. Size & Boundary (DoS Prevention)
-        // Rejects massive inputs before heavy regex or parsing occurs
-        if (normalized.isBlank() || normalized.length() > MAX_URL_LENGTH) {
-            throw new IllegalArgumentException("URL must be between 1 and %d characters.".formatted(MAX_URL_LENGTH));
-        }
+        // 3. Size & Boundary (Throws VAL-002)
+        DomainGuard.lengthBetween(normalized, 1, MAX_URL_LENGTH, "Image URL");
 
-        // 4. Lexical Content (Injection & Obfuscation Prevention)
-        if (!URL_SAFE_PATTERN.matcher(normalized).matches()) {
-            throw new IllegalArgumentException("URL contains forbidden characters or potential injection vectors.");
-        }
+        // 4. Lexical Content (Throws VAL-004)
+        DomainGuard.matches(normalized, URL_SAFE_PATTERN, "Image URL");
 
         // 5. Syntax & Semantics
-        // Uses flexible constructor prologue pattern for readable extraction
         String host = extractAndValidateHost(normalized);
 
-        // 6. Security (Structural SSRF Block)
-        if (INTERNAL_HOST_PATTERN.matcher(host).matches()) {
-            throw new IllegalArgumentException("URL points to a restricted internal network.");
-        }
+        // 6. Security: SSRF Block (Throws VAL-017 for Security violations)
+        DomainGuard.ensure(
+                !INTERNAL_HOST_PATTERN.matcher(host).matches(),
+                "URL points to a restricted internal network.",
+                "VAL-017", "SECURITY_SSRF"
+        );
 
-        // Assignment to the final record component
+        // Assignment
         url = normalized;
     }
 
     /**
-     * Extracted Method: Parses URI and returns a validated host.
-     * Finalized in Java 25 for safe call within constructor prologue.
+     * Parses URI and returns a validated host using DomainGuard for structural checks.
      */
     private static String extractAndValidateHost(String rawUrl) {
         try {
             URI uri = new URI(rawUrl);
 
-            // Syntax: Enforce Scheme (only http/https)
+            // 1. Validate Scheme
             String scheme = uri.getScheme();
-            if (scheme == null || !ALLOWED_SCHEMES.contains(scheme.toLowerCase())) {
-                throw new IllegalArgumentException("Invalid scheme: Only HTTPS/HTTP allowed.");
-            }
+            DomainGuard.ensure(
+                    scheme != null && ALLOWED_SCHEMES.contains(scheme.toLowerCase()),
+                    "Invalid scheme: Only HTTPS/HTTP allowed.",
+                    "VAL-004", "SYNTAX"
+            );
 
-            // Syntax: Enforce Host Presence
+            // 2. Extract and Validate Host (Resolving the 'might be null' warning)
             String host = uri.getHost();
-            if (host == null || host.isBlank()) {
-                throw new IllegalArgumentException("URL must contain a valid host.");
-            }
+
+            // This guard ensures 'host' is non-null and non-blank for the rest of the flow
+            DomainGuard.ensure(
+                    host != null && !host.isBlank(),
+                    "URL must contain a valid host.",
+                    "VAL-004", "SYNTAX"
+            );
 
             return host;
         } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Malformed URL syntax: " + e.getReason());
+            DomainGuard.ensure(
+                    false,
+                    "Malformed URL syntax: " + e.getReason(),
+                    "VAL-004", "SYNTAX"
+            );
+            return ""; // Unreachable but satisfies compiler
         }
     }
 }

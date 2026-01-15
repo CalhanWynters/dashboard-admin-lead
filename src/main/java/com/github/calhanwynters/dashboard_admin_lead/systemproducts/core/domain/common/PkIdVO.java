@@ -1,44 +1,33 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
 
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.util.Objects;
 
 /**
  * Value Object for Primary Keys.
- * Hardened for Java 25 to prevent boundary overflow and logic errors.
+ * Hardened for Java 21/25 (2026 Edition) using DomainGuard.
  */
 public record PkIdVO(Long value) {
 
     // Boundary: Maximum logical value for a Long PK to prevent overflow exploitation
-    // and reserve space for metadata flags if needed.
     private static final long MAX_PK_VALUE = Long.MAX_VALUE - 1000;
 
     /**
-     * Overloaded factory method to satisfy test architecture.
-     * This allows PkIdVO.fromString(101L) to function correctly.
-     */
-    public static PkIdVO fromString(long value) {
-        return new PkIdVO(value);
-    }
-
-    /**
-     * Compact Constructor.
+     * Compact Constructor enforcing positive range and safety boundaries.
      */
     public PkIdVO {
-        // 1. Existence & Nullability
-        Objects.requireNonNull(value, "Primary Key value cannot be null");
+        // 1. Existence
+        DomainGuard.notNull(value, "Primary Key");
 
-        // 2. Size & Boundary Validation
-        // Reject zero and negative values immediately (Semantics)
-        if (value <= 0) {
-            throw new IllegalArgumentException("Primary Key must be a positive non-zero value. Received: %d".formatted(value));
-        }
+        // 2. Positivity & Range Validation (Throws VAL-013)
+        DomainGuard.positive(value, "Primary Key");
 
-        // 3. Security Boundary: Overflow Prevention
-        // In 2025, validating upper bounds on IDs is a defense-in-depth measure
-        // against "Off-by-One" errors in C-based database drivers or buffer overflows.
-        if (value > MAX_PK_VALUE) {
-            throw new IllegalArgumentException("Primary Key exceeds safety boundary. Potential overflow or injection detected.");
-        }
+        // 3. Safety Boundary Validation (Throws VAL-007)
+        DomainGuard.ensure(
+                value <= MAX_PK_VALUE,
+                "Primary Key exceeds safety boundary. Potential overflow or injection detected.",
+                "VAL-007", "RANGE"
+        );
     }
 
     /**
@@ -49,15 +38,23 @@ public record PkIdVO(Long value) {
     }
 
     /**
+     * Overloaded factory method to satisfy test architecture.
+     */
+    public static PkIdVO fromString(long value) {
+        return new PkIdVO(value);
+    }
+
+    /**
      * Helper for string-based inputs (API Gateways/Web layers).
-     * Validates syntax using standard Java parsers.
      */
     public static PkIdVO fromString(String rawValue) {
-        Objects.requireNonNull(rawValue, "Input string cannot be null");
+        DomainGuard.notBlank(rawValue, "Input ID String");
         try {
             return new PkIdVO(Long.parseLong(rawValue.strip()));
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid ID format: must be a valid numeric long.");
+            // Re-wrapping in a DomainRuleViolationException via ensure logic
+            DomainGuard.ensure(false, "Invalid ID format: must be a valid numeric long.", "VAL-004", "SYNTAX");
+            return null; // Unreachable
         }
     }
 }

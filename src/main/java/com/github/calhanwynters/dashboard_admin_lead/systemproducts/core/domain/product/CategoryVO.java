@@ -1,59 +1,46 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.product;
 
-import java.util.Objects;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.util.regex.Pattern;
 
 /**
- * Hardened Category Value Object for Java 25.
- * Implements Unicode-aware whitelisting and DoS prevention boundaries.
+ * Hardened Category Value Object for Java 21/25 (2026 Edition).
+ * Implements Unicode-aware whitelisting and DoS prevention via DomainGuard.
  */
 public record CategoryVO(String value) {
 
+    private static final int MIN_LENGTH = 1;
     private static final int MAX_LENGTH = 100;
+    private static final int SAFETY_BUFFER = MAX_LENGTH * 2;
 
     /**
-     * Lexical Whitelist (Java 25 Optimized):
-     * - \p{L}: Any Unicode letter (Essential for global 2025 support)
-     * - \p{N}: Any Unicode number
-     * - Anchored with ^ and $ to prevent partial injection matches.
+     * Lexical Whitelist (Unicode-aware):
+     * Allows letters, numbers, and spaces across global alphabets.
      */
     private static final Pattern VALID_CHARS = Pattern.compile("^[\\p{L}\\p{N} ]+$");
 
     /**
-     * Compact Constructor.
+     * Compact Constructor enforcing category invariants.
      */
     public CategoryVO {
-        // 1. Existence & Nullability
-        Objects.requireNonNull(value, "Category value must not be null");
+        // 1. Initial Existence (Throws VAL-010)
+        DomainGuard.notBlank(value, "Category");
 
-        // 2. Pre-Check Size (DoS Mitigation)
-        // Reject massive inputs before executing expensive regex or normalization.
-        if (value.length() > MAX_LENGTH * 2) {
-            throw new IllegalArgumentException("Input raw data exceeds safety buffer limits.");
-        }
+        // 2. DoS Mitigation (Throws VAL-014)
+        DomainGuard.ensure(
+                value.length() <= SAFETY_BUFFER,
+                "Input raw data exceeds safety buffer limits.",
+                "VAL-014", "DOS_PREVENTION"
+        );
 
         // 3. Normalization
-        // strip() is the 2025 standard for Unicode-aware whitespace removal.
-        // Internal double-space collapse prevents bypass of unique constraints.
         String normalized = value.strip().replaceAll("\\s{2,}", " ");
 
-        // 4. Content Integrity check
-        if (normalized.isBlank()) {
-            throw new IllegalArgumentException("Category cannot be empty or blank.");
-        }
+        // 4. Domain Invariant Validation (Throws VAL-002 and VAL-004)
+        DomainGuard.lengthBetween(normalized, MIN_LENGTH, MAX_LENGTH, "Category");
+        DomainGuard.matches(normalized, VALID_CHARS, "Category");
 
-        // 5. Size & Boundary
-        if (normalized.length() > MAX_LENGTH) {
-            throw new IllegalArgumentException("Category length %d exceeds maximum of %d"
-                    .formatted(normalized.length(), MAX_LENGTH));
-        }
-
-        // 6. Lexical Content (Unicode Whitelisting)
-        if (!VALID_CHARS.matcher(normalized).matches()) {
-            throw new IllegalArgumentException("Category contains forbidden characters.");
-        }
-
-        // 7. Assignment
+        // 5. Parameter Reassignment for Record initialization
         value = normalized;
     }
 }

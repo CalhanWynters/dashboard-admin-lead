@@ -1,13 +1,13 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
 
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Hardened Domain Status Enum for Java 25.
- * Implements strict input parsing and domain semantic safety.
+ * Hardened Domain Status Enum for Java 21/25 (2026 Edition).
+ * Aligned with DomainGuard for standardized error handling.
  */
 public enum StatusEnums {
     ACTIVE,
@@ -15,45 +15,46 @@ public enum StatusEnums {
     INACTIVE,
     DISCONTINUED;
 
-    // Defensive Copying: Immutable snapshot of valid names for fast, safe lookups
     private static final Set<String> VALID_NAMES = Arrays.stream(StatusEnums.values())
             .map(Enum::name)
             .collect(Collectors.toUnmodifiableSet());
 
     /**
-     * Syntax & Lexical Validation: Safe parser for external inputs.
-     * Prevents internal exception leakage and enforces strict whitelisting.
+     * Safe parser for external inputs using DomainGuard.
      */
     public static StatusEnums fromString(String value) {
-        // 1. Existence & Nullability
-        Objects.requireNonNull(value, "Status value cannot be null");
+        // 1. Existence and initial content (Throws VAL-010)
+        DomainGuard.notBlank(value, "Status");
 
-        // 2. Normalization & Size Boundary
+        // 2. Normalization & DoS Mitigation (Throws VAL-014)
         String normalized = value.strip().toUpperCase();
-        if (normalized.length() > 20) { // DoS Mitigation: Reject abnormally long status strings
-            throw new IllegalArgumentException("Status input exceeds logical boundary.");
-        }
+        DomainGuard.ensure(
+                normalized.length() <= 20,
+                "Status input exceeds logical boundary.",
+                "VAL-014", "DOS_PREVENTION"
+        );
 
-        // 3. Lexical Content / Whitelisting
-        if (!VALID_NAMES.contains(normalized)) {
-            throw new IllegalArgumentException("Invalid Status: '%s'. Allowed values: %s"
-                    .formatted(normalized, VALID_NAMES));
-        }
+        // 3. Whitelist Validation (Throws VAL-004)
+        DomainGuard.ensure(
+                VALID_NAMES.contains(normalized),
+                "Invalid Status: '%s'. Allowed values: %s".formatted(normalized, VALID_NAMES),
+                "VAL-004", "SYNTAX"
+        );
 
         return StatusEnums.valueOf(normalized);
     }
 
     /**
-     * Semantics: Logic to check if the status transition is valid.
-     * (Example of Cross-Field/Semantic Consistency within a domain context)
+     * Semantic state transition logic.
      */
     public boolean canTransitionTo(StatusEnums nextStatus) {
-        Objects.requireNonNull(nextStatus, "Target status cannot be null");
+        // Throws VAL-001
+        DomainGuard.notNull(nextStatus, "Target Status");
 
         return switch (this) {
-            case DRAFT -> true; // Draft can go anywhere
-            case ACTIVE -> nextStatus != DRAFT; // Active cannot go back to Draft
-            case INACTIVE, DISCONTINUED -> nextStatus == ACTIVE; // Only reactivation allowed
+            case DRAFT -> true;
+            case ACTIVE -> nextStatus != DRAFT;
+            case INACTIVE, DISCONTINUED -> nextStatus == ACTIVE;
         };
     }
 }

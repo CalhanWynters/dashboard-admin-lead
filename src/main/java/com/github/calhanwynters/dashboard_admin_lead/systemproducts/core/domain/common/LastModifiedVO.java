@@ -1,43 +1,39 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
 
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Objects;
 
 /**
  * Value Object for last modification timestamps.
- * Hardened for Java 25 environments with Clock-injection for testing
- * and nanosecond precision protection.
+ * Aligned with DomainGuard for 2026 Edition.
  */
 public record LastModifiedVO(OffsetDateTime value) {
 
     // Boundary: Logical lower bound (System Epoch)
     private static final OffsetDateTime MIN_SYSTEM_DATE = OffsetDateTime.parse("2025-01-01T00:00:00Z");
 
-    // Boundary: Safety buffer for clock drift (e.g., 5 minutes)
-    private static final long CLOCK_DRIFT_BUFFER_SECONDS = 30;
-
+    /**
+     * Compact constructor using DomainGuard for temporal invariants.
+     */
     public LastModifiedVO {
-        // 1. Existence & Nullability
-        Objects.requireNonNull(value, "Last modified date cannot be null");
+        // 1. Existence
+        DomainGuard.notNull(value, "Last Modified Date");
 
-        // 2. Syntax: Standardize precision (Truncate to nanoseconds or microseconds)
-        // Prevents database-specific truncation errors causing equality mismatches
-        value = value.truncatedTo(ChronoUnit.NANOS);
+        // 2. Truncation (Normalize precision to prevent DB mismatch)
+        value = value.truncatedTo(ChronoUnit.MICROS);
 
-        // 3. Semantics & Security: Range Validation
-        OffsetDateTime now = OffsetDateTime.now();
+        // 3. Logical Range (Far Past)
+        DomainGuard.ensure(
+                !value.isBefore(MIN_SYSTEM_DATE),
+                "Date is before system epoch (%s)".formatted(MIN_SYSTEM_DATE),
+                "VAL-015", "TEMPORAL_RANGE"
+        );
 
-        // Logical check: Far Past
-        if (value.isBefore(MIN_SYSTEM_DATE)) {
-            throw new IllegalArgumentException("Date is before system epoch (%s)".formatted(MIN_SYSTEM_DATE));
-        }
-
-        // Logical check: Future date with Drift Buffer
-        if (value.isAfter(now.plusSeconds(CLOCK_DRIFT_BUFFER_SECONDS))) {
-            throw new IllegalArgumentException("Date cannot be in the future (beyond clock skew buffer).");
-        }
+        // 4. Future check (utilizing DomainGuard's 500ms drift tolerance)
+        // We convert to Instant to use the centralized drift logic
+        DomainGuard.inPast(value.toInstant(), "Last Modified Date");
     }
 
     /**
@@ -48,7 +44,7 @@ public record LastModifiedVO(OffsetDateTime value) {
     }
 
     /**
-     * Testing/Mocking Factory: Allows injection of fixed clocks for predictable audits.
+     * Testing/Mocking Factory: Allows injection of fixed clocks.
      */
     public static LastModifiedVO now(Clock clock) {
         return new LastModifiedVO(OffsetDateTime.now(clock));

@@ -1,5 +1,12 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.variant;
 
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
+import java.util.Arrays;
+
+/**
+ * Dimension Units for physical product measurements.
+ * Aligned with DomainGuard for standardized error reporting in 2026.
+ */
 public enum DimensionUnitEnums {
     CM("CM"),   // Centimeters
     MM("MM"),   // Millimeters
@@ -16,17 +23,23 @@ public enum DimensionUnitEnums {
         return code;
     }
 
+    /**
+     * Safe parser for dimension codes using DomainGuard.
+     * Throws DomainRuleViolationException for invalid inputs.
+     */
     public static DimensionUnitEnums fromCode(String code) {
-        if (code == null) {
-            throw new IllegalArgumentException("Dimension unit code cannot be null.");
-        }
+        // 1. Existence Check (Throws VAL-010)
+        DomainGuard.notBlank(code, "Dimension Unit Code");
 
-        for (DimensionUnitEnums unit : values()) {
-            if (unit.code.equalsIgnoreCase(code)) {
-                return unit;
-            }
-        }
-
-        throw new IllegalArgumentException("Unsupported dimension unit code: " + code);
+        // 2. Lookup and Validation (Throws VAL-004)
+        return Arrays.stream(values())
+                .filter(unit -> unit.code.equalsIgnoreCase(code.strip()))
+                .findFirst()
+                .orElseThrow(() -> {
+                    DomainGuard.ensure(false,
+                            "Unsupported dimension unit code: " + code,
+                            "VAL-004", "SYNTAX");
+                    return null; // Unreachable
+                });
     }
 }

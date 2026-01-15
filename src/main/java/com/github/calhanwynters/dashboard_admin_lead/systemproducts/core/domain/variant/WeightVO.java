@@ -1,43 +1,50 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.variant;
 
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.math.BigDecimal;
-import java.util.Objects;
 import java.util.regex.Pattern;
 
+/**
+ * Hardened Weight Value Object for 2026 Edition.
+ * Enforces numeric precision and logical safety boundaries via DomainGuard.
+ */
 public record WeightVO(BigDecimal amount, WeightUnitEnums weightUnit) {
 
-    // Lexical Content: Whitelist for numeric inputs
-    private static final Pattern NUMERIC_PATTERN = Pattern.compile("^[0-9]+(\\.[0-9]{1,5})?$"); // Adjusted to match up to 5 decimal places
+    // Lexical Content: Whitelist for numeric inputs (up to 5 decimal places)
+    private static final Pattern NUMERIC_PATTERN = Pattern.compile("^[0-9]+(\\.[0-9]{1,5})?$");
 
-    // Size & Boundary: Max string length for BigDecimal
+    // Size & Boundary: Max string length for BigDecimal to prevent parsing attacks
     private static final int MAX_SERIALIZED_LENGTH = 32;
 
     // Semantics: Max input scale for precision
     private static final int MAX_INPUT_SCALE = 5;
 
+    /**
+     * Compact Constructor enforcing "Always-Valid" weight invariants.
+     */
     public WeightVO {
-        // 1. Existence & Nullability
-        Objects.requireNonNull(amount, "Weight amount must not be null");
-        Objects.requireNonNull(weightUnit, "Weight unit must not be null");
+        // 1. Existence (Throws VAL-001)
+        DomainGuard.notNull(amount, "Weight Amount");
+        DomainGuard.notNull(weightUnit, "Weight Unit");
 
-        // 2. Size & Boundary (String DoS Prevention)
+        // 2. Size & Boundary (DoS Prevention - Throws VAL-014)
         String plainAmount = amount.toPlainString();
-        if (plainAmount.length() > MAX_SERIALIZED_LENGTH) {
-            throw new IllegalArgumentException("Input numeric string length exceeds security boundary.");
-        }
+        DomainGuard.ensure(
+                plainAmount.length() <= MAX_SERIALIZED_LENGTH,
+                "Input numeric string length exceeds security boundary.",
+                "VAL-014", "DOS_PREVENTION"
+        );
 
-        // 3. Lexical Content & Syntax
-        if (!NUMERIC_PATTERN.matcher(plainAmount).matches()) {
-            throw new IllegalArgumentException("Weight amount contains illegal characters or invalid scale format.");
-        }
+        // 3. Lexical Content & Syntax (Throws VAL-004)
+        DomainGuard.matches(plainAmount, NUMERIC_PATTERN, "Weight Amount");
 
-        // 4. Semantics
-        if (amount.scale() > MAX_INPUT_SCALE) {
-            throw new IllegalArgumentException("Numeric precision exceeds allowed scale of " + MAX_INPUT_SCALE + " decimal places.");
-        }
-        if (amount.signum() < 0) {
-            throw new IllegalArgumentException("Weight amount cannot be negative.");
-        }
+        // 4. Semantics (Precision & Sign - Throws VAL-011 / VAL-005)
+        DomainGuard.ensure(
+                amount.scale() <= MAX_INPUT_SCALE,
+                "Numeric precision exceeds allowed scale of %d decimal places.".formatted(MAX_INPUT_SCALE),
+                "VAL-011", "SEMANTICS"
+        );
+
+        DomainGuard.nonNegative(amount, "Weight Amount");
     }
 }
-

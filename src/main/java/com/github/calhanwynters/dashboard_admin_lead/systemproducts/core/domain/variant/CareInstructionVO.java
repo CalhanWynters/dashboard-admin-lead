@@ -1,74 +1,84 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.variant;
 
-import java.util.Objects;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
  * Hardened Value Object for product care instructions.
- * Compliant with 2025 Domain Validation Rubric.
+ * Aligned with DomainGuard for 2026 Edition (Java 21/25).
  */
 public record CareInstructionVO(String instructions) {
 
     private static final int MIN_LENGTH = 5;
     private static final int MAX_LENGTH = 500;
+    private static final double SAFETY_FACTOR = 1.5;
+
+    // Prefix Patterns for Semantic Consistency
     private static final Pattern HYPHEN_PREFIX = Pattern.compile("^-");
     private static final Pattern ASTERISK_PREFIX = Pattern.compile("^\\*");
     private static final Pattern BULLET_DOT_PREFIX = Pattern.compile("^•");
     private static final Pattern NUMBER_PREFIX = Pattern.compile("^(?:[1-9]|1[0-5])\\.");
 
-
     /**
-     * Java 25 Optimized Pattern:
-     * - Whitelists alphanumeric, spaces, and specific punctuation.
-     * - (?U) enables Unicode-aware character classes for 2025 i18n standards.
+     * Unicode-aware content whitelist (Degree sign, symbols, and punctuation included).
      */
-    // \p{S} includes \p{So} (Degree Sign), \p{Sc} (Currency), and \p{Sm} (Math symbols)
     private static final Pattern VALID_CONTENT_PATTERN =
             Pattern.compile("^(?U)[\\p{L}\\p{N} °.,:!\\n\\r*•()\\[\\]\\-?]+$");
 
-
     /**
-     * Compact Constructor.
+     * Compact Constructor enforcing semantic list styles and lexical safety.
      */
     public CareInstructionVO {
-        Objects.requireNonNull(instructions, "Care instructions cannot be null.");
+        // 1. Existence (Throws VAL-010)
+        DomainGuard.notBlank(instructions, "Care Instructions");
+
+        // 2. Normalization
         instructions = instructions.replace("\r\n", "\n").replace("\r", "\n").strip();
 
-        // Size & Lexical Checks
-        if (instructions.length() > MAX_LENGTH * 1.5) throw new IllegalArgumentException("Input raw data exceeds safety buffer.");
-        if (instructions.isBlank()) throw new IllegalArgumentException("Instructions cannot be empty.");
-        if (!VALID_CONTENT_PATTERN.matcher(instructions).matches()) throw new IllegalArgumentException("Instructions contain forbidden characters.");
+        // 3. DoS Mitigation & Size (Throws VAL-014 and VAL-002)
+        DomainGuard.ensure(
+                instructions.length() <= (MAX_LENGTH * SAFETY_FACTOR),
+                "Input raw data exceeds safety buffer.",
+                "VAL-014", "DOS_PREVENTION"
+        );
 
-        int length = instructions.length();
-        if (length < MIN_LENGTH || length > MAX_LENGTH) {
-            throw new IllegalArgumentException("Length %d is outside allowed range [%d-%d].".formatted(length, MIN_LENGTH, MAX_LENGTH));
-        }
+        DomainGuard.lengthBetween(instructions, MIN_LENGTH, MAX_LENGTH, "Care Instructions");
 
-        // Semantic Check: Only call the method that throws specific exceptions
+        // 4. Lexical Content (Throws VAL-004)
+        DomainGuard.matches(instructions, VALID_CONTENT_PATTERN, "Care Instructions");
+
+        // 5. Semantic Style Consistency (Bullets/Numbering)
         validateSemantics(instructions);
     }
 
-
+    /**
+     * Ensures all lines follow the same prefix style established in line 1.
+     */
     private static void validateSemantics(String text) {
-        // Use \\R to handle all OS-specific line breaks (Unix \n, Windows \r\n)
         String[] lines = text.split("\\R");
         if (lines.length == 0) return;
 
-        // Step A: Determine the style from line 1
+        // Determine the style from line 1
         Pattern style = Stream.of(HYPHEN_PREFIX, ASTERISK_PREFIX, BULLET_DOT_PREFIX, NUMBER_PREFIX)
                 .filter(p -> p.matcher(lines[0].strip()).find())
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Instructions must start with a valid bullet (-, *, •) or a number (1-15)."));
+                .orElseThrow(() -> {
+                    DomainGuard.ensure(false,
+                            "Instructions must start with a valid bullet (-, *, •) or a number (1-15).",
+                            "VAL-011", "SEMANTICS");
+                    return null; // Unreachable
+                });
 
-        // Step B: Consistency check for subsequent lines
+        // Ensure subsequent lines follow the same style
         for (int i = 1; i < lines.length; i++) {
             String line = lines[i].strip();
-            if (!line.isEmpty() && !style.matcher(line).find()) {
-                throw new IllegalArgumentException(
-                        "Prefix style mismatch: Line %d does not match the style established in line 1."
-                                .formatted(i + 1));
+            if (!line.isEmpty()) {
+                DomainGuard.ensure(
+                        style.matcher(line).find(),
+                        "Prefix style mismatch: Line %d does not match established style.".formatted(i + 1),
+                        "VAL-011", "SEMANTICS"
+                );
             }
         }
     }

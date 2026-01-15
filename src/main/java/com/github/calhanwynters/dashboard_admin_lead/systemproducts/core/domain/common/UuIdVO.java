@@ -1,38 +1,41 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
 
-import java.util.Objects;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.util.UUID;
 
 /**
- * Hardened UUID Value Object for Java 25.
- * Validated against RFC 9562 standards using standard Java parsers.
+ * Hardened UUID Value Object for Java 21/25 (2026 Edition).
+ * Validated against RFC 9562 standards using DomainGuard.
  */
 public record UuIdVO(String value) {
 
-    // Boundary: Strict UUID length (36 chars)
     private static final int UUID_LENGTH = 36;
 
     /**
-     * Compact Constructor for Java 25.
+     * Compact Constructor enforcing RFC 9562 UUID standards.
      */
     public UuIdVO {
-        // 1. Existence & Nullability
-        Objects.requireNonNull(value, "UuId value cannot be null");
+        // 1. Existence and Initial Content (Throws VAL-010)
+        DomainGuard.notBlank(value, "UUID");
 
-        // 2. Normalization & Size Boundary
-        // strip() handles Unicode whitespace; length check prevents DoS from massive strings
+        // 2. Normalization & Size Boundary (Throws VAL-002)
         String normalized = value.strip();
-        if (normalized.length() != UUID_LENGTH) {
-            throw new IllegalArgumentException("UuId must be exactly %d characters.".formatted(UUID_LENGTH));
-        }
+        DomainGuard.ensure(
+                normalized.length() == UUID_LENGTH,
+                "UUID must be exactly %d characters.".formatted(UUID_LENGTH),
+                "VAL-002", "SIZE"
+        );
 
-        // 3. Syntax & Lexical Content
-        // Use the standard parser (Syntax criterion) to prevent hex injection or invalid versions
+        // 3. Syntax & Lexical Content (Throws VAL-004)
         try {
-            // This validates hex characters and structural hyphens simultaneously
+            // Validates hex characters and structural hyphens via standard parser
             UUID.fromString(normalized);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid UUID syntax or hex encoding detected.");
+            DomainGuard.ensure(
+                    false,
+                    "Invalid UUID syntax or hex encoding detected.",
+                    "VAL-004", "SYNTAX"
+            );
         }
 
         // 4. Data Assignment

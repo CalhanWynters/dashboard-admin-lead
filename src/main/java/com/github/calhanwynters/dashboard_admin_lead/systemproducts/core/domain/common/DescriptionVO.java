@@ -1,89 +1,66 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
 
-import java.util.Objects;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
  * Domain value object for product descriptions.
- * Validated against 2025 Domain Validation Rubric for Java 25.
+ * Optimized for Java 21+ (2026 Architecture).
  */
 public record DescriptionVO(String text) {
 
     private static final int MIN_LENGTH = 10;
     private static final int MAX_LENGTH = 2000;
+    private static final int DOS_SAFETY_BUFFER = MAX_LENGTH * 2;
 
-    // Whitelist: Alphanumeric, common punctuation, and bullets.
-    // Securely excludes <, >, &, and other injection vectors.
-    private static final String ALLOWED_CHARS_REGEX = "^[a-zA-Z0-9 .,:;!\\-?\\n*•()\\[\\]]+$";
-    private static final Pattern ALLOWED_CHARS_PATTERN = Pattern.compile(ALLOWED_CHARS_REGEX);
+    private static final Pattern ALLOWED_CHARS_PATTERN =
+            Pattern.compile("^[a-zA-Z0-9 .,:;!\\-?\\n*•()\\[\\]]+$");
 
-    // Semantics: Business-level forbidden words (Immutable Snapshot)
     private static final Set<String> FORBIDDEN_WORDS = Set.of("forbiddenword1", "forbiddenword2");
 
-    /**
-     * Static factory method to satisfy Domain Architecture tests.
-     * Maps to the canonical constructor.
-     */
     public static DescriptionVO from(String text) {
         return new DescriptionVO(text);
     }
 
-    /**
-     * Compact Constructor for Domain Validation.
-     * Logic is executed before the record is instantiated.
-     */
     public DescriptionVO {
-        // 1. Existence & Nullability
-        Objects.requireNonNull(text, "Description cannot be null");
+        // 1. Existence & Initial Content
+        DomainGuard.notBlank(text, "Description");
 
-        if (text.isBlank()) {
-            throw new IllegalArgumentException("Description cannot be blank or contain only whitespace.");
-        }
+        // 2. Pre-normalization Security Buffer (DoS Mitigation)
+        DomainGuard.ensure(text.length() <= DOS_SAFETY_BUFFER,
+                "Input raw data exceeds safety buffer limits.", "VAL-DESC-001", "SECURITY");
 
-        // 2. Size & Boundary (Pre-check to mitigate DoS from extremely large un-normalized strings)
-        if (text.length() > MAX_LENGTH * 2) {
-            throw new IllegalArgumentException("Input raw data exceeds safety buffer limits.");
-        }
-
-        // 3. Normalization (Preserving structural newlines while collapsing horizontal whitespace)
-        // Using Java 25 optimized regex handling
+        // 3. Normalization
         String normalized = text.strip()
                 .replaceAll("[ \\t\\x0B\\f\\r]+", " ")
-                .replaceAll("(?m)^ +| +$", ""); // Remove trailing/leading spaces per line
+                .replaceAll("(?m)^ +| +$", "");
 
         // 4. Lexical Content (Injection Prevention)
-        if (!ALLOWED_CHARS_PATTERN.matcher(normalized).matches()) {
-            throw new IllegalArgumentException("Description contains forbidden characters or potential injection vectors.");
-        }
+        DomainGuard.matches(normalized, ALLOWED_CHARS_PATTERN, "Description");
 
-        // 5. Final Size Validation
-        int finalLength = normalized.length();
-        if (finalLength < MIN_LENGTH || finalLength > MAX_LENGTH) {
-            throw new IllegalArgumentException(
-                    "Description must be at least %d and at most %d characters. Current: %d"
-                            .formatted(MIN_LENGTH, MAX_LENGTH, finalLength)
-            );
-        }
+        // 5. Size Validation
+        // This utilizes lengthBetween which returns the stripped string and checks MIN/MAX
+        normalized = DomainGuard.lengthBetween(normalized, MIN_LENGTH, MAX_LENGTH, "Description");
 
-        // 6. Semantics & Security (Content Moderation)
+        // 6. Semantics (Forbidden Words)
         String lowerNormalized = normalized.toLowerCase();
-        if (FORBIDDEN_WORDS.stream().anyMatch(lowerNormalized::contains)) {
-            throw new IllegalArgumentException("Description violates content security policies (Forbidden Words).");
-        }
+        boolean hasForbidden = FORBIDDEN_WORDS.stream().anyMatch(lowerNormalized::contains);
+        DomainGuard.ensure(!hasForbidden,
+                "Description violates content security policies.", "VAL-DESC-002", "CONTENT_MODERATION");
 
-        // 7. Data Assignment
+        // 7. Canonical Assignment
         text = normalized;
     }
 
-    // -- Behavior Methods --
-    // Truncating strings
     public DescriptionVO truncate(int maxLength) {
         if (text.length() <= maxLength) {
             return this;
         }
-        // Return a new text object with the truncated string
-        String truncated = text.substring(0, maxLength - 3) + "...";
+        // Use DomainGuard to ensure the maxLength passed into the behavior is valid
+        DomainGuard.positive(maxLength, "Truncation Length");
+
+        String truncated = text.substring(0, Math.max(0, maxLength - 3)) + "...";
         return new DescriptionVO(truncated);
     }
 }
