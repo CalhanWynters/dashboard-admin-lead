@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
  * Hardened Image URL Value Object for 2026 Edition.
  * Audited for SSRF prevention and DoS resilience via DomainGuard.
  */
-public record ImageUrlVO(String url) {
+public record ImageUrl(String url) {
 
     private static final int MAX_URL_LENGTH = 2048;
     private static final Set<String> ALLOWED_SCHEMES = Set.of("http", "https");
@@ -28,7 +28,7 @@ public record ImageUrlVO(String url) {
     /**
      * Compact Constructor enforcing URL invariants and SSRF boundaries.
      */
-    public ImageUrlVO {
+    public ImageUrl {
         // 1. Existence and initial content (Throws VAL-010)
         DomainGuard.notBlank(url, "Image URL");
 

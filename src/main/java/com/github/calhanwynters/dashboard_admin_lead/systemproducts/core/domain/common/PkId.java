@@ -1,13 +1,12 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
-import java.util.Objects;
 
 /**
  * Value Object for Primary Keys.
  * Hardened for Java 21/25 (2026 Edition) using DomainGuard.
  */
-public record PkIdVO(Long value) {
+public record PkId(Long value) {
 
     // Boundary: Maximum logical value for a Long PK to prevent overflow exploitation
     private static final long MAX_PK_VALUE = Long.MAX_VALUE - 1000;
@@ -15,7 +14,7 @@ public record PkIdVO(Long value) {
     /**
      * Compact Constructor enforcing positive range and safety boundaries.
      */
-    public PkIdVO {
+    public PkId {
         // 1. Existence
         DomainGuard.notNull(value, "Primary Key");
 
@@ -33,24 +32,24 @@ public record PkIdVO(Long value) {
     /**
      * Factory method for creating an ID from a raw long.
      */
-    public static PkIdVO of(long value) {
-        return new PkIdVO(value);
+    public static PkId of(long value) {
+        return new PkId(value);
     }
 
     /**
      * Overloaded factory method to satisfy test architecture.
      */
-    public static PkIdVO fromString(long value) {
-        return new PkIdVO(value);
+    public static PkId fromString(long value) {
+        return new PkId(value);
     }
 
     /**
      * Helper for string-based inputs (API Gateways/Web layers).
      */
-    public static PkIdVO fromString(String rawValue) {
+    public static PkId fromString(String rawValue) {
         DomainGuard.notBlank(rawValue, "Input ID String");
         try {
-            return new PkIdVO(Long.parseLong(rawValue.strip()));
+            return new PkId(Long.parseLong(rawValue.strip()));
         } catch (NumberFormatException e) {
             // Re-wrapping in a DomainRuleViolationException via ensure logic
             DomainGuard.ensure(false, "Invalid ID format: must be a valid numeric long.", "VAL-004", "SYNTAX");

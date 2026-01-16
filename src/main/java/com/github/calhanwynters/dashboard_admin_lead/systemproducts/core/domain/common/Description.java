@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
  * Domain value object for product descriptions.
  * Optimized for Java 21+ (2026 Architecture).
  */
-public record DescriptionVO(String text) {
+public record Description(String text) {
 
     private static final int MIN_LENGTH = 10;
     private static final int MAX_LENGTH = 2000;
@@ -19,11 +19,11 @@ public record DescriptionVO(String text) {
 
     private static final Set<String> FORBIDDEN_WORDS = Set.of("forbiddenword1", "forbiddenword2");
 
-    public static DescriptionVO from(String text) {
-        return new DescriptionVO(text);
+    public static Description from(String text) {
+        return new Description(text);
     }
 
-    public DescriptionVO {
+    public Description {
         // 1. Existence & Initial Content
         DomainGuard.notBlank(text, "Description");
 
@@ -53,7 +53,7 @@ public record DescriptionVO(String text) {
         text = normalized;
     }
 
-    public DescriptionVO truncate(int maxLength) {
+    public Description truncate(int maxLength) {
         if (text.length() <= maxLength) {
             return this;
         }
@@ -61,6 +61,6 @@ public record DescriptionVO(String text) {
         DomainGuard.positive(maxLength, "Truncation Length");
 
         String truncated = text.substring(0, Math.max(0, maxLength - 3)) + "...";
-        return new DescriptionVO(truncated);
+        return new Description(truncated);
     }
 }

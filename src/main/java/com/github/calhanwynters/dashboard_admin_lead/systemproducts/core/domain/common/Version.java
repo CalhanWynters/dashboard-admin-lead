@@ -6,23 +6,23 @@ import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.
  * Hardened Version Value Object for Java 21/25 (2026 Edition).
  * Aligned with DomainGuard for overflow protection and standardized validation.
  */
-public record VersionVO(int value) {
+public record Version(int value) {
 
     private static final int MIN_VERSION = 1;
     private static final int MAX_VERSION = 1_000_000;
 
-    public static final VersionVO INITIAL = new VersionVO(MIN_VERSION);
+    public static final Version INITIAL = new Version(MIN_VERSION);
 
     /**
      * Static factory method for parsing semantic strings.
      */
-    public static VersionVO from(String versionString) {
+    public static Version from(String versionString) {
         DomainGuard.notBlank(versionString, "Version String");
 
         try {
             String majorPart = versionString.split("\\.")[0];
             int major = Integer.parseInt(majorPart);
-            return new VersionVO(major);
+            return new Version(major);
         } catch (Exception e) {
             DomainGuard.ensure(
                     false,
@@ -36,7 +36,7 @@ public record VersionVO(int value) {
     /**
      * Compact Constructor enforcing range boundaries.
      */
-    public VersionVO {
+    public Version {
         // Throws VAL-007 (RANGE)
         DomainGuard.range(value, MIN_VERSION, MAX_VERSION, "Version");
     }
@@ -44,22 +44,22 @@ public record VersionVO(int value) {
     /**
      * Creates the next sequential version with Overflow Protection.
      */
-    public VersionVO next() {
+    public Version next() {
         DomainGuard.ensure(
                 this.value < MAX_VERSION,
                 "Maximum version depth reached. Schema rotation required.",
                 "VAL-016", "DOMAIN_OVERFLOW"
         );
-        return new VersionVO(this.value + 1);
+        return new Version(this.value + 1);
     }
 
     /**
      * Utility for adapting legacy data (Always-Valid pattern).
      */
-    public static VersionVO of(Integer rawValue) {
+    public static Version of(Integer rawValue) {
         if (rawValue == null || rawValue < MIN_VERSION) {
             return INITIAL;
         }
-        return new VersionVO(rawValue);
+        return new Version(rawValue);
     }
 }

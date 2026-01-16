@@ -1,6 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.exceptions.DomainRuleViolationException;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -165,6 +166,32 @@ class DomainGuardTest {
                         assertThat(dre.getViolatedRule()).contains("RANGE");
                     });
         }
+        @Test
+        void positive_shouldValidateInteger() {
+            // Success case
+            assertThatCode(() -> DomainGuard.positive(10, "stockCount"))
+                    .doesNotThrowAnyException();
+
+            // Failure case: zero should throw an exception
+            assertThatThrownBy(() -> DomainGuard.positive(0, "stockCount"))
+                    .isInstanceOf(DomainRuleViolationException.class)
+                    .satisfies(ex -> {
+                        DomainRuleViolationException dre = (DomainRuleViolationException) ex;
+                        assertThat(dre.getErrorCode()).contains("VAL-013");
+                        assertThat(dre.getViolatedRule()).contains("RANGE");
+                        assertThat(dre.getMessage()).contains("stockCount must be a positive number (received: 0).");
+                    });
+
+            // Failure case: negative value should throw an exception
+            assertThatThrownBy(() -> DomainGuard.positive(-5, "stockCount"))
+                    .isInstanceOf(DomainRuleViolationException.class)
+                    .satisfies(ex -> {
+                        DomainRuleViolationException dre = (DomainRuleViolationException) ex;
+                        assertThat(dre.getErrorCode()).contains("VAL-013");
+                        assertThat(dre.getViolatedRule()).contains("RANGE");
+                        assertThat(dre.getMessage()).contains("stockCount must be a positive number (received: -5).");
+                    });
+        }
     }
 
     @Nested
@@ -186,12 +213,12 @@ class DomainGuardTest {
                     .satisfies(ex -> {
                         DomainRuleViolationException dre = (DomainRuleViolationException) ex;
 
-                        // Assert against Optional return types
-                        assertThat(dre.getErrorCode()).contains("VAL-003");
-                        assertThat(dre.getViolatedRule()).contains("COLLECTION_MIN_SIZE");
+                        // 1. Assert against Optional return types using .hasValue() for clarity
+                        assertThat(dre.getErrorCode()).hasValue("VAL-003");
+                        assertThat(dre.getViolatedRule()).hasValue("COLLECTION_MIN_SIZE");
 
-                        // This will now pass once .formatted(fieldName) is added to DomainGuard
-                        assertThat(dre.getMessage()).contains("items must contain at least one element");
+                        // 2. Updated message check to account for the punctuation in the Guard script
+                        assertThat(dre.getMessage()).isEqualTo("items must contain at least one element.");
                     });
         }
 

@@ -7,14 +7,14 @@ import java.util.UUID;
  * Hardened UUID Value Object for Java 21/25 (2026 Edition).
  * Validated against RFC 9562 standards using DomainGuard.
  */
-public record UuIdVO(String value) {
+public record UuId(String value) {
 
     private static final int UUID_LENGTH = 36;
 
     /**
      * Compact Constructor enforcing RFC 9562 UUID standards.
      */
-    public UuIdVO {
+    public UuId {
         // 1. Existence and Initial Content (Throws VAL-010)
         DomainGuard.notBlank(value, "UUID");
 
@@ -45,12 +45,12 @@ public record UuIdVO(String value) {
     /**
      * Java 25 Factory Method.
      */
-    public static UuIdVO generate() {
-        return new UuIdVO(UUID.randomUUID().toString());
+    public static UuId generate() {
+        return new UuId(UUID.randomUUID().toString());
     }
 
-    public static UuIdVO fromString(String value) {
-        return new UuIdVO(value);
+    public static UuId fromString(String value) {
+        return new UuId(value);
     }
 
     /**

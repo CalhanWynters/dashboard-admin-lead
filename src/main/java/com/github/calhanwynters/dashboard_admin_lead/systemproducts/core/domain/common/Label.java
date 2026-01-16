@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
  * Hardened Label Value Object for Java 21/25 (2026 Edition).
  * Enforces lexical standards and DoS boundaries via DomainGuard.
  */
-public record LabelVO(String value) {
+public record Label(String value) {
 
     private static final int MIN_LENGTH = 1;
     private static final int MAX_LENGTH = 20;
@@ -23,14 +23,14 @@ public record LabelVO(String value) {
     /**
      * Static factory method for domain-driven instantiation.
      */
-    public static LabelVO from(String value) {
-        return new LabelVO(value);
+    public static Label from(String value) {
+        return new Label(value);
     }
 
     /**
      * Compact constructor using DomainGuard for invariant enforcement.
      */
-    public LabelVO {
+    public Label {
         // 1. Existence & Initial Content Check (Throws VAL-010)
         DomainGuard.notBlank(value, "Label Value");
 

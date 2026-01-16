@@ -9,7 +9,7 @@ import java.util.Currency;
  * Hardened Price Value Object for Java 21/25 (2026 Edition).
  * Implements scale boundaries and currency consistency via DomainGuard.
  */
-public record PriceVO(BigDecimal price, int precision, Currency currency) {
+public record Price(BigDecimal price, int precision, Currency currency) {
 
     private static final int MAX_PRECISION = 10;
     private static final BigDecimal MAX_PRICE = new BigDecimal("100000000.00");
@@ -17,21 +17,21 @@ public record PriceVO(BigDecimal price, int precision, Currency currency) {
     /**
      * Create a PriceVO using a specific price and currency.
      */
-    public PriceVO(BigDecimal price, Currency currency) {
+    public Price(BigDecimal price, Currency currency) {
         this(price, DomainGuard.notNull(currency, "Currency").getDefaultFractionDigits(), currency);
     }
 
     /**
      * Flexible constructor for default USD pricing.
      */
-    public PriceVO(BigDecimal price) {
+    public Price(BigDecimal price) {
         this(price, Currency.getInstance("USD"));
     }
 
     /**
      * Compact Constructor enforcing financial invariants.
      */
-    public PriceVO {
+    public Price {
         // 1. Existence
         DomainGuard.notNull(price, "Price");
         DomainGuard.notNull(currency, "Currency");

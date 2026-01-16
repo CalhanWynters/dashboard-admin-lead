@@ -1,19 +1,19 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.money.PricingModelVO;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.money.PurchasePricing;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 
 /**
  * A pure DDD Value Object representing a product feature.
  * Aligned with DomainGuard validation for 2026 Edition.
  */
-public record FeatureVO(
-        NameVO featureName,
-        LabelVO featureLabel,
-        DescriptionVO featureDescription,
-        PricingModelVO pricingModel
+public record Feature(
+        Name featureName,
+        Label featureLabel,
+        Description featureDescription,
+        PurchasePricing pricingModel
 ) {
-    public FeatureVO {
+    public Feature {
         // 1. Existence & Nullability
         DomainGuard.notNull(featureName, "Feature Name");
         DomainGuard.notNull(featureLabel, "Feature Label");

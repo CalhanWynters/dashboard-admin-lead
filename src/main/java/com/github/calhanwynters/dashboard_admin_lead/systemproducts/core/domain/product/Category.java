@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
  * Hardened Category Value Object for Java 21/25 (2026 Edition).
  * Implements Unicode-aware whitelisting and DoS prevention via DomainGuard.
  */
-public record CategoryVO(String value) {
+public record Category(String value) {
 
     private static final int MIN_LENGTH = 1;
     private static final int MAX_LENGTH = 100;
@@ -22,7 +22,7 @@ public record CategoryVO(String value) {
     /**
      * Compact Constructor enforcing category invariants.
      */
-    public CategoryVO {
+    public Category {
         // 1. Initial Existence (Throws VAL-010)
         DomainGuard.notBlank(value, "Category");
 

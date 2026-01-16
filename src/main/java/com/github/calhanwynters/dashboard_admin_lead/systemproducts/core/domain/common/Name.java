@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
  * Hardened Value Object for Domain Names.
  * Aligned with DomainGuard for 2026 Edition (Java 21/25).
  */
-public record NameVO(String value) {
+public record Name(String value) {
 
     private static final int MIN_LENGTH = 2;
     private static final int MAX_LENGTH = 100;
@@ -20,11 +20,11 @@ public record NameVO(String value) {
     private static final Pattern ALLOWED_CHARS_PATTERN =
             Pattern.compile("^[\\p{L}\\p{N} .,:;!\\-?'\"()]+$");
 
-    public static NameVO from(String value) {
-        return new NameVO(value);
+    public static Name from(String value) {
+        return new Name(value);
     }
 
-    public NameVO {
+    public Name {
         // 1. Initial Existence (Throws VAL-010)
         DomainGuard.notBlank(value, "Name");
 

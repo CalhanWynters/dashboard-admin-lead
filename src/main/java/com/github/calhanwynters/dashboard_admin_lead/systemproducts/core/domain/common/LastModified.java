@@ -9,7 +9,7 @@ import java.time.temporal.ChronoUnit;
  * Value Object for last modification timestamps.
  * Aligned with DomainGuard for 2026 Edition.
  */
-public record LastModifiedVO(OffsetDateTime value) {
+public record LastModified(OffsetDateTime value) {
 
     // Boundary: Logical lower bound (System Epoch)
     private static final OffsetDateTime MIN_SYSTEM_DATE = OffsetDateTime.parse("2025-01-01T00:00:00Z");
@@ -17,7 +17,7 @@ public record LastModifiedVO(OffsetDateTime value) {
     /**
      * Compact constructor using DomainGuard for temporal invariants.
      */
-    public LastModifiedVO {
+    public LastModified {
         // 1. Existence
         DomainGuard.notNull(value, "Last Modified Date");
 
@@ -39,14 +39,14 @@ public record LastModifiedVO(OffsetDateTime value) {
     /**
      * Factory method using system UTC clock.
      */
-    public static LastModifiedVO now() {
-        return new LastModifiedVO(OffsetDateTime.now(Clock.systemUTC()));
+    public static LastModified now() {
+        return new LastModified(OffsetDateTime.now(Clock.systemUTC()));
     }
 
     /**
      * Testing/Mocking Factory: Allows injection of fixed clocks.
      */
-    public static LastModifiedVO now(Clock clock) {
-        return new LastModifiedVO(OffsetDateTime.now(clock));
+    public static LastModified now(Clock clock) {
+        return new LastModified(OffsetDateTime.now(clock));
     }
 }

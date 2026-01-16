@@ -32,9 +32,9 @@ public final class DomainGuard {
 
     // 2. TEXTUAL CONTENT (Blank check + Strip)
     public static String notBlank(String value, String fieldName) {
-        notNull(value, fieldName);
+        notNull(value, fieldName);  // Expecting this to throw if value is null
         if (value.isBlank()) {
-            throwDomainRuleViolation(fieldName + " cannot be empty or whitespace.", "VAL-010", "TEXT_CONTENT");
+            throwDomainRuleViolation(fieldName + " is blank.", "VAL-010", "TEXT_CONTENT");
         }
         return value.strip();
     }
@@ -97,7 +97,28 @@ public final class DomainGuard {
         return value;
     }
 
+    public static void positive(int value, String fieldName) {
+        if (value <= 0) {
+            throwDomainRuleViolation(
+                    "%s must be a positive number (received: %d).".formatted(fieldName, value),
+                    "VAL-013", "RANGE"
+            );
+        }
+    }
+
+
     // 6. COLLECTIONS
+    public static <T extends java.util.SequencedCollection<?>> T firstNotNull(T collection, String fieldName) {
+        notEmpty(collection, fieldName); // Now calls the local method above
+        if (collection.getFirst() == null) {
+            throwDomainRuleViolation(
+                    "%s must have a non-null primary (first) element.".formatted(fieldName),
+                    "VAL-015", "COLLECTION_ORDER"
+            );
+        }
+        return collection;
+    }
+
     public static <T extends Collection<?>> T notEmpty(T collection, String fieldName) {
         notNull(collection, fieldName);
         if (collection.isEmpty()) {
@@ -110,7 +131,7 @@ public final class DomainGuard {
     }
 
     public static <T extends Collection<?>> T noNullElements(T collection, String fieldName) {
-        notEmpty(collection, fieldName);
+        notEmpty(collection, fieldName); // Now calls the local method above
         if (collection.stream().anyMatch(Objects::isNull)) {
             throwDomainRuleViolation(
                     "%s contains null elements.".formatted(fieldName),
@@ -138,11 +159,13 @@ public final class DomainGuard {
      * Validates that an instant is in the past, allowing for minor clock drift.
      * @param clock The clock to use for "now" (useful for testing or shared system time).
      */
+    // 8. TEMPORAL (Updated for 2026 with Clock Drift Tolerance)
     public static Instant inPast(Instant date, String fieldName, Clock clock) {
         notNull(date, fieldName);
-        // Tolerance allows "now" to be slightly ahead of the provided date due to drift
+        // Use .plus(CLOCK_DRIFT_TOLERANCE) to allow minor skew
         if (date.isAfter(clock.instant().plus(CLOCK_DRIFT_TOLERANCE))) {
             throwDomainRuleViolation(
+                    // CHANGE: Match the test's expected "cannot be" phrasing
                     "%s cannot be in the future (received: %s).".formatted(fieldName, date),
                     "VAL-008", "TEMPORAL"
             );

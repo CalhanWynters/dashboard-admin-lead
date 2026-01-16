@@ -5,39 +5,22 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Currency;
 
-/**
- * A Value Object representing a specific amount of money in a specific currency.
- * Uses BigDecimal for precision and immutability, aligned with DomainGuard for 2026 standards.
- */
-record Money(BigDecimal amount, Currency currency, int precision, RoundingMode roundingMode)
+// FIX: Added the 'public' modifier
+public record Money(BigDecimal amount, Currency currency, int precision, RoundingMode roundingMode)
         implements Comparable<Money> {
 
-    /**
-     * Ensures the internal amount is always scaled correctly upon creation,
-     * regardless of the input BigDecimal's original scale.
-     */
     public Money {
-        // Use DomainGuard for standardized null checks (Throws VAL-001)
         DomainGuard.notNull(amount, "Amount");
         DomainGuard.notNull(currency, "Currency");
         DomainGuard.notNull(roundingMode, "Rounding Mode");
-
-        // Use DomainGuard for standardized range check (Throws VAL-007)
         DomainGuard.nonNegative(BigDecimal.valueOf(precision), "Precision");
-
-        // This is crucial: we ensure the internal 'amount' field value is forced to the correct scale/mode.
+        // Ensure the amount is scaled immediately upon construction for consistency
         amount = amount.setScale(precision, roundingMode);
     }
 
-    /**
-     * Constructor overload for common defaults (e.g., USD usually has 2 decimals).
-     * Defaults to 2 decimal places and HALF_UP rounding.
-     */
     public Money(BigDecimal amount, Currency currency) {
         this(amount, currency, 2, RoundingMode.HALF_UP);
     }
-
-    // --- Factory Methods (Remain as is) ---
 
     public static Money zero(Currency currency) {
         return new Money(BigDecimal.ZERO, currency);
@@ -47,44 +30,67 @@ record Money(BigDecimal amount, Currency currency, int precision, RoundingMode r
         return new Money(amount, Currency.getInstance(currencyCode));
     }
 
-
-    // --- DDD Operations (using DomainGuard for consistency checks) ---
-
     public Money add(Money other) {
-        // Use DomainGuard.ensure for cross-field integrity checks (VAL-MONEY-001)
         DomainGuard.ensure(
                 this.currency.equals(other.currency) && this.precision == other.precision,
                 "Cannot add money objects with different currencies or precision settings.",
                 "VAL-MONEY-001",
                 "CURRENCY_MISMATCH"
         );
-
         BigDecimal result = this.amount.add(other.amount);
         return new Money(result, this.currency, this.precision, this.roundingMode);
     }
 
+    public Money subtract(Money other) {
+        DomainGuard.ensure(
+                this.currency.equals(other.currency) && this.precision == other.precision,
+                "Cannot subtract money objects with different currencies or precision settings.",
+                "VAL-MONEY-002",
+                "CURRENCY_MISMATCH"
+        );
+        BigDecimal result = this.amount.subtract(other.amount);
+        return new Money(result, this.currency, this.precision, this.roundingMode);
+    }
+
+    public Money negate() {
+        BigDecimal result = this.amount.negate();
+        return new Money(result, this.currency, this.precision, this.roundingMode);
+    }
+
     public Money multiply(int multiplier) {
+        // --- REVISION 1: Changed "positive" to "nonNegative" to allow multiplying by zero ---
+        DomainGuard.nonNegative(BigDecimal.valueOf(multiplier), "Int-based Multiplier must be non-negative.");
         BigDecimal result = this.amount.multiply(BigDecimal.valueOf(multiplier));
         return new Money(result, this.currency, this.precision, this.roundingMode);
     }
 
-    public Money divide(int divisor) {
-        // Use DomainGuard for range checks/business rules related to input values (VAL-011)
-        DomainGuard.positive(divisor, "Divisor");
-
-        BigDecimal result = this.amount.divide(BigDecimal.valueOf(divisor), this.precision, this.roundingMode);
+    /**
+     * Overloaded method to multiply the money amount by a BigDecimal factor (fractional quantities).
+     * The result is scaled and rounded according to the Money object's precision rules.
+     * Decided to keep int based multiplying to acts as a safeguard against corrupted input data.
+     */
+    public Money multiply(BigDecimal factor) {
+        DomainGuard.nonNegative(factor, "Fraction-based Multiplying factor must be non-negative.");
+        // The result is automatically scaled/rounded in the compact constructor
+        BigDecimal result = this.amount.multiply(factor);
         return new Money(result, this.currency, this.precision, this.roundingMode);
     }
 
-    // --- Comparison and Utility Methods ---
+    public Money divide(int divisor) {
+        DomainGuard.positive(divisor, "Divisor must be positive.");
+
+        // --- REVISION 2: Use BigDecimal.valueOf for cleaner code ---
+        BigDecimal result = this.amount.divide(BigDecimal.valueOf(divisor), this.precision, this.roundingMode);
+
+        return new Money(result, this.currency, this.precision, this.roundingMode);
+    }
 
     @Override
     public int compareTo(Money other) {
-        // Use DomainGuard.ensure for cross-field integrity checks (VAL-MONEY-002)
         DomainGuard.ensure(
                 this.currency.equals(other.currency),
                 "Cannot compare different currencies.",
-                "VAL-MONEY-002",
+                "VAL-MONEY-003",
                 "CURRENCY_MISMATCH"
         );
         return this.amount.compareTo(other.amount);
@@ -95,8 +101,8 @@ record Money(BigDecimal amount, Currency currency, int precision, RoundingMode r
     }
 
     public boolean equalsValue(Money other) {
-        // Use DomainGuard.notNull internally if preferred, but Objects.requireNonNull is fine in internal helper methods
         if (other == null) return false;
+        // Compare based on the immutable scaled amount
         boolean amountsEqual = this.amount.compareTo(other.amount) == 0;
         boolean currenciesEqual = this.currency.equals(other.currency);
         return amountsEqual && currenciesEqual;
