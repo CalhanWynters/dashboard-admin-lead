@@ -1,4 +1,4 @@
-package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.variant;
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.util.Arrays;

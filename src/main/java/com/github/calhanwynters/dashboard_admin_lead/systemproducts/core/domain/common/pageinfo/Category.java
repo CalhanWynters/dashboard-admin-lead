@@ -1,4 +1,4 @@
-package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.product;
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.pageinfo;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.util.regex.Pattern;
