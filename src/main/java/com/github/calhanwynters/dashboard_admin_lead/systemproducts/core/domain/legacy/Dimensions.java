@@ -1,4 +1,4 @@
-package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.legacy;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.math.BigDecimal;
@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
  * Hardened Dimensions Value Object for 2026 Edition.
  * Enforces strict non-scientific notation and logical safety boundaries via DomainGuard.
  */
-public record DimensionsVO(BigDecimal length, BigDecimal width, BigDecimal height, DimensionUnitEnums sizeUnit) {
+public record Dimensions(BigDecimal length, BigDecimal width, BigDecimal height, DimensionUnitEnums sizeUnit) {
 
     private static final Pattern NUMERIC_PATTERN = Pattern.compile("^[0-9]+(\\.[0-9]{1,10})?$");
     private static final BigDecimal ABSOLUTE_MAX_LIMIT = new BigDecimal("10000.0");
@@ -18,8 +18,8 @@ public record DimensionsVO(BigDecimal length, BigDecimal width, BigDecimal heigh
      * Factory method: Strictly enforces non-scientific notation from String inputs.
      * Prevents precision-loss attacks common in 2026 API integrations.
      */
-    public static DimensionsVO of(String lengthStr, String widthStr, String heightStr, DimensionUnitEnums unit) {
-        return new DimensionsVO(
+    public static Dimensions of(String lengthStr, String widthStr, String heightStr, DimensionUnitEnums unit) {
+        return new Dimensions(
                 parseStrict(lengthStr, "Length"),
                 parseStrict(widthStr, "Width"),
                 parseStrict(heightStr, "Height"),
@@ -45,7 +45,7 @@ public record DimensionsVO(BigDecimal length, BigDecimal width, BigDecimal heigh
     /**
      * Compact Constructor enforcing "Always-Valid" dimension invariants.
      */
-    public DimensionsVO {
+    public Dimensions {
         // 1. Existence (Throws VAL-001)
         DomainGuard.notNull(length, "Length");
         DomainGuard.notNull(width, "Width");

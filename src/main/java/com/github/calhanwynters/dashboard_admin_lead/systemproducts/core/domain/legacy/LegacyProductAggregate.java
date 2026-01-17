@@ -1,4 +1,4 @@
-package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates;
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.legacy;
 
 /*
  **  ProductAggregate
@@ -15,5 +15,5 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
  *
  */
 
-public class ProductAggregate {
+public class LegacyProductAggregate {
 }

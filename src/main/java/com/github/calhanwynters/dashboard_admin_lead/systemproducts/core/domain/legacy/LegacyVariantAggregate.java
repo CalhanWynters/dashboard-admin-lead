@@ -1,4 +1,4 @@
-package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates;
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.legacy;
 
 /*
  ** VariantEntity
@@ -15,5 +15,6 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
  * Set<PriceVO> currentPrice, // This will include different currencies for regional configuration.
  * Set<FeatureAbstractClass> features
  */
-public class VariantAggregate {
+
+public class LegacyVariantAggregate {
 }

@@ -1,4 +1,4 @@
-package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.legacy;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.math.BigDecimal;

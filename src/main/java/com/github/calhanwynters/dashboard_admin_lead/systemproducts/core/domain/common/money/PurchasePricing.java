@@ -17,7 +17,15 @@ import java.math.BigDecimal;
  * }</pre>
  */
 
-public sealed interface PurchasePricing permits PriceFractTieredGradPurchase, PriceFractScaledPurchase, PriceFixedPurchase, PriceNonePurchase, PriceIntScaledPurchase, PriceIntTieredGradPurchase, PriceIntTieredVolPurchase, PriceFractTieredVolPurchase {
+public sealed interface PurchasePricing
+        permits SimplePurchasePricing,
+        PriceFractTieredGradPurchase,
+        PriceFractScaledPurchase,
+        PriceIntScaledPurchase,
+        PriceIntTieredGradPurchase,
+        PriceIntTieredVolPurchase,
+        PriceFractTieredVolPurchase {
+
     /**
      * Calculates the total price for a given quantity.
      * @param quantity the number of units
@@ -25,7 +33,6 @@ public sealed interface PurchasePricing permits PriceFractTieredGradPurchase, Pr
      */
     Money calculate(BigDecimal quantity);
 }
-
 
 /*
 MISSING Pricing Models that could not be modeled in this contract:

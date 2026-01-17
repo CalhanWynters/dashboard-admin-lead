@@ -1,5 +1,5 @@
 # FeatureAbstractClass
-- private final UuIdVO featVariantId should be handled externally by Aggregate Root or Service.
+- dimensions and weight of a product, status of variants to be handled outside of system product module.
 
 
 

@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.util.Currency;
 import java.util.Objects;
 
-public record PriceFixedPurchase(Money fixedPrice) implements PurchasePricing {
+public record PriceFixedPurchase(Money fixedPrice) implements SimplePurchasePricing {
 
     public PriceFixedPurchase {
         Objects.requireNonNull(fixedPrice, "Fixed price cannot be null.");

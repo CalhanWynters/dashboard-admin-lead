@@ -10,14 +10,12 @@ import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.
  */
 public record Feature(
         Name featureName,
-        Label featureLabel,
         Description featureDescription,
         PurchasePricing pricingModel
 ) {
     public Feature {
         // 1. Existence & Nullability
         DomainGuard.notNull(featureName, "Feature Name");
-        DomainGuard.notNull(featureLabel, "Feature Label");
         DomainGuard.notNull(featureDescription, "Feature Description");
         DomainGuard.notNull(pricingModel, "Pricing Model");
 

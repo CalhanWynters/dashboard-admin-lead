@@ -8,7 +8,7 @@ import java.util.stream.Stream;
  * Hardened Value Object for product care instructions.
  * Aligned with DomainGuard for 2026 Edition (Java 21/25).
  */
-public record CareInstructionVO(String instructions) {
+public record CareInstruction(String instructions) {
 
     private static final int MIN_LENGTH = 5;
     private static final int MAX_LENGTH = 500;
@@ -29,7 +29,7 @@ public record CareInstructionVO(String instructions) {
     /**
      * Compact Constructor enforcing semantic list styles and lexical safety.
      */
-    public CareInstructionVO {
+    public CareInstruction {
         // 1. Existence (Throws VAL-010)
         DomainGuard.notBlank(instructions, "Care Instructions");
 

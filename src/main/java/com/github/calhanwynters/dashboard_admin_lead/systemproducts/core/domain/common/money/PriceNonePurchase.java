@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.util.Currency;
 import java.util.Objects;
 
-public record PriceNonePurchase(Currency currency) implements PurchasePricing {
+public record PriceNonePurchase(Currency currency) implements SimplePurchasePricing {
 
     public PriceNonePurchase {
         Objects.requireNonNull(currency, "Currency context is required even for PriceNone.");
