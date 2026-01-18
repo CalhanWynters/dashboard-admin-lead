@@ -12,18 +12,16 @@ import java.util.Set;
 public class VariantCollection {
 
     private final int primaryKey; // Local database primary key
-    private final UuId id; // Unique identifier for the variant
+    private final UuId variantColId; // Unique identifier for the variant
     private final UuId businessId; // Unique identifier for the associated business
     private final Set<Feature> features; // Set to hold unique features
 
     /**
-     * @param primaryKey Local database primary key for this variant
      * @param businessId Unique identifier for the business associated with this variant
-     * @param features Set of features associated with the variant
      */
     public VariantCollection(int primaryKey, UuId businessId, Set<Feature> features) {
         this.primaryKey = primaryKey; // Assign the local integer primary key
-        this.id = UuId.generate(); // Generate a new unique identifier for the variant
+        this.variantColId = UuId.generate(); // Generate a new unique identifier for the variant
         this.businessId = businessId; // Assign the business ID
         this.features = Set.copyOf(features); // Ensure features are immutable
         validateFeatures();
@@ -41,8 +39,8 @@ public class VariantCollection {
     // ======================== Behavioral Methods ================================================
 
     // Common Getters
-    public UuId getId() {
-        return id;
+    public UuId getVariantColId() {
+        return variantColId;
     }
     public UuId getBusinessId() {return businessId;}
     public int getPrimaryKey() {

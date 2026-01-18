@@ -13,18 +13,16 @@ import java.util.Set;
 public class GalleryCollection {
 
     private final int primaryKey; // Local database primary key
-    private final UuId id; // Unique identifier for the gallery
+    private final UuId galleryColId; // Unique identifier for the gallery
     private final UuId businessId; // Unique identifier for the associated business
     private final Set<ImageUrl> imageUrls; // Set to hold unique ImageUrl objects
 
     /**
-     * @param primaryKey Local database primary key for this gallery
      * @param businessId Unique identifier for the business associated with this gallery
-     * @param imageUrls Set of image URLs associated with the gallery
      */
     public GalleryCollection(int primaryKey, UuId businessId, Set<ImageUrl> imageUrls) {
         this.primaryKey = primaryKey; // Assign the local integer primary key
-        this.id = UuId.generate(); // Generate a new unique identifier for the gallery
+        this.galleryColId = UuId.generate(); // Generate a new unique identifier for the gallery
         this.businessId = businessId; // Assign the business ID
         this.imageUrls = Collections.unmodifiableSet(imageUrls); // Ensure the set is immutable
         validateImageUrls();
@@ -43,8 +41,8 @@ public class GalleryCollection {
     // ======================== Behavioral Methods ================================================
 
     // Common Getters
-    public UuId getId() {
-        return id;
+    public UuId getGalleryColId() {
+        return galleryColId;
     }
     public UuId getBusinessId() {
         return businessId;

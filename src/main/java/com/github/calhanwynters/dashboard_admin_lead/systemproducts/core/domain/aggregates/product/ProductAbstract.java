@@ -1,11 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product;
 
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryCollection;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Category;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Description;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.ImageUrl;
-
-import java.util.List;
 import java.util.Objects;
 
 public abstract class ProductAbstract {
@@ -17,8 +13,8 @@ public abstract class ProductAbstract {
     private final Description productDesc;
     private final StatusEnums productStatus;
     private final Version productVersion;
-    private final AuditMetadata audit; // Groups CreatedAt and LastModified
-    private final List<ImageUrl> images;
+    private final AuditMetadata audit;
+    private final GalleryCollection galleryCollection;
 
     protected ProductAbstract(Builder<?, ?> builder) {
         this.productId = Objects.requireNonNull(builder.productId, "Product ID cannot be null");
@@ -29,29 +25,19 @@ public abstract class ProductAbstract {
         this.productStatus = Objects.requireNonNull(builder.productStatus, "Status cannot be null");
         this.productVersion = Objects.requireNonNull(builder.productVersion, "Version cannot be null");
         this.audit = Objects.requireNonNull(builder.audit, "Audit metadata cannot be null");
-
-        Objects.requireNonNull(builder.images, "Images list cannot be null");
-        this.images = List.copyOf(builder.images);
+        this.galleryCollection = Objects.requireNonNull(builder.galleryCollection, "GalleryCollection cannot be null");
     }
 
-    /**
-     * Recursive Generic Builder
-     * @param <T> The Product subtype
-     * @param <B> The Builder subtype
-     */
     public abstract static class Builder<T extends ProductAbstract, B extends Builder<T, B>> {
-        private PkId productId;
-        private UuId productUuId;
-        private UuId businessId;
-        private Name productName;
-        private Category category;
-        private Description productDesc;
-        private Description shippingPolicy;
-        private StatusEnums productStatus;
-        private Version productVersion;
-        private AuditMetadata audit;
-        private List<ImageUrl> images;            // Consider decoupling this into a Gallery Aggregate
-        private ImageUrl thumbnail;
+        protected PkId productId;
+        protected UuId productUuId;
+        protected Name productName;
+        protected Category category;
+        protected Description productDesc;
+        protected StatusEnums productStatus;
+        protected Version productVersion;
+        protected AuditMetadata audit;
+        protected GalleryCollection galleryCollection;
 
         protected abstract B self();
         public abstract T build();
@@ -64,7 +50,7 @@ public abstract class ProductAbstract {
         public B productStatus(StatusEnums productStatus) { this.productStatus = productStatus; return self(); }
         public B productVersion(Version productVersion) { this.productVersion = productVersion; return self(); }
         public B audit(AuditMetadata audit) { this.audit = audit; return self(); }
-        public B images(List<ImageUrl> images) { this.images = images; return self(); }
+        public B galleryCollection(GalleryCollection galleryCollection) { this.galleryCollection = galleryCollection; return self(); }
     }
 
     // Getters
@@ -76,13 +62,13 @@ public abstract class ProductAbstract {
     public StatusEnums getProductStatus() { return productStatus; }
     public Version getProductVersion() { return productVersion; }
     public AuditMetadata getAudit() { return audit; }
-    public List<ImageUrl> getImages() { return images; }
+    public GalleryCollection getGalleryCollection() { return galleryCollection; }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof ProductAbstract that)) return false;
-        return Objects.equals(productUuId, that.productUuId);
+        return Objects.equals(this.productUuId, that.productUuId);
     }
 
     @Override

@@ -8,22 +8,20 @@ import java.util.Set;
 /**
  * A collection of Type objects, each with a unique identifier and associated data.
  */
+@SuppressWarnings("ClassCanBeRecord") // Prefer to keep as class for Domain Aggregate role
 public class TypeCollection {
 
     private final int primaryKey; // Local database primary key
-    private final UuId id; // Unique identifier for the collection
+    private final UuId typeColId; // Unique identifier for the collection
     private final UuId businessId; // Unique identifier for the associated business
     private final Set<Type> types; // Set to hold unique Type objects
 
     /**
-     * @param primaryKey Local database primary key for this Type collection
-     * @param id Unique identifier for the Type collection
      * @param businessId Unique identifier for the business associated with this collection
-     * @param types Initial set of Type objects to populate the collection
      */
-    public TypeCollection(int primaryKey, UuId id, UuId businessId, Set<Type> types) {
+    public TypeCollection(int primaryKey, UuId typeColId, UuId businessId, Set<Type> types) {
         this.primaryKey = primaryKey; // Assign the local integer primary key
-        this.id = UuId.generate(); // Assign the collection ID
+        this.typeColId = UuId.generate(); // Assign the collection ID
         this.businessId = businessId; // Assign the business ID
         this.types = Set.copyOf(types); // Create an immutable copy of the set
         validateType(); // Perform validation on initialization
@@ -41,8 +39,8 @@ public class TypeCollection {
     // ======================== Behavioral Methods ================================================
 
     // Common Getters
-    public UuId getId() {
-        return id;
+    public UuId getTypeColId() {
+        return typeColId;
     }
     public UuId getBusinessId() {
         return businessId;
@@ -63,7 +61,7 @@ public class TypeCollection {
         Set<Type> updatedTypes = new HashSet<>(types);
         updatedTypes.remove(type); // Remove the specified type
 
-        return new TypeCollection(primaryKey, id, businessId, updatedTypes); // Expected 4 arguments but found 3
+        return new TypeCollection(primaryKey, typeColId, businessId, updatedTypes); // Expected 4 arguments but found 3
     }
 
     // Class Specific
