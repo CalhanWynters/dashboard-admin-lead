@@ -1,9 +1,9 @@
-package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.feature;
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variant;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Description;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Name;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.money.PurchasePricing;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.validationchecks.DomainGuard;
 
 /**
  * A pure DDD Value Object representing a product feature.

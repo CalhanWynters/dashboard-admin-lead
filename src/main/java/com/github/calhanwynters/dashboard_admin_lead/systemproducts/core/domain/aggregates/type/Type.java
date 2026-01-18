@@ -1,18 +1,18 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.type;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.CareInstruction;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Description;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Name;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.money.Money;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.money.PurchasePricingFactory;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.money.SimplePurchasePricing;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.validationchecks.DomainGuard;
 
 import java.math.BigDecimal;
 import java.util.Currency;
 
 public record Type(
         Name typeName,
+        Dimensions typeDimensions,
+        Weight typeWeight,
         Description typeDescription,
         CareInstruction typeCareInstruction,
         SimplePurchasePricing pricingModel
@@ -37,6 +37,17 @@ public record Type(
                 "Type care instruction must provide specific maintenance guidance.",
                 "VAL-023", "SEMANTICS"
         );
+
+        // Validating dimensions and weight if provided
+        if (typeDimensions != null) {
+            DomainGuard.notNull(typeDimensions.length(), "Length cannot be null");
+            DomainGuard.notNull(typeDimensions.width(), "Width cannot be null");
+            DomainGuard.notNull(typeDimensions.height(), "Height cannot be null");
+        }
+
+        if (typeWeight != null) {
+            DomainGuard.positive(typeWeight.amount(), "Weight amount must be positive");
+        }
     }
 
     /**
@@ -45,6 +56,8 @@ public record Type(
     public static Type createWithFixedPricing(
             PurchasePricingFactory factory,
             Name typeName,
+            Dimensions typeDimensions,
+            Weight typeWeight,
             Description typeDescription,
             CareInstruction typeCareInstruction,
             Money fixedPrice) {
@@ -55,7 +68,7 @@ public record Type(
         }
 
         SimplePurchasePricing pricing = factory.createFixedPurchase(fixedPrice);
-        return new Type(typeName, typeDescription, typeCareInstruction, pricing);
+        return new Type(typeName, typeDimensions, typeWeight, typeDescription, typeCareInstruction, pricing);
     }
 
     /**
@@ -64,12 +77,28 @@ public record Type(
     public static Type createWithoutPricing(
             PurchasePricingFactory factory,
             Name typeName,
+            Dimensions typeDimensions,
+            Weight typeWeight,
             Description typeDescription,
             CareInstruction typeCareInstruction,
             Currency currency) {
 
         DomainGuard.notNull(currency, "Currency cannot be null");
         SimplePurchasePricing pricing = factory.createNonePurchase(currency);
-        return new Type(typeName, typeDescription, typeCareInstruction, pricing);
+        return new Type(typeName, typeDimensions, typeWeight, typeDescription, typeCareInstruction, pricing);
+    }
+
+    // Additional factory methods could be added here for flexibility
+
+    /**
+     * Getter method for Type pricing information.
+     */
+    public BigDecimal getPrice(BigDecimal quantity) {
+        if (quantity.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Quantity must be non-negative.");
+        }
+
+        Money price = pricingModel.calculate(quantity);
+        return price.amount(); // Assuming Money has a method to get the BigDecimal amount
     }
 }

@@ -42,16 +42,16 @@ public abstract class ProductAbstract {
     public abstract static class Builder<T extends ProductAbstract, B extends Builder<T, B>> {
         private PkId productId;
         private UuId productUuId;
+        private UuId businessId;
         private Name productName;
         private Category category;
         private Description productDesc;
+        private Description shippingPolicy;
         private StatusEnums productStatus;
         private Version productVersion;
         private AuditMetadata audit;
         private List<ImageUrl> images;            // Consider decoupling this into a Gallery Aggregate
-        // ADDITIONAL FIELD: Thumbnail
-        // ADDITIONAL FIELD: Business UuID
-        // ADDITIONAL FIELD: Unique Shipping Policy
+        private ImageUrl thumbnail;
 
         protected abstract B self();
         public abstract T build();

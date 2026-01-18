@@ -1,4 +1,4 @@
-package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks;
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.validationchecks;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.exceptions.DomainRuleViolationException;
 import java.math.BigDecimal;

@@ -1,6 +1,6 @@
-package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.legacy;
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.validationchecks.DomainGuard;
 import java.math.BigDecimal;
 import java.util.regex.Pattern;
 
@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
  * Hardened Weight Value Object for 2026 Edition.
  * Enforces numeric precision and logical safety boundaries via DomainGuard.
  */
-public record WeightVO(BigDecimal amount, WeightUnitEnums weightUnit) {
+public record Weight(BigDecimal amount, WeightUnitEnums weightUnit) {
 
     // Lexical Content: Whitelist for numeric inputs (up to 5 decimal places)
     private static final Pattern NUMERIC_PATTERN = Pattern.compile("^[0-9]+(\\.[0-9]{1,5})?$");
@@ -22,7 +22,7 @@ public record WeightVO(BigDecimal amount, WeightUnitEnums weightUnit) {
     /**
      * Compact Constructor enforcing "Always-Valid" weight invariants.
      */
-    public WeightVO {
+    public Weight {
         // 1. Existence (Throws VAL-001)
         DomainGuard.notNull(amount, "Weight Amount");
         DomainGuard.notNull(weightUnit, "Weight Unit");

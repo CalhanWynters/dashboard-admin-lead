@@ -12,10 +12,6 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 public class ProductTyped extends ProductAbstract {
 
     // Super builder
-    // Care instructions are individual to Product type
-    // Pricing Model is individual to Product type
-    // Dimensions are individual to Product type
-    // Weight is individual to Product type
 
     // ADDITIONAL FIELD: Set of Type  * Consider Decoupling list/set into another aggregate/entity
     // Reference list or sets with lifecycle ID

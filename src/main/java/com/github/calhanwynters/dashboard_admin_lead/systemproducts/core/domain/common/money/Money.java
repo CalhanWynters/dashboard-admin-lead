@@ -1,6 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.money;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.validationchecks.DomainGuard;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Currency;

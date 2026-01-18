@@ -1,5 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks;
 
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.exceptions.DomainRuleViolationException;
 
 import org.junit.jupiter.api.DisplayName;

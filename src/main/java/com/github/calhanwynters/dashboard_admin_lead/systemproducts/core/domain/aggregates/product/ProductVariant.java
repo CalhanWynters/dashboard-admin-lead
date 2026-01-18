@@ -11,8 +11,6 @@ public class ProductVariant extends ProductAbstract {
     // Super builder
     // ADDITIONAL FIELD: Care Instructions
     // ADDITIONAL FIELD: PurchasePricing
-    // ADDITIONAL FIELD: Dimensions
-    // ADDITIONAL FIELD: Weight
 
     // ADDITIONAL FIELD: Set of Features  * Consider Decoupling list/set into another aggregate/entity
     // Reference list or sets with lifecycle ID
