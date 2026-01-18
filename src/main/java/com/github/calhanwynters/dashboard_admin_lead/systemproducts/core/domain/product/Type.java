@@ -1,10 +1,11 @@
-package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.product;
 
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.CareInstruction;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Description;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Name;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.money.Money;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.money.PurchasePricingFactory;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.money.SimplePurchasePricing;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.pageinfo.CareInstruction;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.pageinfo.Description;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 
 import java.math.BigDecimal;

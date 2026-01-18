@@ -1,6 +1,7 @@
 # FeatureAbstractClass
 - dimensions and weight of a product, status of variants to be handled outside of system product module.
 
+- Introduce dimensions and weight into the Type value object.
 
 
 

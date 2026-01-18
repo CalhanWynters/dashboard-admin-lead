@@ -1,5 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.pageinfo;
 
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Description;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.helpers.BaseDomainGuardTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

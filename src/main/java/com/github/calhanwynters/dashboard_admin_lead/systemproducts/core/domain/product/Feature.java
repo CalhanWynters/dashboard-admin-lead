@@ -1,7 +1,8 @@
-package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.product;
 
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Description;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Name;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.money.PurchasePricing;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.pageinfo.Description;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 
 /**

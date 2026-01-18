@@ -1,9 +1,9 @@
-package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.Product;
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.product;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.pageinfo.Category;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.pageinfo.Description;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.pageinfo.ImageUrl;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Category;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Description;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.ImageUrl;
 
 import java.util.List;
 import java.util.Objects;
@@ -48,7 +48,10 @@ public abstract class ProductAbstract {
         private StatusEnums productStatus;
         private Version productVersion;
         private AuditMetadata audit;
-        private List<ImageUrl> images;
+        private List<ImageUrl> images;            // Consider decoupling this into a Gallery Aggregate
+        // ADDITIONAL FIELD: Thumbnail
+        // ADDITIONAL FIELD: Business UuID
+        // ADDITIONAL FIELD: Unique Shipping Policy
 
         protected abstract B self();
         public abstract T build();
