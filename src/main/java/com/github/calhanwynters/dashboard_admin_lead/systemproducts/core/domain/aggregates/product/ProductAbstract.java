@@ -1,4 +1,4 @@
-package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.product;
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Category;
