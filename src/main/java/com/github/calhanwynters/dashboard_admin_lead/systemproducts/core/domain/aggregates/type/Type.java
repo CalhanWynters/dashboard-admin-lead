@@ -10,6 +10,8 @@ import java.math.BigDecimal;
 import java.util.Currency;
 
 public record Type(
+        UuId typeId,
+        Label compatibilityTag,
         Name typeName,
         Dimensions typeDimensions,
         Weight typeWeight,
@@ -22,6 +24,8 @@ public record Type(
      * Use this for final validation of all components.
      */
     public Type {
+        DomainGuard.notNull(typeId, "Type ID");
+        DomainGuard.notNull(compatibilityTag, "Compatibility Tag");
         DomainGuard.notNull(typeName, "Type Name");
         DomainGuard.notNull(typeDescription, "Type Description");
         DomainGuard.notNull(typeCareInstruction, "Type Care Instruction");
@@ -54,6 +58,8 @@ public record Type(
      * Static factory for fixed pricing.
      */
     public static Type createWithFixedPricing(
+            UuId typeId,
+            Label compatibilityTag,
             PurchasePricingFactory factory,
             Name typeName,
             Dimensions typeDimensions,
@@ -68,13 +74,16 @@ public record Type(
         }
 
         SimplePurchasePricing pricing = factory.createFixedPurchase(fixedPrice);
-        return new Type(typeName, typeDimensions, typeWeight, typeDescription, typeCareInstruction, pricing);
+        return new Type(typeId, compatibilityTag, typeName, typeDimensions,
+                typeWeight, typeDescription, typeCareInstruction, pricing);
     }
 
     /**
      * Static factory for types without a purchase price.
      */
     public static Type createWithoutPricing(
+            UuId typeId,
+            Label compatibilityTag,
             PurchasePricingFactory factory,
             Name typeName,
             Dimensions typeDimensions,
@@ -85,7 +94,8 @@ public record Type(
 
         DomainGuard.notNull(currency, "Currency cannot be null");
         SimplePurchasePricing pricing = factory.createNonePurchase(currency);
-        return new Type(typeName, typeDimensions, typeWeight, typeDescription, typeCareInstruction, pricing);
+        return new Type(typeId, compatibilityTag, typeName, typeDimensions,
+                typeWeight, typeDescription, typeCareInstruction, pricing);
     }
 
     // Additional factory methods could be added here for flexibility

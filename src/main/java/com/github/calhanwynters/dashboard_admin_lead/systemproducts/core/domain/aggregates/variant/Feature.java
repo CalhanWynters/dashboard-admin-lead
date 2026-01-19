@@ -1,7 +1,9 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variant;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Description;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Label;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Name;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.money.PurchasePricing;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.validationchecks.DomainGuard;
 
@@ -10,13 +12,17 @@ import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.
  * Aligned with DomainGuard validation for 2026 Edition.
  */
 public record Feature(
+        UuId featureUuId,
         Name featureName,
+        Label compatibilityTag,
         Description featureDescription,
         PurchasePricing pricingModel
 ) {
     public Feature {
         // 1. Existence & Nullability
+        DomainGuard.notNull(featureUuId, "Feature ID");
         DomainGuard.notNull(featureName, "Feature Name");
+        DomainGuard.notNull(compatibilityTag, "Compatibility Tag");
         DomainGuard.notNull(featureDescription, "Feature Description");
         DomainGuard.notNull(pricingModel, "Pricing Model");
 

@@ -59,9 +59,9 @@ public class TypeCollection {
         }
 
         Set<Type> updatedTypes = new HashSet<>(types);
-        updatedTypes.remove(type); // Remove the specified type
+        updatedTypes.remove(type);
 
-        return new TypeCollection(primaryKey, typeColId, businessId, updatedTypes); // Expected 4 arguments but found 3
+        return new TypeCollection(primaryKey, typeColId, businessId, updatedTypes);
     }
 
     // Class Specific

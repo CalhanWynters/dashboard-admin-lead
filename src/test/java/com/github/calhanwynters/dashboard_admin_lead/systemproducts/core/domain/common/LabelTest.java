@@ -1,7 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.helpers.BaseDomainGuardTest;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.legacy.Label;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
