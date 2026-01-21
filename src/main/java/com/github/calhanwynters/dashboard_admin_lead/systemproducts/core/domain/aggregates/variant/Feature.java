@@ -4,8 +4,8 @@ import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Label;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Name;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.UuId;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.money.PurchasePricing;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.money.PurchasePricing;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 
 /**
  * A pure DDD Value Object representing a product feature.

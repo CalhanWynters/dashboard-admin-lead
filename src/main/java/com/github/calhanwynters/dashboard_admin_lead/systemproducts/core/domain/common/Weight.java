@@ -1,6 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.math.BigDecimal;
 import java.util.regex.Pattern;
 
@@ -9,6 +9,9 @@ import java.util.regex.Pattern;
  * Enforces numeric precision and logical safety boundaries via DomainGuard.
  */
 public record Weight(BigDecimal amount, WeightUnitEnums weightUnit) {
+
+    // The "Null Object" constant
+    public static final Weight NONE = null;
 
     // Lexical Content: Whitelist for numeric inputs (up to 5 decimal places)
     private static final Pattern NUMERIC_PATTERN = Pattern.compile("^[0-9]+(\\.[0-9]{1,5})?$");

@@ -1,16 +1,17 @@
-package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.money;
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.money;
 
 import java.math.BigDecimal;
 import java.util.Comparator;
+import java.util.Currency;
 import java.util.List;
 import java.util.Objects;
-import java.util.Currency;
 
 /**
- * Implements Graduated (Staircase) Pricing for single purchases.
- * Every unit is billed according to the rate of the tier it falls into.
+ * Implements Graduated (Staircase) Pricing for fractional quantities.
+ * Portions of the quantity are billed at different rates as thresholds are crossed.
+ * Common in SaaS metered billing, utility usage, and time-based services.
  */
-public record PriceIntTieredGradPurchase(List<TierBucket> buckets) implements PurchasePricing {
+public record PriceFractTieredGradPurchase(List<TierBucket> buckets) implements PurchasePricing {
 
     public record TierBucket(BigDecimal minQty, BigDecimal maxQty, Money pricePerUnit) {
         public TierBucket {
@@ -19,17 +20,13 @@ public record PriceIntTieredGradPurchase(List<TierBucket> buckets) implements Pu
         }
     }
 
-    /**
-     * Compact Constructor for validation and defensive copying.
-     */
-    public PriceIntTieredGradPurchase {
+    public PriceFractTieredGradPurchase {
         Objects.requireNonNull(buckets, "Buckets list cannot be null");
         if (buckets.isEmpty()) {
-            throw new IllegalArgumentException("Must have at least one bucket.");
+            throw new IllegalArgumentException("Must have at least one pricing bucket.");
         }
 
         // 1. Validate Currency Consistency
-        // All tiers must use the same currency to allow for mathematical summation.
         Currency baseCurrency = buckets.getFirst().pricePerUnit().currency();
         for (TierBucket bucket : buckets) {
             if (!bucket.pricePerUnit().currency().equals(baseCurrency)) {
@@ -38,17 +35,24 @@ public record PriceIntTieredGradPurchase(List<TierBucket> buckets) implements Pu
         }
 
         // 2. Defensive Copying and Sorting
-        // Reassigning the 'buckets' parameter here automatically updates the record's final field.
         buckets = buckets.stream()
                 .sorted(Comparator.comparing(TierBucket::minQty))
                 .toList();
     }
 
+    /**
+     * Calculates the total price by filling buckets sequentially.
+     * Supports fractional quantities (e.g., 1.5 units).
+     */
     @Override
     public Money calculate(BigDecimal quantity) {
         BigDecimal remaining = (quantity == null) ? BigDecimal.ZERO : quantity;
 
-        // Start with a zero-sum Money using the currency from the first bucket
+        if (remaining.signum() < 0) {
+            throw new IllegalArgumentException("Quantity cannot be negative.");
+        }
+
+        // Initialize total with a zero amount in the bucket's currency
         Money total = Money.zero(buckets.getFirst().pricePerUnit().currency());
 
         for (TierBucket bucket : buckets) {
@@ -57,11 +61,10 @@ public record PriceIntTieredGradPurchase(List<TierBucket> buckets) implements Pu
             BigDecimal contribution = calculateBucketContribution(bucket, remaining);
 
             if (contribution.signum() > 0) {
-                // Calculate cost for this specific bucket's portion
-                Money bucketCost = bucket.pricePerUnit().multiply(contribution.intValueExact());
+                // IMPORTANT: Uses the BigDecimal multiply overload to allow fractional math
+                Money bucketCost = bucket.pricePerUnit().multiply(contribution);
                 total = total.add(bucketCost);
 
-                // Subtract the processed portion from the total remaining quantity
                 remaining = remaining.subtract(contribution);
             }
         }
@@ -70,11 +73,11 @@ public record PriceIntTieredGradPurchase(List<TierBucket> buckets) implements Pu
     }
 
     /**
-     * Determines how much of the remaining quantity fits into the current bucket.
+     * Determines the portion of the remaining quantity that belongs in this bucket.
      */
     private BigDecimal calculateBucketContribution(TierBucket bucket, BigDecimal remaining) {
         if (bucket.maxQty() == null) {
-            // "Infinity" bucket: takes everything that is left
+            // Final catch-all bucket
             return remaining;
         }
 

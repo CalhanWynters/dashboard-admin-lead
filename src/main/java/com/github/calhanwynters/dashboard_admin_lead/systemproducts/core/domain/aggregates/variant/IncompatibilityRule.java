@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Label;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.UuId;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 
 import java.util.Set;
 

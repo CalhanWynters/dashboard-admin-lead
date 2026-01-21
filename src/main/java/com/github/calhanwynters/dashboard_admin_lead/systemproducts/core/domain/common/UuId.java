@@ -1,6 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.util.UUID;
 
 /**
@@ -10,6 +10,9 @@ import java.util.UUID;
 public record UuId(String value) {
 
     private static final int UUID_LENGTH = 36;
+
+    // The Null Object / Sentinel Value
+    public static final UuId NONE = null;
 
     /**
      * Compact Constructor enforcing RFC 9562 UUID standards.

@@ -1,6 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.math.BigDecimal;
 import java.util.regex.Pattern;
 
@@ -13,6 +13,9 @@ public record Dimensions(BigDecimal length, BigDecimal width, BigDecimal height,
     private static final Pattern NUMERIC_PATTERN = Pattern.compile("^[0-9]+(\\.[0-9]{1,10})?$");
     private static final BigDecimal ABSOLUTE_MAX_LIMIT = new BigDecimal("10000.0");
     private static final int MAX_INPUT_STR_LENGTH = 16;
+
+    // The "Null Object" constant
+    public static final Dimensions NONE = null;
 
     /**
      * Factory method: Strictly enforces non-scientific notation from String inputs.

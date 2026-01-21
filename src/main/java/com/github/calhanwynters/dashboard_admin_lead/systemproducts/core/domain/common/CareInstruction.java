@@ -1,6 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -13,6 +13,9 @@ public record CareInstruction(String instructions) {
     private static final int MIN_LENGTH = 5;
     private static final int MAX_LENGTH = 500;
     private static final double SAFETY_FACTOR = 1.5;
+
+    // The "Null Object" constant
+    public static final CareInstruction NONE = null;
 
     // Prefix Patterns for Semantic Consistency
     private static final Pattern HYPHEN_PREFIX = Pattern.compile("^-");

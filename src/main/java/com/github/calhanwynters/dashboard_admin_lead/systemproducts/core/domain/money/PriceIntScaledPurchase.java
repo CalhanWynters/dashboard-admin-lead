@@ -1,4 +1,4 @@
-package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.money;
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.money;
 
 import java.math.BigDecimal;
 import java.util.Currency;
