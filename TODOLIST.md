@@ -1,5 +1,4 @@
 # FeatureAbstractClass
-- dimensions and weight of a productAggregateRoot, status of variants to be handled outside of system productAggregateRoot module.
 - Check UuIds in classes for confusion with java.util.UUID
 - Handle Feature/Type compatibility on service layer. Only looking to snapshot to main business core microservice.
     That is where the handling of compatibility will be coded.

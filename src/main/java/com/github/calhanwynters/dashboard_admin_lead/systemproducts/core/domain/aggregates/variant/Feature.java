@@ -7,10 +7,6 @@ import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.money.PurchasePricing;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 
-/**
- * A pure DDD Value Object representing a product feature.
- * Aligned with DomainGuard validation for 2026 Edition.
- */
 public record Feature(
         UuId featureUuId,
         Name featureName,
