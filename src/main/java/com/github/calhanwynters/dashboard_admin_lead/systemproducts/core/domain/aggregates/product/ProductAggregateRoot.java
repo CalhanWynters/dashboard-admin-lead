@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variant.IncompatibilityRule;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.money.SimplePurchasePricing;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.SimplePurchasePricing;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 import java.util.Optional;
 import java.util.Set;
@@ -31,7 +31,6 @@ public class ProductAggregateRoot {
     private final Dimensions productDimensions;
     private final Weight productWeight;
     private final CareInstruction productCareInstruction;
-    private final SimplePurchasePricing productPricing;
 
     // Decoupled Aggregate References (Composition)
     private final UuId galleryColId;
@@ -49,8 +48,8 @@ public class ProductAggregateRoot {
                          Category productCategory, Description productDesc, StatusEnums productStatus,
                          Version productVersion, AuditMetadata audit, UuId galleryColId, UuId typeColId,
                          UuId variantColId, Dimensions productDimensions, Weight productWeight,
-                         CareInstruction productCareInstruction, SimplePurchasePricing productPricing,
-                         Set<IncompatibilityRule> internalRules, Set<IncompatibilityRule> contextualRules) {
+                         CareInstruction productCareInstruction, Set<IncompatibilityRule> internalRules,
+                         Set<IncompatibilityRule> contextualRules) {
 
         // Invariant Guarding
         DomainGuard.notNull(productUuId, "Product Identity");
@@ -77,7 +76,6 @@ public class ProductAggregateRoot {
         this.productDimensions = productDimensions;
         this.productWeight = productWeight;
         this.productCareInstruction = productCareInstruction;
-        this.productPricing = productPricing;
 
         // Defensive Copying for Rules
         this.internalRules = internalRules == null ? Set.of() : Set.copyOf(internalRules);
@@ -94,7 +92,7 @@ public class ProductAggregateRoot {
     private void validateAttributeSourceInvariants() {
         boolean hasTypeTemplate = typeColId != null;
         boolean hasBespokeData = productDimensions != null || productWeight != null ||
-                productCareInstruction != null || productPricing != null;
+                productCareInstruction != null;
 
         if (hasTypeTemplate && hasBespokeData) {
             throw new IllegalStateException("Domain Violation: Product cannot mix a Type template with bespoke attributes.");
@@ -110,7 +108,6 @@ public class ProductAggregateRoot {
     public Optional<Dimensions> getProductDimensions() { return Optional.ofNullable(productDimensions); }
     public Optional<Weight> getProductWeight() { return Optional.ofNullable(productWeight); }
     public Optional<CareInstruction> getProductCareInstruction() { return Optional.ofNullable(productCareInstruction); }
-    public Optional<SimplePurchasePricing> getProductPricing() { return Optional.ofNullable(productPricing); }
 
     // ======================== Standard Accessors ============================
 

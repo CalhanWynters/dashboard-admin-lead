@@ -1,13 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.type;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.money.Money;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.money.PurchasePricingFactory;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.money.SimplePurchasePricing;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
-
-import java.math.BigDecimal;
-import java.util.Currency;
 
 public record Type(
         UuId typeId,
@@ -16,8 +10,7 @@ public record Type(
         Dimensions typeDimensions,
         Weight typeWeight,
         Description typeDescription,
-        CareInstruction typeCareInstruction,
-        SimplePurchasePricing pricingModel
+        CareInstruction typeCareInstruction
 ) {
     /**
      * Compact Constructor must be PUBLIC to match the record.
@@ -29,7 +22,6 @@ public record Type(
         DomainGuard.notNull(typeName, "Type Name");
         DomainGuard.notNull(typeDescription, "Type Description");
         DomainGuard.notNull(typeCareInstruction, "Type Care Instruction");
-        DomainGuard.notNull(pricingModel, "Pricing Model");
 
         DomainGuard.ensure(
                 !typeName.value().equalsIgnoreCase(typeDescription.text()),
@@ -52,63 +44,5 @@ public record Type(
         if (typeWeight != null) {
             DomainGuard.positive(typeWeight.amount(), "Weight amount must be positive");
         }
-    }
-
-    /**
-     * Static factory for fixed pricing.
-     */
-    public static Type createWithFixedPricing(
-            UuId typeId,
-            Label compatibilityTag,
-            PurchasePricingFactory factory,
-            Name typeName,
-            Dimensions typeDimensions,
-            Weight typeWeight,
-            Description typeDescription,
-            CareInstruction typeCareInstruction,
-            Money fixedPrice) {
-
-        DomainGuard.notNull(fixedPrice, "Fixed Price cannot be null");
-        if (fixedPrice.amount().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Fixed price must be non-negative.");
-        }
-
-        SimplePurchasePricing pricing = factory.createFixedPurchase(fixedPrice);
-        return new Type(typeId, compatibilityTag, typeName, typeDimensions,
-                typeWeight, typeDescription, typeCareInstruction, pricing);
-    }
-
-    /**
-     * Static factory for types without a purchase price.
-     */
-    public static Type createWithoutPricing(
-            UuId typeId,
-            Label compatibilityTag,
-            PurchasePricingFactory factory,
-            Name typeName,
-            Dimensions typeDimensions,
-            Weight typeWeight,
-            Description typeDescription,
-            CareInstruction typeCareInstruction,
-            Currency currency) {
-
-        DomainGuard.notNull(currency, "Currency cannot be null");
-        SimplePurchasePricing pricing = factory.createNonePurchase(currency);
-        return new Type(typeId, compatibilityTag, typeName, typeDimensions,
-                typeWeight, typeDescription, typeCareInstruction, pricing);
-    }
-
-    // Additional factory methods could be added here for flexibility
-
-    /**
-     * Getter method for Type pricing information.
-     */
-    public BigDecimal getPrice(BigDecimal quantity) {
-        if (quantity.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Quantity must be non-negative.");
-        }
-
-        Money price = pricingModel.calculate(quantity);
-        return price.amount(); // Assuming Money has a method to get the BigDecimal amount
     }
 }

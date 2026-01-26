@@ -1,5 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence;
 
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.TypeColQueryRepository;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.UuId;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
@@ -12,91 +14,72 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * CQRS Read Repository for Product Types using MongoDB.
- * Optimized for 2026 admin dashboard performance with denormalized documents.
+ * MongoDB Implementation of the TypeColQueryRepository.
+ * Maps denormalized MongoDB documents directly to TypeColProjectionDTO.
  */
-public class TypeMongoQueryRepositoryImpl {
+public class TypeMongoQueryRepositoryImpl implements TypeColQueryRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(TypeMongoQueryRepositoryImpl.class);
     private final MongoCollection<Document> collection;
 
     public TypeMongoQueryRepositoryImpl(MongoClient mongoClient) {
-        // Targets the 'product_catalog_read' database and 'types' collection
         this.collection = mongoClient.getDatabase("product_catalog_read")
-                .getCollection("types");
+                .getCollection("type_collections");
     }
 
-    /**
-     * Read Model Record: Represents the flat data structure optimized for UI display.
-     */
-    public record TypeReadModel(
-            String typeUuid,
-            String name,
-            String compatibilityTag,
-            String description,
-            String careInstructions,
-            PhysicalSpecs physicalSpecs,
-            PricingInfo pricing
-    ) {}
-
-    public record PhysicalSpecs(double length, double width, double height, double weight) {}
-    public record PricingInfo(double amount, String currency, String modelType) {}
-
-    /**
-     * Fetches a specific Type by its UUID.
-     */
-    public Optional<TypeReadModel> findByUuid(String typeUuid) {
+    @Override
+    public Optional<TypeColProjectionDTO> findProjectionByBusinessId(UuId businessId) {
         try {
-            Document doc = collection.find(Filters.eq("_id", typeUuid)).first();
-            return Optional.ofNullable(doc).map(this::mapToReadModel);
+            // Find the collection document by business_id
+            Document doc = collection.find(Filters.eq("business_id", businessId.value().toString())).first();
+
+            if (doc == null) {
+                return Optional.empty();
+            }
+
+            return Optional.of(mapToProjectionDto(doc));
         } catch (Exception e) {
-            logger.error("Error retrieving Type from MongoDB: {}", typeUuid, e);
+            logger.error("Error retrieving Type Collection projection for business: {}", businessId, e);
             return Optional.empty();
         }
     }
 
-    /**
-     * Fetches all Types for a specific business, leveraging MongoDB indexes.
-     */
-    public List<TypeReadModel> findAllByBusiness(String businessId) {
-        List<TypeReadModel> results = new ArrayList<>();
-        try {
-            collection.find(Filters.eq("business_id", businessId))
-                    .forEach(doc -> results.add(mapToReadModel(doc)));
-        } catch (Exception e) {
-            logger.error("Error retrieving Types for business: {}", businessId, e);
-        }
-        return results;
+    private TypeColProjectionDTO mapToProjectionDto(Document doc) {
+        List<Document> typeDocs = doc.getList("types", Document.class, new ArrayList<>());
+
+        List<TypeColProjectionDTO.TypeItemDTO> typeItems = typeDocs.stream()
+                .map(this::mapToItemDto)
+                .toList();
+
+        return new TypeColProjectionDTO(
+                doc.getString("_id"), // typeColId
+                doc.getString("business_id"),
+                typeItems.size(),
+                typeItems
+        );
     }
 
-    /**
-     * Maps a BSON Document to the immutable TypeReadModel.
-     */
-    private TypeReadModel mapToReadModel(Document doc) {
-        Document specsDoc = doc.get("physical_specs", Document.class);
-        Document priceDoc = doc.get("pricing", Document.class);
+    private TypeColProjectionDTO.TypeItemDTO mapToItemDto(Document typeDoc) {
+        Document specs = typeDoc.get("physical_specs", Document.class);
+        Document pricing = typeDoc.get("pricing", Document.class);
 
-        PhysicalSpecs specs = (specsDoc == null) ? null : new PhysicalSpecs(
-                specsDoc.getDouble("length"),
-                specsDoc.getDouble("width"),
-                specsDoc.getDouble("height"),
-                specsDoc.getDouble("weight")
-        );
+        // Formatting logic moved to the read-side mapper/repository for UI optimization
+        String dimensions = (specs != null)
+                ? String.format("%sx%sx%s", specs.get("length"), specs.get("width"), specs.get("height"))
+                : "N/A";
 
-        PricingInfo pricing = (priceDoc == null) ? null : new PricingInfo(
-                priceDoc.getDouble("amount"),
-                priceDoc.getString("currency"),
-                priceDoc.getString("model_type")
-        );
+        String weight = (specs != null) ? String.valueOf(specs.get("weight")) : "N/A";
+        String price = (pricing != null) ? String.valueOf(pricing.get("amount")) : "0.00";
 
-        return new TypeReadModel(
-                doc.getString("_id"),
-                doc.getString("name"),
-                doc.getString("compatibility_tag"),
-                doc.getString("description"),
-                doc.getString("care_instructions"),
-                specs,
-                pricing
+        return new TypeColProjectionDTO.TypeItemDTO(
+                typeDoc.getString("type_id"),
+                typeDoc.getString("name"),
+                typeDoc.getString("compatibility_tag"),
+                typeDoc.getString("description"),
+                typeDoc.getString("care_instructions"),
+                weight,
+                dimensions,
+                price
         );
     }
 }

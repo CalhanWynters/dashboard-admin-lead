@@ -4,15 +4,13 @@ import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Label;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Name;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.UuId;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.money.PurchasePricing;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 
 public record Feature(
         UuId featureUuId,
         Name featureName,
         Label compatibilityTag,
-        Description featureDescription,
-        PurchasePricing pricingModel
+        Description featureDescription
 ) {
     public Feature {
         // 1. Existence & Nullability
@@ -20,7 +18,6 @@ public record Feature(
         DomainGuard.notNull(featureName, "Feature Name");
         DomainGuard.notNull(compatibilityTag, "Compatibility Tag");
         DomainGuard.notNull(featureDescription, "Feature Description");
-        DomainGuard.notNull(pricingModel, "Pricing Model");
 
         // 2. Semantic Integrity
         // Ensure description is not a lazy copy of the name

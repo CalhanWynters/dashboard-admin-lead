@@ -1,7 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.money.SimplePurchasePricing;
 import java.util.Set;
 
 /**
@@ -20,9 +19,9 @@ public class ProductFactory {
      */
     public static ProductAggregateRoot createBespokeStandalone(
             UuId businessId, Name name, Category category, Description desc,
-            Dimensions dim, Weight weight, CareInstruction care, SimplePurchasePricing pricing) {
+            Dimensions dim, Weight weight, CareInstruction care) {
 
-        return createBespoke(businessId, name, category, desc, UuId.NONE, dim, weight, care, pricing);
+        return createBespoke(businessId, name, category, desc, UuId.NONE, dim, weight, care);
     }
 
     /**
@@ -31,9 +30,9 @@ public class ProductFactory {
      */
     public static ProductAggregateRoot createBespokeWithVariants(
             UuId businessId, Name name, Category category, Description desc,
-            UuId variantColId, Dimensions dim, Weight weight, CareInstruction care, SimplePurchasePricing pricing) {
+            UuId variantColId, Dimensions dim, Weight weight, CareInstruction care) {
 
-        return createBespoke(businessId, name, category, desc, variantColId, dim, weight, care, pricing);
+        return createBespoke(businessId, name, category, desc, variantColId, dim, weight, care);
     }
 
     /**
@@ -80,7 +79,6 @@ public class ProductFactory {
                 Dimensions.NONE,
                 Weight.NONE,
                 CareInstruction.NONE,
-                SimplePurchasePricing.NONE,
                 Set.of(),           // internalRules
                 Set.of()            // contextualRules
         );
@@ -89,7 +87,7 @@ public class ProductFactory {
     private static ProductAggregateRoot createBespoke(
             UuId businessId, Name name, Category category, Description desc,
             UuId variantColId, Dimensions dimensions, Weight weight,
-            CareInstruction care, SimplePurchasePricing pricing) {
+            CareInstruction care) {
 
         return new ProductAggregateRoot(
                 PkId.of(0L),
@@ -107,7 +105,6 @@ public class ProductFactory {
                 dimensions,
                 weight,
                 care,
-                pricing,
                 Set.of(),           // internalRules
                 Set.of()            // contextualRules
         );

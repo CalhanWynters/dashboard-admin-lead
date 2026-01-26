@@ -1,7 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.money.SimplePurchasePricing;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.SimplePurchasePricing;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
 
 /**
@@ -58,7 +58,6 @@ public class ProductBehavior {
                 productAggregateRoot.getProductDimensions().orElse(Dimensions.NONE),
                 productAggregateRoot.getProductWeight().orElse(Weight.NONE),
                 productAggregateRoot.getProductCareInstruction().orElse(CareInstruction.NONE),
-                productAggregateRoot.getProductPricing().orElse(SimplePurchasePricing.NONE),
 
                 // Preservation of Domain Rules
                 productAggregateRoot.getInternalRules(),
