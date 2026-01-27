@@ -1,21 +1,15 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain;
 
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryCollection;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.UuId;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Domain-facing contract for reading Gallery data.
- * This interface belongs to the Core/Domain layer.
+ * Domain-facing contract for Gallery Read operations.
+ * Aligned with Variant and Type modules for 2026.
  */
 public interface GalleryQueryRepository {
-
-    /**
-     * Defines the standard structure for a Gallery read projection
-     * without exposing infrastructure-specific classes (like Document).
-     */
-    record GallerySummary(String galleryUuid, String businessId, List<String> imageUrls) {}
-
-    Optional<GallerySummary> findByUuid(String galleryUuid);
-
-    List<GallerySummary> findAllByBusiness(String businessId);
+    Optional<GalleryCollection> findById(UuId galleryId);
+    List<GalleryCollection> findAllByBusinessId(UuId businessId);
 }

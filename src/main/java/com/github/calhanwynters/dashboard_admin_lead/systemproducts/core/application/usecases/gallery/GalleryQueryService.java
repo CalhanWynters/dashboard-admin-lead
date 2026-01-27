@@ -3,6 +3,9 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.applic
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.dto.GalleryProjectionDTO;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.mappers.GalleryProjectionMapper;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.GalleryQueryRepository;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryCollection;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.UuId;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -11,28 +14,22 @@ import java.util.Optional;
  * Coordinates between Domain Repositories and Application DTOs.
  */
 public class GalleryQueryService {
-
     private final GalleryQueryRepository queryRepository;
 
     public GalleryQueryService(GalleryQueryRepository queryRepository) {
         this.queryRepository = queryRepository;
     }
 
-    /**
-     * Retrieves a single gallery by its UUID and maps it to a DTO.
-     */
     public Optional<GalleryProjectionDTO> getGallery(String galleryUuid) {
-        return queryRepository.findByUuid(galleryUuid)
+        // Enforce 2026 Integrity: Validate input via VO before processing
+        UuId domainId = UuId.fromString(galleryUuid);
+        return queryRepository.findById(domainId)
                 .map(GalleryProjectionMapper::toDto);
     }
 
-    /**
-     * Retrieves all galleries associated with a business.
-     */
     public List<GalleryProjectionDTO> getGalleriesByBusiness(String businessId) {
-        List<GalleryQueryRepository.GallerySummary> summaries =
-                queryRepository.findAllByBusiness(businessId);
-
-        return GalleryProjectionMapper.toDtoList(summaries);
+        UuId domainBizId = UuId.fromString(businessId);
+        List<GalleryCollection> collections = queryRepository.findAllByBusinessId(domainBizId);
+        return GalleryProjectionMapper.toDtoList(collections);
     }
 }

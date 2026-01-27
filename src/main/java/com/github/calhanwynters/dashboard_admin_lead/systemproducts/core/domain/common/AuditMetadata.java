@@ -36,6 +36,9 @@ public record AuditMetadata(CreatedAt createdAt, LastModified lastModified) {
         return new AuditMetadata(now, new LastModified(now.value()));
     }
 
+    public static AuditMetadata reconstitute(CreatedAt createdAt, LastModified lastModified) {
+        return new AuditMetadata(createdAt, lastModified);
+    }
 
     /**
      * Produces a new metadata instance for an update event.

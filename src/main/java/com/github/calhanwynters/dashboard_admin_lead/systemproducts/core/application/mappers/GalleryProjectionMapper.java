@@ -1,32 +1,40 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.mappers;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.dto.GalleryProjectionDTO;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.GalleryQueryRepository.GallerySummary;
-
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryCollection;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.ImageUrl;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class GalleryProjectionMapper {
 
     /**
-     * Maps the Domain's GallerySummary record to an Application-level DTO.
+     * Maps the GalleryCollection Aggregate to a Read-Model DTO.
+     * Aligned with 2026 field naming and Value Object extraction.
      */
-    public static GalleryProjectionDTO toDto(GallerySummary summary) {
-        if (summary == null) return null;
+    public static GalleryProjectionDTO toDto(GalleryCollection collection) {
+        if (collection == null) return null;
+
+        // Extract raw strings from the ImageUrl Value Objects for the DTO
+        List<String> urls = collection.getImageUrls().stream()
+                .map(ImageUrl::url)
+                .collect(Collectors.toList());
 
         return new GalleryProjectionDTO(
-                summary.galleryUuid(),
-                summary.businessId(),
-                summary.imageUrls() != null ? summary.imageUrls() : List.of(),
-                summary.imageUrls() != null ? summary.imageUrls().size() : 0
+                collection.getGalleryColId().value(), // Updated to match Aggregate field
+                collection.getBusinessId().value(),
+                urls,
+                urls.size()
         );
     }
 
     /**
-     * Bulk mapping for list responses.
+     * Maps a list of aggregates to a list of DTOs.
      */
-    public static List<GalleryProjectionDTO> toDtoList(List<GallerySummary> summaries) {
-        return summaries.stream()
+    public static List<GalleryProjectionDTO> toDtoList(List<GalleryCollection> collections) {
+        if (collections == null) return List.of();
+
+        return collections.stream()
                 .map(GalleryProjectionMapper::toDto)
                 .collect(Collectors.toList());
     }

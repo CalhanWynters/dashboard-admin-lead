@@ -1,5 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product;
 
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variant.IncompatibilityRule;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
 import java.util.Set;
 
@@ -109,4 +110,20 @@ public class ProductFactory {
                 Set.of()            // contextualRules
         );
     }
+
+    public static ProductAggregateRoot reconstitute(
+            PkId productId, UuId productUuId, UuId businessId, Name name,
+            Category category, Description desc, StatusEnums status,
+            Version version, AuditMetadata audit, UuId galleryColId,
+            UuId typeColId, UuId variantColId, Dimensions dim,
+            Weight weight, CareInstruction care,
+            Set<IncompatibilityRule> internal, Set<IncompatibilityRule> contextual) {
+
+        return new ProductAggregateRoot(
+                productId, productUuId, businessId, name, category, desc,
+                status, version, audit, galleryColId, typeColId, variantColId,
+                dim, weight, care, internal, contextual
+        );
+    }
+
 }
