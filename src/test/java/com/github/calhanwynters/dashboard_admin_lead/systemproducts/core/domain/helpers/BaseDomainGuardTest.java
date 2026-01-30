@@ -1,6 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.helpers;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.exceptions.DomainRuleViolationException;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.exceptions.DomainRuleViolationException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;

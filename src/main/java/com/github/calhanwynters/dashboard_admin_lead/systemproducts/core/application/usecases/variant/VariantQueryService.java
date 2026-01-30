@@ -1,25 +1,23 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.usecases.variant;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.dto.VariantColProjectionDTO;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.mappers.VariantColProjectionMapper;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.VariantColQueryRepository;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variant.FeatureCompatibilityPolicy;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.VariantQueryRepository;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.variant.FeatureCompatibilityPolicy;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.UuId;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.validationchecks.DomainGuard;
 
 import java.util.Optional;
 
 public class VariantQueryService {
 
-    private final VariantColQueryRepository repository;
+    private final VariantQueryRepository repository;
     private final FeatureCompatibilityPolicy globalPolicy;
 
-    public VariantQueryService(VariantColQueryRepository repository, FeatureCompatibilityPolicy globalPolicy) {
+    public VariantQueryService(VariantQueryRepository repository, FeatureCompatibilityPolicy globalPolicy) {
         this.repository = repository;
         this.globalPolicy = globalPolicy;
     }
 
-    public Optional<VariantColProjectionDTO> getVariantById(String variantId) {
+    public Optional<VariantProjectionDTO> getVariantById(String variantId) {
         // Enforce 2026 Domain Integrity: ensure the string is a valid UUID before querying
         DomainGuard.notBlank(variantId, "Variant ID");
 
@@ -27,7 +25,7 @@ public class VariantQueryService {
         UuId domainId = UuId.fromString(variantId);
 
         return repository.findById(domainId)
-                .map(collection -> VariantColProjectionMapper.toDTO(collection, globalPolicy));
+                .map(collection -> VariantProjectionMapper.toDTO(collection, globalPolicy));
     }
 
     public boolean variantExists(String variantId) {

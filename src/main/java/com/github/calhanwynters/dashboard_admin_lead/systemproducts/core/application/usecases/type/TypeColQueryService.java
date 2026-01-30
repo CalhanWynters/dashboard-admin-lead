@@ -1,7 +1,5 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.usecases.type;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.dto.TypeColProjectionDTO;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.mappers.TypeColProjectionMapper;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.TypeColQueryRepository;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.UuId;
 

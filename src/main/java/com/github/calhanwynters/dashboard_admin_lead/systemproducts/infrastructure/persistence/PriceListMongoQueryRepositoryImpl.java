@@ -1,9 +1,10 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.PriceListQueryRepository;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.*;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.PriceListAggregate;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.PriceListFactory;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.purchasepricingmodel.*;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
@@ -30,8 +31,8 @@ public class PriceListMongoQueryRepositoryImpl implements PriceListQueryReposito
     }
 
     @Override
-    public List<PriceList> findByStrategyBoundary(Class<?> strategyClass) {
-        List<PriceList> results = new ArrayList<>();
+    public List<PriceListAggregate> findByStrategyBoundary(Class<?> strategyClass) {
+        List<PriceListAggregate> results = new ArrayList<>();
         // Strategy boundary is stored as a String (class name) in your mapping logic
         collection.find(Filters.eq("strategyBoundary", strategyClass.getName()))
                 .forEach(doc -> results.add(mapToAggregate(doc)));
@@ -39,8 +40,8 @@ public class PriceListMongoQueryRepositoryImpl implements PriceListQueryReposito
     }
 
     @Override
-    public List<PriceList> findAllByCurrency(Currency currency) {
-        List<PriceList> results = new ArrayList<>();
+    public List<PriceListAggregate> findAllByCurrency(Currency currency) {
+        List<PriceListAggregate> results = new ArrayList<>();
         /*
          * Since multiCurrencyPrices is a Map<UuId, Map<Currency, PurchasePricing>>,
          * in MongoDB it looks like: multiCurrencyPrices.TARGET_UUID.CURRENCY_CODE
@@ -61,14 +62,14 @@ public class PriceListMongoQueryRepositoryImpl implements PriceListQueryReposito
 
 
     @Override
-    public Optional<PriceList> findById(UuId priceListUuId) {
+    public Optional<PriceListAggregate> findById(UuId priceListUuId) {
         Document doc = collection.find(Filters.eq("priceListUuId", priceListUuId.value())).first();
         return Optional.ofNullable(doc).map(this::mapToAggregate);
     }
 
     @Override
-    public List<PriceList> findAllByBusinessId(UuId businessId) {
-        List<PriceList> results = new ArrayList<>();
+    public List<PriceListAggregate> findAllByBusinessId(UuId businessId) {
+        List<PriceListAggregate> results = new ArrayList<>();
         collection.find(Filters.eq("businessId", businessId.value()))
                 .forEach(doc -> results.add(mapToAggregate(doc)));
         return results;
@@ -89,7 +90,7 @@ public class PriceListMongoQueryRepositoryImpl implements PriceListQueryReposito
 
     // --- RECONSTITUTION MAPPING (Nested Multi-Currency logic) ---
 
-    private PriceList mapToAggregate(Document doc) {
+    private PriceListAggregate mapToAggregate(Document doc) {
         return PriceListFactory.reconstitute(
                 PkId.of(doc.getLong("primaryKey")),
                 UuId.fromString(doc.getString("priceListUuId")),

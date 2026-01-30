@@ -1,8 +1,10 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.TypeColQueryRepository;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.type.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.type.Type;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.type.TypeColFactory;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.type.TypeCollectionAggregate;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
@@ -24,14 +26,14 @@ public class TypeColMongoQueryRepositoryImpl implements TypeColQueryRepository {
     }
 
     @Override
-    public Optional<TypeCollection> findById(UuId typeColId) {
+    public Optional<TypeCollectionAggregate> findById(UuId typeColId) {
         Document doc = collection.find(Filters.eq("typeColId", typeColId.value())).first();
         return Optional.ofNullable(doc).map(this::mapToAggregate);
     }
 
     @Override
-    public List<TypeCollection> findAllByBusinessId(UuId businessId) {
-        List<TypeCollection> results = new ArrayList<>();
+    public List<TypeCollectionAggregate> findAllByBusinessId(UuId businessId) {
+        List<TypeCollectionAggregate> results = new ArrayList<>();
         collection.find(Filters.eq("businessId", businessId.value()))
                 .forEach(doc -> results.add(mapToAggregate(doc)));
         return results;
@@ -44,7 +46,7 @@ public class TypeColMongoQueryRepositoryImpl implements TypeColQueryRepository {
 
     // --- READ-ONLY MAPPING LOGIC (Reconstitution) ---
 
-    private TypeCollection mapToAggregate(Document doc) {
+    private TypeCollectionAggregate mapToAggregate(Document doc) {
         List<Document> typeDocs = doc.getList("types", Document.class);
         Set<Type> types = new HashSet<>();
 

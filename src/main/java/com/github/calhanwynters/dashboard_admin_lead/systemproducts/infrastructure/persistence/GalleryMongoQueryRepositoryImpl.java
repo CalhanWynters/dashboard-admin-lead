@@ -1,8 +1,8 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.GalleryQueryRepository;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryCollection;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryColFactory;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.gallery.GalleryCollection;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.gallery.GalleryColFactory;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.ImageUrl;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.UuId;
 import com.mongodb.client.MongoClient;

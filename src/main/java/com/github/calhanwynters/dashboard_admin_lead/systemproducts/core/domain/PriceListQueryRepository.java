@@ -1,6 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceList;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.PriceListAggregate;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.UuId;
 
 import java.time.OffsetDateTime;
@@ -18,7 +18,7 @@ public interface PriceListQueryRepository {
      * Retrieves the full PriceList aggregate by its domain identity.
      * Reconstitutes the nested Map<UuId, Map<Currency, PurchasePricing>> structure.
      */
-    Optional<PriceList> findById(UuId priceListUuId);
+    Optional<PriceListAggregate> findById(UuId priceListUuId);
 
     /**
      * Optimistic Locking: Returns the latest LastModified timestamp for a specific PriceList.
@@ -29,18 +29,18 @@ public interface PriceListQueryRepository {
     /**
      * Finds all PriceLists belonging to a specific business.
      */
-    List<PriceList> findAllByBusinessId(UuId businessId);
+    List<PriceListAggregate> findAllByBusinessId(UuId businessId);
 
     /**
      * Finds a PriceList that contains a specific strategy boundary (e.g., Fixed vs. Tiered).
      */
-    List<PriceList> findByStrategyBoundary(Class<?> strategyClass);
+    List<PriceListAggregate> findByStrategyBoundary(Class<?> strategyClass);
 
     /**
      * Specific 2026 E-commerce query: Finds all PriceLists that provide pricing
      * for a specific currency context (e.g., "Give me all USD pricelists").
      */
-    List<PriceList> findAllByCurrency(Currency currency);
+    List<PriceListAggregate> findAllByCurrency(Currency currency);
 
     /**
      * Existence check for a specific PriceList identity.

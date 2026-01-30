@@ -1,10 +1,8 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.usecases.product;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.dto.ProductProjectionDTO;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.mappers.ProductProjectionMapper;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.ProductQueryRepository;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.UuId;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.validationchecks.DomainGuard;
 
 import java.time.OffsetDateTime;
 import java.util.List;

@@ -1,6 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryCollection;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.gallery.GalleryCollection;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.UuId;
 import java.util.List;
 import java.util.Optional;

@@ -1,6 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.type.TypeCollection;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.type.TypeCollectionAggregate;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.UuId;
 import java.util.List;
 import java.util.Optional;
@@ -14,12 +14,12 @@ public interface TypeColQueryRepository {
     /**
      * Retrieves the current snapshot of a TypeCollection by its unique domain ID.
      */
-    Optional<TypeCollection> findById(UuId typeColId);
+    Optional<TypeCollectionAggregate> findById(UuId typeColId);
 
     /**
      * Retrieves all TypeCollection snapshots belonging to a specific business.
      */
-    List<TypeCollection> findAllByBusinessId(UuId businessId);
+    List<TypeCollectionAggregate> findAllByBusinessId(UuId businessId);
 
     /**
      * Checks if a TypeCollection exists for a specific business.

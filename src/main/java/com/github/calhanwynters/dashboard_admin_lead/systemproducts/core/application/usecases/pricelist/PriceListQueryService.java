@@ -1,7 +1,5 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.usecases.pricelist;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.dto.PriceListProjectionDTO;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.mappers.PriceListProjectionMapper;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.PriceListQueryRepository;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.UuId;
 

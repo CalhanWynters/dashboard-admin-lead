@@ -1,8 +1,8 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.ProductQueryRepository;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.ProductAggregateRoot;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.ProductFactory;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.product.ProductAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.product.ProductFactory;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
