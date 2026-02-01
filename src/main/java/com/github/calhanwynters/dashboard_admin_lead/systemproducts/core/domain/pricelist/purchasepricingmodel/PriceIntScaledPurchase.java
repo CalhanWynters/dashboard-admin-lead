@@ -4,7 +4,8 @@ import java.math.BigDecimal;
 import java.util.Currency;
 import java.util.Objects;
 
-public record PriceIntScaledPurchase(Money basePrice, Money scalingFactorPerUnit) implements PurchasePricing {
+public record PriceIntScaledPurchase(
+        Money basePrice, Money scalingFactorPerUnit) implements PurchasePricing {
 
     public PriceIntScaledPurchase {
         Objects.requireNonNull(basePrice, "Base price cannot be null.");

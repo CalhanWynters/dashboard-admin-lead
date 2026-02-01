@@ -2,9 +2,9 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import java.math.BigDecimal;
 import java.util.Comparator;
+import java.util.Currency;
 import java.util.List;
 import java.util.Objects;
-import java.util.Currency;
 
 /**
  * Implements Graduated (Staircase) Pricing for single purchases.

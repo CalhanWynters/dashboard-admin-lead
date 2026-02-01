@@ -1,33 +1,34 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.PkId;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.UuId;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.Version;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.AuditMetadata;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.PriceListDomainWrapper.PriceListId;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.PriceListDomainWrapper.PriceListUuId;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.PriceListDomainWrapper.PriceListBusinessUuId;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.PriceListDomainWrapper.PriceListVersion;
+
+import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
+import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
+import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
+
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.purchasepricingmodel.Money;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.purchasepricingmodel.PurchasePricing;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.validationchecks.DomainGuard;
+import org.springframework.data.domain.AbstractAggregateRoot;
 
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.Currency;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Aggregate Root: PriceList (2026 Edition)
  * Manages localized currency mappings across the product catalog.
  */
-public class PriceListAggregate {
+public class PriceListAggregate extends AbstractAggregateRoot<PriceListAggregate> {
     // Identity & Tenant Metadata
-    private final PkId priceListId;
-    private final UuId priceListUuId;
-    private final UuId businessId;
+    PriceListId priceListId;
+    PriceListUuId priceListUuId;
+    PriceListBusinessUuId businessId;
 
     // Consistency Boundaries
     private final Class<? extends PurchasePricing> strategyBoundary;
-    private final Version priceListVersion;
+    PriceListVersion priceListVersion;
     private final AuditMetadata audit;
 
     /**
@@ -40,9 +41,9 @@ public class PriceListAggregate {
     /**
      * Package-private constructor: Enforced by PriceListFactory.
      */
-    PriceListAggregate(PkId priceListId, UuId priceListUuId, UuId businessId,
+    PriceListAggregate(PriceListId priceListId, PriceListUuId priceListUuId, PriceListBusinessUuId businessId,
                        Class<? extends PurchasePricing> strategyBoundary,
-                       Version priceListVersion, AuditMetadata audit,
+                       PriceListVersion priceListVersion, AuditMetadata audit,
                        Map<UuId, Map<Currency, PurchasePricing>> multiCurrencyPrices) {
 
         // Invariant Guarding
@@ -88,11 +89,11 @@ public class PriceListAggregate {
 
     // ======================== Accessors ============================
 
-    public PkId getPriceListId() { return priceListId; }
-    public UuId getPriceListUuId() { return priceListUuId; }
-    public UuId getBusinessId() { return businessId; }
+    public PriceListId getPriceListId() { return priceListId; }
+    public PriceListUuId getPriceListUuId() { return priceListUuId; }
+    public PriceListBusinessUuId getBusinessId() { return businessId; }
     public Class<? extends PurchasePricing> getStrategyBoundary() { return strategyBoundary; }
-    public Version getVersion() { return priceListVersion; }
+    public PriceListVersion getVersion() { return priceListVersion; }
     public AuditMetadata getAudit() { return audit; }
     public Map<UuId, Map<Currency, PurchasePricing>> getMultiCurrencyPrices() {
         return Collections.unmodifiableMap(multiCurrencyPrices);

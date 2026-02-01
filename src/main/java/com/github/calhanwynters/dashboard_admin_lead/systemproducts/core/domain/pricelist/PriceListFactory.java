@@ -1,6 +1,5 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.purchasepricingmodel.PurchasePricing;
 
 import java.util.Currency;

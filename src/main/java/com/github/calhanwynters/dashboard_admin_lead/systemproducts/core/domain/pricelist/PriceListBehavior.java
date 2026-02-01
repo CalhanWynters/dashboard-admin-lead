@@ -1,8 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.*;
+import com.github.calhanwynters.dashboard_admin_lead.LEGACYsystemproducts.core.domain.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.purchasepricingmodel.PurchasePricing;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.common.validationchecks.DomainGuard;
 
 import java.util.Currency;
 import java.util.HashMap;
