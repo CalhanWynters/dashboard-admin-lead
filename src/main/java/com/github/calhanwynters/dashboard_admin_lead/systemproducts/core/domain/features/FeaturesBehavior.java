@@ -27,8 +27,6 @@ public class FeaturesBehavior {
         DomainGuard.notNull(actor, "Actor performing the update");
 
         // 1. Update domain fields
-        // Note: You may need to change these fields in FeaturesAggregate
-        // from 'final' to private (non-final) to allow this mutation.
         feature.updateDetails(newName, newTag);
 
         // 2. Refresh audit trail

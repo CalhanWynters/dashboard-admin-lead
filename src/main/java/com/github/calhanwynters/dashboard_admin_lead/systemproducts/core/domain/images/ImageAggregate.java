@@ -1,5 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.images;
 
+import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.ImageUrl;
@@ -37,6 +38,11 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
         this.imageName = imageName;
         this.imageDescription = imageDescription;
         this.imageUrl = imageUrl;
+    }
+
+    @Override
+    public void recordUpdate(Actor actor) {
+        super.recordUpdate(actor);
     }
 
     // Getters

@@ -1,5 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.features;
 
+import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
@@ -15,17 +16,18 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
     private final FeatureId featuresId;
     private final FeatureUuId featuresUuId;
     private final FeatureBusinessUuId featuresBusinessUuId;
-    private final FeatureName featuresName;
-    private final FeatureLabel compatibilityTag;
+
+    private FeatureName featuresName;
+    private FeatureLabel compatibilityTag;
 
     public FeaturesAggregate(FeatureId featuresId,
                              FeatureUuId featuresUuId,
                              FeatureBusinessUuId featuresBusinessUuId,
                              FeatureName featuresName,
                              FeatureLabel compatibilityTag,
-                             AuditMetadata auditMetadata) { // Mandatory Audit
+                             AuditMetadata auditMetadata) {
 
-        super(auditMetadata); // Handles temporal invariants
+        super(auditMetadata);
 
         DomainGuard.notNull(featuresId, "Feature PK ID");
         DomainGuard.notNull(featuresUuId, "Feature UUID");
@@ -38,6 +40,15 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
         this.featuresBusinessUuId = featuresBusinessUuId;
         this.featuresName = featuresName;
         this.compatibilityTag = compatibilityTag;
+    }
+
+    public void updateDetails(FeatureName newName, FeatureLabel newTag) {
+        this.featuresName = newName;
+        this.compatibilityTag = newTag;
+    }
+
+    public void recordUpdate(Actor actor) {
+        super.recordUpdate(actor);
     }
 
     // Getters

@@ -11,12 +11,15 @@ public class TypesAggregate extends BaseAggregateRoot<TypesAggregate> {
     private final TypesId typesId;
     private final TypesUuId typesUuId;
     private final TypesBusinessUuId typesBusinessUuId;
-    private TypesName typesName; // Removed final to allow Behavior-driven updates
+    private TypesName typesName;
+
+    private TypesPhysicalSpecs typesPhysicalSpecs;
 
     public TypesAggregate(TypesId typesId,
                           TypesUuId typesUuId,
                           TypesBusinessUuId typesBusinessUuId,
                           TypesName typesName,
+                          TypesPhysicalSpecs typesPhysicalSpecs,
                           AuditMetadata auditMetadata) {
         super(auditMetadata);
 
@@ -24,30 +27,40 @@ public class TypesAggregate extends BaseAggregateRoot<TypesAggregate> {
         DomainGuard.notNull(typesUuId, "Types UUID");
         DomainGuard.notNull(typesBusinessUuId, "Business UUID");
         DomainGuard.notNull(typesName, "Types Name");
+        DomainGuard.notNull(typesPhysicalSpecs, "Types Physical Specs");
 
         this.typesId = typesId;
         this.typesUuId = typesUuId;
         this.typesBusinessUuId = typesBusinessUuId;
         this.typesName = typesName;
+        this.typesPhysicalSpecs = typesPhysicalSpecs;
     }
 
     /**
-     * Audit Bridge for TypesBehavior.
-     */
-    void triggerAuditUpdate(Actor actor) {
-        this.recordUpdate(actor);
-    }
-
-    /**
-     * Internal mutation for Behavior access.
+     * Internal state change for the name.
      */
     void updateNameInternal(TypesName newName) {
         this.typesName = newName;
     }
+
+    /**
+     * Internal state change for physical specs.
+     */
+    void updatePhysicalSpecsInternal(TypesPhysicalSpecs newSpecs) {
+        this.typesPhysicalSpecs = newSpecs;
+    }
+
+    public void triggerAuditUpdate(Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        // Assuming your BaseAggregateRoot holds an AuditMetadata field
+        this.auditMetadata = this.auditMetadata.update(actor);
+    }
+
 
     // Getters
     public TypesId getTypesId() { return typesId; }
     public TypesUuId getTypesUuId() { return typesUuId; }
     public TypesBusinessUuId getTypesBusinessUuId() { return typesBusinessUuId; }
     public TypesName getTypesName() { return typesName; }
+    public TypesPhysicalSpecs getTypesPhysicalSpecs() { return typesPhysicalSpecs; }
 }

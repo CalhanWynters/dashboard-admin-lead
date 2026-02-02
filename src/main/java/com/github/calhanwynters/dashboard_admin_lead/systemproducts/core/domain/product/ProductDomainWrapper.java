@@ -17,6 +17,18 @@ public interface ProductDomainWrapper {
         }
     }
 
+    record ProductManifest(
+            ProductName name,
+            ProductCategory category,
+            ProductDescription description
+    ) {
+        public ProductManifest {
+            DomainGuard.notNull(name, "Product Name");
+            DomainGuard.notNull(category, "Category");
+            DomainGuard.notNull(description, "Description");
+        }
+    }
+
     record ProductBusinessUuId(UuId value) {}
     record ProductName(Name value) {}
     record ProductCategory(Category value) {}
@@ -40,6 +52,23 @@ public interface ProductDomainWrapper {
     }
 
     // --- Physical Traits with Null Object Constants ---
+
+    /**
+     * Composite trait for Product.
+     * Groups shared PhysicalSpecs into the Product Domain.
+     */
+    record ProductPhysicalSpecs(PhysicalSpecs value) {
+        public static final ProductPhysicalSpecs NONE = new ProductPhysicalSpecs(PhysicalSpecs.NONE);
+
+        public boolean isNone() {
+            return value == null || value.isNone();
+        }
+
+        // Convenience mappers to keep the Aggregate API clean
+        public ProductWeight weight() { return new ProductWeight(value.weight()); }
+        public ProductDimensions dimensions() { return new ProductDimensions(value.dimensions()); }
+        public ProductCareInstructions careInstructions() { return new ProductCareInstructions(value.careInstructions()); }
+    }
 
     record ProductWeight(Weight value) {
         public static final ProductWeight NONE = new ProductWeight(Weight.NONE);

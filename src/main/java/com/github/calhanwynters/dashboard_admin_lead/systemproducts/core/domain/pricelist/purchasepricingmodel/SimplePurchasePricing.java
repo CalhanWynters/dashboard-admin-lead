@@ -4,5 +4,5 @@ public sealed interface SimplePurchasePricing extends PurchasePricing
         permits PriceFixedPurchase, PriceNonePurchase {
 
     // The "Null Object" constant
-    public static final SimplePurchasePricing NONE = null;
+    SimplePurchasePricing NONE = null;
 }

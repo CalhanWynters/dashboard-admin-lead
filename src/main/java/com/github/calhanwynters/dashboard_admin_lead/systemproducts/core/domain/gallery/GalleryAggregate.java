@@ -1,5 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.gallery;
 
+import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
@@ -24,6 +25,11 @@ public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
         this.galleryId = galleryId;
         this.galleryUuId = galleryUuId;
         this.galleryBusinessUuId = galleryBusinessUuId;
+    }
+
+    @Override
+    public void recordUpdate(Actor actor) {
+        super.recordUpdate(actor);
     }
 
     public GalleryId getGalleryId() { return galleryId; }

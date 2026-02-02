@@ -6,19 +6,34 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 
 public class TypesFactory {
 
-    public static TypesAggregate create(TypesBusinessUuId bizId, TypesName name, Actor creator) {
+    /**
+     * Used for creating a brand-new aggregate for the first time.
+     */
+    public static TypesAggregate create(
+            TypesBusinessUuId bizId,
+            TypesName name,
+            TypesPhysicalSpecs physicalSpecs, // New parameter
+            Actor creator) {
         return new TypesAggregate(
                 TypesId.of(0L),
                 TypesUuId.generate(),
                 bizId,
                 name,
+                physicalSpecs,
                 AuditMetadata.create(creator)
         );
     }
 
+    /**
+     * Used for recreating an aggregate from a database or storage.
+     */
     public static TypesAggregate reconstitute(
-            TypesId id, TypesUuId uuId, TypesBusinessUuId bizId,
-            TypesName name, AuditMetadata audit) {
-        return new TypesAggregate(id, uuId, bizId, name, audit);
+            TypesId id,
+            TypesUuId uuId,
+            TypesBusinessUuId bizId,
+            TypesName name,
+            TypesPhysicalSpecs physicalSpecs, // New parameter
+            AuditMetadata audit) {
+        return new TypesAggregate(id, uuId, bizId, name, physicalSpecs, audit);
     }
 }

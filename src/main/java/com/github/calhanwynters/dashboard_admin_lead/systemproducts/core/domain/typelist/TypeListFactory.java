@@ -11,7 +11,7 @@ public class TypeListFactory {
 
     public static TypeListAggregate create(TypeListBusinessUuId bizId, Set<TypesUuId> ids, Actor creator) {
         return new TypeListAggregate(
-                TypeListId.of(0L),
+                TypeListId.NONE, // Much cleaner than magic strings
                 TypeListUuId.generate(),
                 bizId,
                 ids,

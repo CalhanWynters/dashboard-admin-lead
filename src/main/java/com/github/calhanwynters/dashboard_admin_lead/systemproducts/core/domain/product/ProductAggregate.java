@@ -19,17 +19,13 @@ public class ProductAggregate extends BaseAggregateRoot<ProductAggregate> {
     private final ProductId productId;
     private final ProductUuId productUuId;
     private final ProductBusinessUuId productBusinessUuId;
-    private final ProductName productName;
-    private final ProductCategory productCategory;
-    private final ProductDescription productDescription;
 
     private ProductVersion productVersion;
     private ProductStatus productStatus;
 
-    // Composition traits
-    private final ProductWeight productWeight;
-    private final ProductDimensions productDimensions;
-    private final ProductCareInstructions productCareInstructions;
+    // Grouped Domain Logic
+    private final ProductManifest manifest;
+    private final ProductPhysicalSpecs physicalSpecs;
 
     // Aggregation References
     private final GalleryUuId galleryUuId;
@@ -40,14 +36,10 @@ public class ProductAggregate extends BaseAggregateRoot<ProductAggregate> {
     protected ProductAggregate(ProductId productId,
                                ProductUuId productUuId,
                                ProductBusinessUuId productBusinessUuId,
-                               ProductName productName,
-                               ProductCategory productCategory,
+                               ProductManifest manifest,
                                ProductVersion productVersion,
-                               ProductDescription productDescription,
                                ProductStatus productStatus,
-                               ProductWeight productWeight,
-                               ProductDimensions productDimensions,
-                               ProductCareInstructions productCareInstructions,
+                               ProductPhysicalSpecs physicalSpecs,
                                GalleryUuId galleryUuId,
                                VariantListUuId variantListUuId,
                                TypeListUuId typeListUuId,
@@ -60,36 +52,31 @@ public class ProductAggregate extends BaseAggregateRoot<ProductAggregate> {
         DomainGuard.notNull(productId, "Product ID");
         DomainGuard.notNull(productUuId, "Product UUID");
         DomainGuard.notNull(productBusinessUuId, "Business UUID");
-        DomainGuard.notNull(productName, "Product Name");
-        DomainGuard.notNull(productCategory, "Category");
         DomainGuard.notNull(productVersion, "Version");
-        DomainGuard.notNull(productDescription, "Description");
         DomainGuard.notNull(productStatus, "Status");
+        DomainGuard.notNull(manifest, "Product Manifest");
 
         this.productId = productId;
         this.productUuId = productUuId;
         this.productBusinessUuId = productBusinessUuId;
-        this.productName = productName;
-        this.productCategory = productCategory;
         this.productVersion = productVersion;
-        this.productDescription = productDescription;
         this.productStatus = productStatus;
+        this.manifest = manifest;
 
-        // 2. XOR Logic: Handle Conditional Composition
-        if (typeListUuId != null && !typeListUuId.equals(TypeListUuId.NONE)) {
+        // 2. XOR Logic: Handle Physical Composition
+        boolean hasType = typeListUuId != null && !typeListUuId.equals(TypeListUuId.NONE);
+
+        if (hasType) {
             this.typeListUuId = typeListUuId;
-            this.productWeight = ProductWeight.NONE;
-            this.productDimensions = ProductDimensions.NONE;
-            this.productCareInstructions = ProductCareInstructions.NONE;
+            this.physicalSpecs = ProductPhysicalSpecs.NONE;
         } else {
             this.typeListUuId = TypeListUuId.NONE;
-            DomainGuard.notNull(productWeight, "Bespoke Product Weight");
-            DomainGuard.notNull(productDimensions, "Bespoke Product Dimensions");
-            DomainGuard.notNull(productCareInstructions, "Bespoke Product Care Instructions");
-
-            this.productWeight = productWeight;
-            this.productDimensions = productDimensions;
-            this.productCareInstructions = productCareInstructions;
+            DomainGuard.ensure(
+                    physicalSpecs != null && !physicalSpecs.isNone(),
+                    "Bespoke Product requires Physical Specs",
+                    "VAL-015", "INVARIANT_VIOLATION"
+            );
+            this.physicalSpecs = physicalSpecs;
         }
 
         this.galleryUuId = (galleryUuId != null) ? galleryUuId : GalleryUuId.NONE;
@@ -107,18 +94,26 @@ public class ProductAggregate extends BaseAggregateRoot<ProductAggregate> {
         this.recordUpdate(actor);
     }
 
-    // Getters remain purely functional...
+    // Getters
     public ProductId getProductId() { return productId; }
     public ProductUuId getProductUuId() { return productUuId; }
     public ProductBusinessUuId getProductBusinessUuId() { return productBusinessUuId; }
-    public ProductName getProductName() { return productName; }
-    public ProductCategory getProductCategory() { return productCategory; }
+    public ProductName getProductName() { return manifest.name(); }
+    public ProductCategory getProductCategory() { return manifest.category(); }
     public ProductVersion getProductVersion() { return productVersion; }
-    public ProductDescription getProductDescription() { return productDescription; }
+    public ProductDescription getProductDescription() { return manifest.description(); }
     public ProductStatus getProductStatus() { return productStatus; }
-    public ProductWeight getProductWeight() { return productWeight; }
-    public ProductDimensions getProductDimensions() { return productDimensions; }
-    public ProductCareInstructions getProductCareInstructions() { return productCareInstructions; }
+
+    public ProductWeight getProductWeight() {
+        return new ProductWeight(physicalSpecs.value().weight());
+    }
+    public ProductDimensions getProductDimensions() {
+        return new ProductDimensions(physicalSpecs.value().dimensions());
+    }
+    public ProductCareInstructions getProductCareInstructions() {
+        return new ProductCareInstructions(physicalSpecs.value().careInstructions());
+    }
+
     public GalleryUuId getGalleryUuId() { return galleryUuId; }
     public VariantListUuId getVariantListUuId() { return variantListUuId; }
     public TypeListUuId getTypeListUuId() { return typeListUuId; }
