@@ -3,21 +3,19 @@ package com.github.calhanwynters.dashboard_admin_lead.common;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 
 /**
- * Composed Value Object grouping temporal audit data.
- * Enforces cross-field invariants between creation and modification.
+ * Pure Domain Value Object for auditing.
+ * No JPA/Infrastructure dependencies allowed here.
  */
-public record AuditMetadata(CreatedAt createdAt, LastModified lastModified) {
-
-    /**
-     * Compact constructor for 2026 Edition.
-     */
+public record AuditMetadata(
+        CreatedAt createdAt,
+        LastModified lastModified,
+        Actor lastModifiedBy
+) {
     public AuditMetadata {
-        // 1. Existence Checks
         DomainGuard.notNull(createdAt, "Created At");
         DomainGuard.notNull(lastModified, "Last Modified");
+        DomainGuard.notNull(lastModifiedBy, "Last Modified By");
 
-        // 2. Semantic Integrity: CreatedAt <= LastModified
-        // Enforces the core business rule that an object cannot be modified before it is created.
         DomainGuard.ensure(
                 !lastModified.value().isBefore(createdAt.value()),
                 "Last modified date (%s) cannot be earlier than creation date (%s)."
@@ -26,25 +24,16 @@ public record AuditMetadata(CreatedAt createdAt, LastModified lastModified) {
         );
     }
 
-    /**
-     * Factory for new entities.
-     * In 2026, we initialize both to the same instant for a new record.
-     */
-    public static AuditMetadata create() {
+    public static AuditMetadata create(Actor actor) {
         CreatedAt now = CreatedAt.now();
-        // Both are born at the same microsecond
-        return new AuditMetadata(now, new LastModified(now.value()));
+        return new AuditMetadata(now, new LastModified(now.value()), actor);
     }
 
-    public static AuditMetadata reconstitute(CreatedAt createdAt, LastModified lastModified) {
-        return new AuditMetadata(createdAt, lastModified);
+    public AuditMetadata update(Actor actor) {
+        return new AuditMetadata(this.createdAt, LastModified.now(), actor);
     }
 
-    /**
-     * Produces a new metadata instance for an update event.
-     * Keeps the original CreatedAt but refreshes LastModified to 'now'.
-     */
-    public AuditMetadata update() {
-        return new AuditMetadata(this.createdAt, LastModified.now());
+    public static AuditMetadata reconstitute(CreatedAt createdAt, LastModified lastModified, Actor lastModifiedBy) {
+        return new AuditMetadata(createdAt, lastModified, lastModifiedBy);
     }
 }

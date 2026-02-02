@@ -1,30 +1,29 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.types;
 
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.types.TypesDomainWrapper.TypesId;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.types.TypesDomainWrapper.TypesUuId;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.types.TypesDomainWrapper.TypesBusinessUuId;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.types.TypesDomainWrapper.TypesName;
-
+import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
+import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
+import com.github.calhanwynters.dashboard_admin_lead.common.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
-import org.springframework.data.domain.AbstractAggregateRoot;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.types.TypesDomainWrapper.*;
 
-public class TypesAggregate extends AbstractAggregateRoot<TypesAggregate> {
+public class TypesAggregate extends BaseAggregateRoot<TypesAggregate> {
 
     private final TypesId typesId;
     private final TypesUuId typesUuId;
     private final TypesBusinessUuId typesBusinessUuId;
-    private final TypesName typesName;
+    private TypesName typesName; // Removed final to allow Behavior-driven updates
 
     public TypesAggregate(TypesId typesId,
                           TypesUuId typesUuId,
                           TypesBusinessUuId typesBusinessUuId,
-                          TypesName typesName) {
+                          TypesName typesName,
+                          AuditMetadata auditMetadata) {
+        super(auditMetadata);
 
-        // Validation checks
-        DomainGuard.notNull(typesId, "TypesAggregate ID");
-        DomainGuard.notNull(typesUuId, "TypesAggregate UUID");
-        DomainGuard.notNull(typesBusinessUuId, "TypesAggregate Business UUID");
-        DomainGuard.notNull(typesName, "TypesAggregate Name");
+        DomainGuard.notNull(typesId, "Types ID");
+        DomainGuard.notNull(typesUuId, "Types UUID");
+        DomainGuard.notNull(typesBusinessUuId, "Business UUID");
+        DomainGuard.notNull(typesName, "Types Name");
 
         this.typesId = typesId;
         this.typesUuId = typesUuId;
@@ -32,20 +31,23 @@ public class TypesAggregate extends AbstractAggregateRoot<TypesAggregate> {
         this.typesName = typesName;
     }
 
+    /**
+     * Audit Bridge for TypesBehavior.
+     */
+    void triggerAuditUpdate(Actor actor) {
+        this.recordUpdate(actor);
+    }
+
+    /**
+     * Internal mutation for Behavior access.
+     */
+    void updateNameInternal(TypesName newName) {
+        this.typesName = newName;
+    }
+
     // Getters
-    public TypesId getTypesId() {
-        return typesId;
-    }
-
-    public TypesUuId getTypesUuId() {
-        return typesUuId;
-    }
-
-    public TypesBusinessUuId getTypesBusinessUuId() {
-        return typesBusinessUuId;
-    }
-
-    public TypesName getTypesName() {
-        return typesName;
-    }
+    public TypesId getTypesId() { return typesId; }
+    public TypesUuId getTypesUuId() { return typesUuId; }
+    public TypesBusinessUuId getTypesBusinessUuId() { return typesBusinessUuId; }
+    public TypesName getTypesName() { return typesName; }
 }

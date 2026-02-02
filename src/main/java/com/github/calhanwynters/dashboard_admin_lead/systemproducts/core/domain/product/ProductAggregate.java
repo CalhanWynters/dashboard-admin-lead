@@ -6,10 +6,15 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.typelist.TypeListDomainWrapper.TypeListUuId;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.PriceListDomainWrapper.PriceListUuId;
 
+import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
+import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
+import com.github.calhanwynters.dashboard_admin_lead.common.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
-import org.springframework.data.domain.AbstractAggregateRoot;
 
-public class ProductAggregate extends AbstractAggregateRoot<ProductAggregate> {
+/**
+ * Pure Domain Aggregate - No JPA/Infrastructure annotations.
+ */
+public class ProductAggregate extends BaseAggregateRoot<ProductAggregate> {
 
     private final ProductId productId;
     private final ProductUuId productUuId;
@@ -46,17 +51,20 @@ public class ProductAggregate extends AbstractAggregateRoot<ProductAggregate> {
                                GalleryUuId galleryUuId,
                                VariantListUuId variantListUuId,
                                TypeListUuId typeListUuId,
-                               PriceListUuId priceListUuId) {
+                               PriceListUuId priceListUuId,
+                               AuditMetadata auditMetadata) {
+
+        super(auditMetadata); // Handles temporal business logic
 
         // 1. Validate Mandatory Identity & Metadata
         DomainGuard.notNull(productId, "Product ID");
         DomainGuard.notNull(productUuId, "Product UUID");
         DomainGuard.notNull(productBusinessUuId, "Business UUID");
         DomainGuard.notNull(productName, "Product Name");
-        DomainGuard.notNull(productCategory, "Product Category");
-        DomainGuard.notNull(productVersion, "Product Version");
-        DomainGuard.notNull(productDescription, "Product Description");
-        DomainGuard.notNull(productStatus, "Product Status");
+        DomainGuard.notNull(productCategory, "Category");
+        DomainGuard.notNull(productVersion, "Version");
+        DomainGuard.notNull(productDescription, "Description");
+        DomainGuard.notNull(productStatus, "Status");
 
         this.productId = productId;
         this.productUuId = productUuId;
@@ -68,16 +76,13 @@ public class ProductAggregate extends AbstractAggregateRoot<ProductAggregate> {
         this.productStatus = productStatus;
 
         // 2. XOR Logic: Handle Conditional Composition
-        // We evaluate typeListUuId first to determine if this is "Standard" or "Bespoke"
         if (typeListUuId != null && !typeListUuId.equals(TypeListUuId.NONE)) {
             this.typeListUuId = typeListUuId;
-            // Standard products ignore passed physical traits and use Null Objects
             this.productWeight = ProductWeight.NONE;
             this.productDimensions = ProductDimensions.NONE;
             this.productCareInstructions = ProductCareInstructions.NONE;
         } else {
             this.typeListUuId = TypeListUuId.NONE;
-            // Bespoke products require valid physical traits
             DomainGuard.notNull(productWeight, "Bespoke Product Weight");
             DomainGuard.notNull(productDimensions, "Bespoke Product Dimensions");
             DomainGuard.notNull(productCareInstructions, "Bespoke Product Care Instructions");
@@ -87,21 +92,22 @@ public class ProductAggregate extends AbstractAggregateRoot<ProductAggregate> {
             this.productCareInstructions = productCareInstructions;
         }
 
-        // 3. Handle Remaining References with Defaults
         this.galleryUuId = (galleryUuId != null) ? galleryUuId : GalleryUuId.NONE;
         this.variantListUuId = (variantListUuId != null) ? variantListUuId : VariantListUuId.NONE;
         this.priceListUuId = (priceListUuId != null) ? priceListUuId : PriceListUuId.NONE;
     }
 
-    void updateStatus(ProductStatus newStatus) {
+    public void updateStatus(ProductStatus newStatus, Actor actor) {
         this.productStatus = newStatus;
+        this.recordUpdate(actor);
     }
 
-    void incrementVersion() {
+    public void incrementVersion(Actor actor) {
         this.productVersion = new ProductVersion(this.productVersion.value().next());
+        this.recordUpdate(actor);
     }
 
-    // Getters remain unchanged...
+    // Getters remain purely functional...
     public ProductId getProductId() { return productId; }
     public ProductUuId getProductUuId() { return productUuId; }
     public ProductBusinessUuId getProductBusinessUuId() { return productBusinessUuId; }

@@ -1,6 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.product;
 
-import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
+import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
+import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.product.ProductDomainWrapper.*;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.gallery.GalleryDomainWrapper.GalleryUuId;
@@ -8,15 +9,10 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.typelist.TypeListDomainWrapper.TypeListUuId;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.PriceListDomainWrapper.PriceListUuId;
 
-/**
- * Modern Factory for Product Aggregates.
- * Maps legacy permutations to the composition-based ProductAggregate.
- */
 public class ProductFactory {
 
     /**
      * PERMUTATION 1 & 2: Bespoke Product
-     * Used for unique architectures with local physical specs.
      */
     public static ProductAggregate createBespoke(
             ProductBusinessUuId businessId,
@@ -26,7 +22,8 @@ public class ProductFactory {
             ProductWeight weight,
             ProductDimensions dim,
             ProductCareInstructions care,
-            VariantListUuId variantListId) {
+            VariantListUuId variantListId,
+            Actor creator) { // Added Actor
 
         return new ProductAggregate(
                 ProductId.of(0L),
@@ -43,7 +40,8 @@ public class ProductFactory {
                 GalleryUuId.generate(),
                 variantListId,
                 TypeListUuId.NONE,
-                PriceListUuId.NONE
+                PriceListUuId.NONE,
+                AuditMetadata.create(creator) // Generate initial audit trail
         );
     }
 
@@ -56,11 +54,12 @@ public class ProductFactory {
             ProductCategory category,
             ProductDescription desc,
             TypeListUuId typeListId,
-            VariantListUuId variantListId) {
+            VariantListUuId variantListId,
+            Actor creator) { // Added Actor
 
         return new ProductAggregate(
                 ProductId.of(0L),
-                new ProductUuId(UuId.generate()),
+                ProductUuId.generate(),
                 businessId,
                 name,
                 category,
@@ -73,23 +72,26 @@ public class ProductFactory {
                 GalleryUuId.generate(),
                 variantListId,
                 typeListId,
-                PriceListUuId.NONE
+                PriceListUuId.NONE,
+                AuditMetadata.create(creator) // Generate initial audit trail
         );
     }
 
     /**
      * Reconstitution Factory
-     * Used by Repositories to hydrate existing data back into the Aggregate.
+     * Passes existing AuditMetadata directly from the database/repository.
      */
     public static ProductAggregate reconstitute(
             ProductId id, ProductUuId uuId, ProductBusinessUuId bizId, ProductName name,
             ProductCategory cat, ProductVersion ver, ProductDescription desc, ProductStatus status,
             ProductWeight weight, ProductDimensions dim, ProductCareInstructions care,
-            GalleryUuId galleryId, VariantListUuId variantId, TypeListUuId typeId, PriceListUuId priceId) {
+            GalleryUuId galleryId, VariantListUuId variantId, TypeListUuId typeId, PriceListUuId priceId,
+            AuditMetadata auditMetadata) { // Added AuditMetadata
 
         return new ProductAggregate(
                 id, uuId, bizId, name, cat, ver, desc, status,
-                weight, dim, care, galleryId, variantId, typeId, priceId
+                weight, dim, care, galleryId, variantId, typeId, priceId,
+                auditMetadata
         );
     }
 }

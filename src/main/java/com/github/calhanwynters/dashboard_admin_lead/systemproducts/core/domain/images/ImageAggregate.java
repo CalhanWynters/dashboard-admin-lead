@@ -1,16 +1,12 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.images;
 
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.images.ImagesDomainWrapper.ImageId;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.images.ImagesDomainWrapper.ImageUuId;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.images.ImagesDomainWrapper.ImageBusinessUuId;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.images.ImagesDomainWrapper.ImageName;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.images.ImagesDomainWrapper.ImageDescription;
-
+import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
+import com.github.calhanwynters.dashboard_admin_lead.common.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.ImageUrl;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
-import org.springframework.data.domain.AbstractAggregateRoot;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.images.ImagesDomainWrapper.*;
 
-public class ImageAggregate extends AbstractAggregateRoot<ImageAggregate> {
+public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
 
     private final ImageId imageId;
     private final ImageUuId imageUuId;
@@ -24,8 +20,10 @@ public class ImageAggregate extends AbstractAggregateRoot<ImageAggregate> {
                           ImageBusinessUuId imageBusinessUuId,
                           ImageName imageName,
                           ImageDescription imageDescription,
-                          ImageUrl imageUrl) {
-        // Validation checks
+                          ImageUrl imageUrl,
+                          AuditMetadata auditMetadata) {
+        super(auditMetadata);
+
         DomainGuard.notNull(imageId, "Image PK ID");
         DomainGuard.notNull(imageUuId, "Image UUID");
         DomainGuard.notNull(imageBusinessUuId, "Image Business UUID");
@@ -42,27 +40,10 @@ public class ImageAggregate extends AbstractAggregateRoot<ImageAggregate> {
     }
 
     // Getters
-    public ImageId getImageId() {
-        return imageId;
-    }
-
-    public ImageUuId getImageUuId() {
-        return imageUuId;
-    }
-
-    public ImageBusinessUuId getImageBusinessUuId() {
-        return imageBusinessUuId;
-    }
-
-    public ImageName getImageName() {
-        return imageName;
-    }
-
-    public ImageDescription getImageDescription() {
-        return imageDescription;
-    }
-
-    public ImageUrl getImageUrl() {
-        return imageUrl;
-    }
+    public ImageId getImageId() { return imageId; }
+    public ImageUuId getImageUuId() { return imageUuId; }
+    public ImageBusinessUuId getImageBusinessUuId() { return imageBusinessUuId; }
+    public ImageName getImageName() { return imageName; }
+    public ImageDescription getImageDescription() { return imageDescription; }
+    public ImageUrl getImageUrl() { return imageUrl; }
 }

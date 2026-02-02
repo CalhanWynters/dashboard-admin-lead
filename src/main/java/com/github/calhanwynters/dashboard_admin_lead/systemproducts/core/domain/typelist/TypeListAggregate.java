@@ -1,18 +1,17 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.typelist;
 
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.typelist.TypeListDomainWrapper.TypeListId;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.typelist.TypeListDomainWrapper.TypeListUuId;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.typelist.TypeListDomainWrapper.TypeListBusinessUuId;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.types.TypesDomainWrapper.TypesUuId;
-
+import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
+import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
+import com.github.calhanwynters.dashboard_admin_lead.common.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
-import org.springframework.data.domain.AbstractAggregateRoot;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.typelist.TypeListDomainWrapper.*;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.types.TypesDomainWrapper.TypesUuId;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class TypeListAggregate extends AbstractAggregateRoot<TypeListAggregate> {
+public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
 
     private final TypeListId typeListId;
     private final TypeListUuId typeListUuId;
@@ -22,43 +21,33 @@ public class TypeListAggregate extends AbstractAggregateRoot<TypeListAggregate> 
     public TypeListAggregate(TypeListId typeListId,
                              TypeListUuId typeListUuId,
                              TypeListBusinessUuId typeListBusinessUuId,
-                             Set<TypesUuId> typeUuIds) {
-        // Validation checks
-        DomainGuard.notNull(typeListId, "TypeListAggregate ID");
-        DomainGuard.notNull(typeListUuId, "TypeListAggregate UUID");
-        DomainGuard.notNull(typeListBusinessUuId, "TypeListAggregate Business UUID");
+                             Set<TypesUuId> typeUuIds,
+                             AuditMetadata auditMetadata) {
+        super(auditMetadata);
+
+        DomainGuard.notNull(typeListId, "TypeList ID");
+        DomainGuard.notNull(typeListUuId, "TypeList UUID");
+        DomainGuard.notNull(typeListBusinessUuId, "Business UUID");
         DomainGuard.notNull(typeUuIds, "Type UUID Set");
 
         this.typeListId = typeListId;
         this.typeListUuId = typeListUuId;
         this.typeListBusinessUuId = typeListBusinessUuId;
-        // Defensive copy to protect internal state
         this.typeUuIds = new HashSet<>(typeUuIds);
     }
 
-    // Getters
-    public TypeListId getTypeListId() {
-        return typeListId;
+    // Bridge method for Behavior access
+    void triggerAuditUpdate(Actor actor) {
+        this.recordUpdate(actor);
     }
 
-    public TypeListUuId getTypeListUuId() {
-        return typeListUuId;
-    }
-
-    public TypeListBusinessUuId getTypeListBusinessUuId() {
-        return typeListBusinessUuId;
-    }
-
-    public Set<TypesUuId> getTypeUuIds() {
-        // Return unmodifiable to ensure DDD encapsulation
-        return Collections.unmodifiableSet(typeUuIds);
-    }
-
-    /**
-     * Business method to add a type to the list.
-     */
-    public void addType(TypesUuId typeUuId) {
-        DomainGuard.notNull(typeUuId, "Type UUID");
+    void addTypeInternal(TypesUuId typeUuId) {
         this.typeUuIds.add(typeUuId);
     }
+
+    // Getters
+    public TypeListId getTypeListId() { return typeListId; }
+    public TypeListUuId getTypeListUuId() { return typeListUuId; }
+    public TypeListBusinessUuId getTypeListBusinessUuId() { return typeListBusinessUuId; }
+    public Set<TypesUuId> getTypeUuIds() { return Collections.unmodifiableSet(typeUuIds); }
 }

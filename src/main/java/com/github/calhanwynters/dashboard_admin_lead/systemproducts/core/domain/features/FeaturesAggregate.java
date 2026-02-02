@@ -1,14 +1,16 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.features;
 
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.features.FeaturesDomainWrapper.FeatureId;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.features.FeaturesDomainWrapper.FeatureUuId;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.features.FeaturesDomainWrapper.FeatureBusinessUuId;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.features.FeaturesDomainWrapper.FeatureName;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.features.FeaturesDomainWrapper.FeatureLabel;
+import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
+import com.github.calhanwynters.dashboard_admin_lead.common.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
-import org.springframework.data.domain.AbstractAggregateRoot;
 
-public class FeaturesAggregate extends AbstractAggregateRoot<FeaturesAggregate> {
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.features.FeaturesDomainWrapper.*;
+
+/**
+ * Aggregate Root for Product Features.
+ * Inherits standardized business auditing via BaseAggregateRoot.
+ */
+public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
 
     private final FeatureId featuresId;
     private final FeatureUuId featuresUuId;
@@ -16,17 +18,19 @@ public class FeaturesAggregate extends AbstractAggregateRoot<FeaturesAggregate> 
     private final FeatureName featuresName;
     private final FeatureLabel compatibilityTag;
 
-    // Constructor
     public FeaturesAggregate(FeatureId featuresId,
                              FeatureUuId featuresUuId,
                              FeatureBusinessUuId featuresBusinessUuId,
                              FeatureName featuresName,
-                             FeatureLabel compatibilityTag) {
-        // Validation checks
+                             FeatureLabel compatibilityTag,
+                             AuditMetadata auditMetadata) { // Mandatory Audit
+
+        super(auditMetadata); // Handles temporal invariants
+
         DomainGuard.notNull(featuresId, "Feature PK ID");
         DomainGuard.notNull(featuresUuId, "Feature UUID");
         DomainGuard.notNull(featuresBusinessUuId, "Feature Business UUID");
-        DomainGuard.notNull(featuresName, "Feature featuresName");
+        DomainGuard.notNull(featuresName, "Feature Name");
         DomainGuard.notNull(compatibilityTag, "Compatibility Tag");
 
         this.featuresId = featuresId;
@@ -37,21 +41,9 @@ public class FeaturesAggregate extends AbstractAggregateRoot<FeaturesAggregate> 
     }
 
     // Getters
-    public FeatureId getFeaturesId() {
-        return featuresId;
-    }
-    public FeatureUuId getFeaturesUuId() {
-        return featuresUuId;
-    }
-    public FeatureBusinessUuId getFeaturesBusinessUuId() {
-        return featuresBusinessUuId;
-    }
-    public FeatureName getFeaturesName() {
-        return featuresName;
-    }
-    public FeatureLabel getCompatibilityTag() {
-        return compatibilityTag;
-    }
-
-    // Optionally, you can override hashCode, equals, and toString for better usability
+    public FeatureId getFeaturesId() { return featuresId; }
+    public FeatureUuId getFeaturesUuId() { return featuresUuId; }
+    public FeatureBusinessUuId getFeaturesBusinessUuId() { return featuresBusinessUuId; }
+    public FeatureName getFeaturesName() { return featuresName; }
+    public FeatureLabel getCompatibilityTag() { return compatibilityTag; }
 }

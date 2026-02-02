@@ -1,22 +1,22 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.gallery;
 
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.gallery.GalleryDomainWrapper.GalleryId;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.gallery.GalleryDomainWrapper.GalleryUuId;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.gallery.GalleryDomainWrapper.GalleryBusinessUuId;
+import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
+import com.github.calhanwynters.dashboard_admin_lead.common.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
-import org.springframework.data.domain.AbstractAggregateRoot;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.gallery.GalleryDomainWrapper.*;
 
-public class GalleryAggregate extends AbstractAggregateRoot<GalleryAggregate> {
+public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
 
     private final GalleryId galleryId;
     private final GalleryUuId galleryUuId;
     private final GalleryBusinessUuId galleryBusinessUuId;
 
-    // Constructor
     public GalleryAggregate(GalleryId galleryId,
                             GalleryUuId galleryUuId,
-                            GalleryBusinessUuId galleryBusinessUuId) {
-        // Validation checks
+                            GalleryBusinessUuId galleryBusinessUuId,
+                            AuditMetadata auditMetadata) {
+        super(auditMetadata);
+
         DomainGuard.notNull(galleryId, "Gallery PK ID");
         DomainGuard.notNull(galleryUuId, "Gallery UUID");
         DomainGuard.notNull(galleryBusinessUuId, "Gallery Business UUID");
@@ -26,16 +26,7 @@ public class GalleryAggregate extends AbstractAggregateRoot<GalleryAggregate> {
         this.galleryBusinessUuId = galleryBusinessUuId;
     }
 
-    // Getters
-    public GalleryId getGalleryId() {
-        return galleryId;
-    }
-
-    public GalleryUuId getGalleryUuId() {
-        return galleryUuId;
-    }
-
-    public GalleryBusinessUuId getGalleryBusinessUuId() {
-        return galleryBusinessUuId;
-    }
+    public GalleryId getGalleryId() { return galleryId; }
+    public GalleryUuId getGalleryUuId() { return galleryUuId; }
+    public GalleryBusinessUuId getGalleryBusinessUuId() { return galleryBusinessUuId; }
 }

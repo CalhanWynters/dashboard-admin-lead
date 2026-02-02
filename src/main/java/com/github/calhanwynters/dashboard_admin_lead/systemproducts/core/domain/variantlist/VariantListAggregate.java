@@ -1,18 +1,17 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.variantlist;
 
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.variantlist.VariantListDomainWrapper.VariantListId;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.variantlist.VariantListDomainWrapper.VariantListUuId;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.variantlist.VariantListDomainWrapper.VariantListBusinessUuId;
-import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.variants.VariantsDomainWrapper.VariantsUuId;
-
+import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
+import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
+import com.github.calhanwynters.dashboard_admin_lead.common.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
-import org.springframework.data.domain.AbstractAggregateRoot;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.variantlist.VariantListDomainWrapper.*;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.variants.VariantsDomainWrapper.VariantsUuId;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class VariantListAggregate extends AbstractAggregateRoot<VariantListAggregate> {
+public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate> {
 
     private final VariantListId variantListId;
     private final VariantListUuId variantListUuId;
@@ -22,43 +21,35 @@ public class VariantListAggregate extends AbstractAggregateRoot<VariantListAggre
     public VariantListAggregate(VariantListId variantListId,
                                 VariantListUuId variantListUuId,
                                 VariantListBusinessUuId variantListBusinessUuId,
-                                Set<VariantsUuId> variantUuIds) {
-        // Validation checks
-        DomainGuard.notNull(variantListId, "VariantListAggregate ID");
-        DomainGuard.notNull(variantListUuId, "VariantListAggregate UUID");
-        DomainGuard.notNull(variantListBusinessUuId, "VariantListAggregate Business UUID");
+                                Set<VariantsUuId> variantUuIds,
+                                AuditMetadata auditMetadata) {
+        super(auditMetadata);
+
+        DomainGuard.notNull(variantListId, "VariantList ID");
+        DomainGuard.notNull(variantListUuId, "VariantList UUID");
+        DomainGuard.notNull(variantListBusinessUuId, "Business UUID");
         DomainGuard.notNull(variantUuIds, "Variant UUID Set");
 
         this.variantListId = variantListId;
         this.variantListUuId = variantListUuId;
         this.variantListBusinessUuId = variantListBusinessUuId;
-        // Defensive copy
         this.variantUuIds = new HashSet<>(variantUuIds);
     }
 
-    // Getters
-    public VariantListId getVariantListId() {
-        return variantListId;
-    }
-
-    public VariantListUuId getVariantListUuId() {
-        return variantListUuId;
-    }
-
-    public VariantListBusinessUuId getVariantListBusinessUuId() {
-        return variantListBusinessUuId;
-    }
-
-    public Set<VariantsUuId> getVariantUuIds() {
-        return Collections.unmodifiableSet(variantUuIds);
-    }
-
     /**
-     * Updates the list and provides a hook for Spring Data
-     * AbstractAggregateRoot events.
+     * Bridge method for Behavior access to protected audit logic.
      */
-    public void addVariant(VariantsUuId variantsUuId) {
-        DomainGuard.notNull(variantsUuId, "Variant UUID");
+    void triggerAuditUpdate(Actor actor) {
+        this.recordUpdate(actor);
+    }
+
+    void addVariantInternal(VariantsUuId variantsUuId) {
         this.variantUuIds.add(variantsUuId);
     }
+
+    // Getters
+    public VariantListId getVariantListId() { return variantListId; }
+    public VariantListUuId getVariantListUuId() { return variantListUuId; }
+    public VariantListBusinessUuId getVariantListBusinessUuId() { return variantListBusinessUuId; }
+    public Set<VariantsUuId> getVariantUuIds() { return Collections.unmodifiableSet(variantUuIds); }
 }

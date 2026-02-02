@@ -1,11 +1,12 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.product;
 
+import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.product.ProductDomainWrapper.*;
 
 /**
  * Modern Behavioral Service for Product Aggregates.
- * Orchestrates state transitions while maintaining the XOR invariants and versioning.
+ * Orchestrates state transitions with mandatory audit attribution.
  */
 public class ProductBehavior {
 
@@ -16,17 +17,16 @@ public class ProductBehavior {
         this.product = product;
     }
 
-    public ProductAggregate activate() { return transitionTo(ProductStatus.ACTIVE); }
-    public ProductAggregate deactivate() { return transitionTo(ProductStatus.INACTIVE); }
-    public ProductAggregate discontinue() { return transitionTo(ProductStatus.DISCONTINUED); }
+    // Behavior methods now demand an Actor
+    public ProductAggregate activate(Actor actor) { return transitionTo(ProductStatus.ACTIVE, actor); }
+    public ProductAggregate deactivate(Actor actor) { return transitionTo(ProductStatus.INACTIVE, actor); }
+    public ProductAggregate discontinue(Actor actor) { return transitionTo(ProductStatus.DISCONTINUED, actor); }
 
     /**
-     * Executes state transitions and increments domain versioning.
-     * Note: In the modern 2026 architecture, we modify the aggregate state
-     * and register domain events rather than full reconstruction.
+     * Executes state transitions, increments versioning, and attributes the change to an Actor.
      */
-    private ProductAggregate transitionTo(ProductStatus nextStatus) {
-        // 1. Semantic Check via delegated Enum Logic in the wrapper
+    private ProductAggregate transitionTo(ProductStatus nextStatus, Actor actor) {
+        // 1. Semantic Check via delegated Enum Logic
         DomainGuard.ensure(
                 product.getProductStatus().canTransitionTo(nextStatus),
                 "Illegal state transition: Cannot change from %s to %s."
@@ -34,13 +34,10 @@ public class ProductBehavior {
                 "VAL-016", "STATE_VIOLATION"
         );
 
-        // 2. Apply State Changes
-        // Ensure these fields are accessible for mutation within the same package
-        product.updateStatus(nextStatus);
-        product.incrementVersion();
-
-        // 3. Register Domain Event (Standard Spring Data pattern)
-        // product.registerEvent(new ProductStatusChangedEvent(product.getProductUuId(), nextStatus));
+        // 2. Apply State Changes with Audit Trail
+        // These calls now trigger recordUpdate(actor) inside the aggregate
+        product.updateStatus(nextStatus, actor);
+        product.incrementVersion(actor);
 
         return product;
     }

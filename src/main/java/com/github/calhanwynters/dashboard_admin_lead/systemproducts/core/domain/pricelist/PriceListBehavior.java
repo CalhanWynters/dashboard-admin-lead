@@ -1,6 +1,8 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist;
 
-import com.github.calhanwynters.dashboard_admin_lead.LEGACYsystemproducts.core.domain.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
+import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
+import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.purchasepricingmodel.PurchasePricing;
 
 import java.util.Currency;
@@ -8,8 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Handles domain-driven state transitions for the PriceList Aggregate (2026 Edition).
- * Orchestrates multi-currency price updates while maintaining strict boundary invariants.
+ * Orchestrates multi-currency price updates with mandatory actor attribution.
  */
 public class PriceListBehavior {
 
@@ -21,15 +22,15 @@ public class PriceListBehavior {
     }
 
     /**
-     * Injects or updates a specific currency price for a Target ID (Product/Type/Variant).
+     * Injects or updates a specific currency price.
      */
-    public PriceListAggregate addOrUpdatePrice(UuId targetId, Currency currency, PurchasePricing pricing) {
-        // 1. Enforce the strategy boundary (e.g., must be PriceFixedPurchase)
+    public PriceListAggregate addOrUpdatePrice(UuId targetId, Currency currency, PurchasePricing pricing, Actor actor) {
+        // 1. Enforce strategy boundary
         priceListAggregate.validateStrategyMatch(pricing);
 
-        // 2. Immutability Pattern: Deep copy the nested maps to prevent aliasing
-        Map<UuId, Map<Currency, PurchasePricing>> newOuterMap = new HashMap<>(priceListAggregate.getMultiCurrencyPrices());
-
+        // 2. Perform deep copy for mutation safety
+        Map<UuId, Map<Currency, PurchasePricing>> currentPrices = priceListAggregate.getMultiCurrencyPrices();
+        Map<UuId, Map<Currency, PurchasePricing>> newOuterMap = new HashMap<>(currentPrices);
         Map<Currency, PurchasePricing> newCurrencyMap = new HashMap<>(
                 newOuterMap.getOrDefault(targetId, new HashMap<>())
         );
@@ -37,23 +38,16 @@ public class PriceListBehavior {
         newCurrencyMap.put(currency, pricing);
         newOuterMap.put(targetId, newCurrencyMap);
 
-        // 3. Return a new state via direct instantiation to maintain Behavior-to-Root coupling
-        return new PriceListAggregate(
-                priceListAggregate.getPriceListId(),
-                priceListAggregate.getPriceListUuId(),
-                priceListAggregate.getBusinessId(),
-                priceListAggregate.getStrategyBoundary(),
-                priceListAggregate.getVersion().next(),  // Version Increment
-                priceListAggregate.getAudit().update(),  // Temporal Audit Refresh
-                newOuterMap
-        );
+        // 3. Apply changes to existing aggregate to maintain lifecycle
+        this.applyChanges(newOuterMap, actor);
+
+        return priceListAggregate;
     }
 
     /**
-     * Removes a price for a specific currency context.
-     * Logic: If the last currency for an item is removed, the entire Target ID entry is purged.
+     * Removes a price and purges empty target entries.
      */
-    public PriceListAggregate removePrice(UuId targetId, Currency currency) {
+    public PriceListAggregate removePrice(UuId targetId, Currency currency, Actor actor) {
         if (!priceListAggregate.getMultiCurrencyPrices().containsKey(targetId)) {
             return this.priceListAggregate;
         }
@@ -69,14 +63,19 @@ public class PriceListBehavior {
             newOuterMap.put(targetId, newCurrencyMap);
         }
 
-        return new PriceListAggregate(
-                priceListAggregate.getPriceListId(),
-                priceListAggregate.getPriceListUuId(),
-                priceListAggregate.getBusinessId(),
-                priceListAggregate.getStrategyBoundary(),
-                priceListAggregate.getVersion().next(),
-                priceListAggregate.getAudit().update(),
-                newOuterMap
-        );
+        this.applyChanges(newOuterMap, actor);
+
+        return priceListAggregate;
+    }
+
+    /**
+     * Internal helper to synchronize versioning and auditing.
+     */
+    private void applyChanges(Map<UuId, Map<Currency, PurchasePricing>> newPrices, Actor actor) {
+        priceListAggregate.updatePricesInternal(newPrices);
+        priceListAggregate.incrementVersion();
+
+        // Call the bridge method instead of recordUpdate directly
+        priceListAggregate.triggerAuditUpdate(actor);
     }
 }
