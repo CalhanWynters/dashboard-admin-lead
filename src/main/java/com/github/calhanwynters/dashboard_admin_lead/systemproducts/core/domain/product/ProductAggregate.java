@@ -4,7 +4,6 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.gallery.GalleryDomainWrapper.GalleryUuId;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.variantlist.VariantListDomainWrapper.VariantListUuId;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.typelist.TypeListDomainWrapper.TypeListUuId;
-// Import the PriceListUuId from its domain wrapper
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.PriceListDomainWrapper.PriceListUuId;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
@@ -17,9 +16,12 @@ public class ProductAggregate extends AbstractAggregateRoot<ProductAggregate> {
     private final ProductBusinessUuId productBusinessUuId;
     private final ProductName productName;
     private final ProductCategory productCategory;
-    private final ProductVersion productVersion;
     private final ProductDescription productDescription;
-    private final ProductStatus productStatus;
+
+    private ProductVersion productVersion;
+    private ProductStatus productStatus;
+
+    // Composition traits
     private final ProductWeight productWeight;
     private final ProductDimensions productDimensions;
     private final ProductCareInstructions productCareInstructions;
@@ -30,41 +32,31 @@ public class ProductAggregate extends AbstractAggregateRoot<ProductAggregate> {
     private final TypeListUuId typeListUuId;
     private final PriceListUuId priceListUuId;
 
-    // Should handle FeatureCompatibilityPolicy and IncompatibilityRule mechanisms in Domain Services?? or is application services?
+    protected ProductAggregate(ProductId productId,
+                               ProductUuId productUuId,
+                               ProductBusinessUuId productBusinessUuId,
+                               ProductName productName,
+                               ProductCategory productCategory,
+                               ProductVersion productVersion,
+                               ProductDescription productDescription,
+                               ProductStatus productStatus,
+                               ProductWeight productWeight,
+                               ProductDimensions productDimensions,
+                               ProductCareInstructions productCareInstructions,
+                               GalleryUuId galleryUuId,
+                               VariantListUuId variantListUuId,
+                               TypeListUuId typeListUuId,
+                               PriceListUuId priceListUuId) {
 
-    public ProductAggregate(ProductId productId,
-                            ProductUuId productUuId,
-                            ProductBusinessUuId productBusinessUuId,
-                            ProductName productName,
-                            ProductCategory productCategory,
-                            ProductVersion productVersion,
-                            ProductDescription productDescription,
-                            ProductStatus productStatus,
-                            ProductWeight productWeight,
-                            ProductDimensions productDimensions,
-                            ProductCareInstructions productCareInstructions,
-                            GalleryUuId galleryUuId,
-                            VariantListUuId variantListUuId,
-                            TypeListUuId typeListUuId,
-                            PriceListUuId priceListUuId) {
-
-        DomainGuard.notNull(productId, "ProductAggregate ID");
-        DomainGuard.notNull(productUuId, "ProductAggregate UUID");
-        DomainGuard.notNull(productBusinessUuId, "ProductAggregate Business UUID");
-        DomainGuard.notNull(productName, "ProductAggregate Name");
-        DomainGuard.notNull(productCategory, "ProductAggregate Category");
-        DomainGuard.notNull(productVersion, "ProductAggregate Version");
-        DomainGuard.notNull(productDescription, "ProductAggregate Description");
-        DomainGuard.notNull(productStatus, "ProductAggregate Status");
-        DomainGuard.notNull(productWeight, "ProductAggregate Weight");
-        DomainGuard.notNull(productDimensions, "ProductAggregate Dimensions");
-        DomainGuard.notNull(productCareInstructions, "ProductAggregate Care Instructions");
-
-        // Reference Validations
-        DomainGuard.notNull(galleryUuId, "Associated Gallery UUID");
-        DomainGuard.notNull(variantListUuId, "Associated Variant List UUID");
-        DomainGuard.notNull(typeListUuId, "Associated Type List UUID");
-        DomainGuard.notNull(priceListUuId, "Associated Price List UUID");
+        // 1. Validate Mandatory Identity & Metadata
+        DomainGuard.notNull(productId, "Product ID");
+        DomainGuard.notNull(productUuId, "Product UUID");
+        DomainGuard.notNull(productBusinessUuId, "Business UUID");
+        DomainGuard.notNull(productName, "Product Name");
+        DomainGuard.notNull(productCategory, "Product Category");
+        DomainGuard.notNull(productVersion, "Product Version");
+        DomainGuard.notNull(productDescription, "Product Description");
+        DomainGuard.notNull(productStatus, "Product Status");
 
         this.productId = productId;
         this.productUuId = productUuId;
@@ -74,17 +66,42 @@ public class ProductAggregate extends AbstractAggregateRoot<ProductAggregate> {
         this.productVersion = productVersion;
         this.productDescription = productDescription;
         this.productStatus = productStatus;
-        this.productWeight = productWeight;
-        this.productDimensions = productDimensions;
-        this.productCareInstructions = productCareInstructions;
 
-        this.galleryUuId = galleryUuId;
-        this.variantListUuId = variantListUuId;
-        this.typeListUuId = typeListUuId;
-        this.priceListUuId = priceListUuId;
+        // 2. XOR Logic: Handle Conditional Composition
+        // We evaluate typeListUuId first to determine if this is "Standard" or "Bespoke"
+        if (typeListUuId != null && !typeListUuId.equals(TypeListUuId.NONE)) {
+            this.typeListUuId = typeListUuId;
+            // Standard products ignore passed physical traits and use Null Objects
+            this.productWeight = ProductWeight.NONE;
+            this.productDimensions = ProductDimensions.NONE;
+            this.productCareInstructions = ProductCareInstructions.NONE;
+        } else {
+            this.typeListUuId = TypeListUuId.NONE;
+            // Bespoke products require valid physical traits
+            DomainGuard.notNull(productWeight, "Bespoke Product Weight");
+            DomainGuard.notNull(productDimensions, "Bespoke Product Dimensions");
+            DomainGuard.notNull(productCareInstructions, "Bespoke Product Care Instructions");
+
+            this.productWeight = productWeight;
+            this.productDimensions = productDimensions;
+            this.productCareInstructions = productCareInstructions;
+        }
+
+        // 3. Handle Remaining References with Defaults
+        this.galleryUuId = (galleryUuId != null) ? galleryUuId : GalleryUuId.NONE;
+        this.variantListUuId = (variantListUuId != null) ? variantListUuId : VariantListUuId.NONE;
+        this.priceListUuId = (priceListUuId != null) ? priceListUuId : PriceListUuId.NONE;
     }
 
-    // Standard Getters
+    void updateStatus(ProductStatus newStatus) {
+        this.productStatus = newStatus;
+    }
+
+    void incrementVersion() {
+        this.productVersion = new ProductVersion(this.productVersion.value().next());
+    }
+
+    // Getters remain unchanged...
     public ProductId getProductId() { return productId; }
     public ProductUuId getProductUuId() { return productUuId; }
     public ProductBusinessUuId getProductBusinessUuId() { return productBusinessUuId; }
@@ -96,8 +113,6 @@ public class ProductAggregate extends AbstractAggregateRoot<ProductAggregate> {
     public ProductWeight getProductWeight() { return productWeight; }
     public ProductDimensions getProductDimensions() { return productDimensions; }
     public ProductCareInstructions getProductCareInstructions() { return productCareInstructions; }
-
-    // Reference Getters
     public GalleryUuId getGalleryUuId() { return galleryUuId; }
     public VariantListUuId getVariantListUuId() { return variantListUuId; }
     public TypeListUuId getTypeListUuId() { return typeListUuId; }

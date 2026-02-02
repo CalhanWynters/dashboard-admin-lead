@@ -12,8 +12,12 @@ public record UuId(String value) {
 
     private static final int UUID_LENGTH = 36;
 
-    // The Null Object / Sentinel Value
-    public static final UuId NONE = null;
+    // The RFC 9562 Nil UUID (00000000-0000-0000-0000-000000000000)
+    public static final UuId NONE = new UuId("00000000-0000-0000-0000-000000000000");
+
+    public boolean isNone() {
+        return this.equals(NONE);
+    }
 
     /**
      * Compact Constructor enforcing RFC 9562 UUID standards.

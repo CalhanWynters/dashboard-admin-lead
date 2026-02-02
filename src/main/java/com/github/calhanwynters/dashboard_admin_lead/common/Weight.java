@@ -11,8 +11,12 @@ import java.util.regex.Pattern;
  */
 public record Weight(BigDecimal amount, WeightUnitEnums weightUnit) {
 
-    // The "Null Object" constant
-    public static final Weight NONE = null;
+    // Concrete Null Object instance
+    public static final Weight NONE = new Weight(BigDecimal.ZERO, WeightUnitEnums.NONE);
+
+    public boolean isNone() {
+        return this.equals(NONE) || this.weightUnit == WeightUnitEnums.NONE;
+    }
 
     // Lexical Content: Whitelist for numeric inputs (up to 5 decimal places)
     private static final Pattern NUMERIC_PATTERN = Pattern.compile("^[0-9]+(\\.[0-9]{1,5})?$");

@@ -1,8 +1,16 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist;
 
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.PriceListDomainWrapper.PriceListId;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.PriceListDomainWrapper.PriceListUuId;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.PriceListDomainWrapper.PriceListBusinessUuId;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.PriceListDomainWrapper.PriceListVersion;
+
+import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
+import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.purchasepricingmodel.PurchasePricing;
 
 import java.util.Currency;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -12,30 +20,31 @@ import java.util.Map;
 public class PriceListFactory {
 
     /**
-     * Creates a brand new PriceList for a specific business and strategy boundary.
+     * Creates a brand new PriceList.
+     * Uses delegated wrappers for 2026 Composition standards.
      */
-    public static PriceListAggregate createNew(UuId businessId, Class<? extends PurchasePricing> boundary) {
+    public static PriceListAggregate createNew(PriceListBusinessUuId businessId,
+                                               Class<? extends PurchasePricing> boundary) {
         return new PriceListAggregate(
-                PkId.of(0L),
-                UuId.generate(),
+                PriceListId.of(0L),
+                PriceListUuId.generate(),
                 businessId,
                 boundary,
-                Version.INITIAL,
+                PriceListVersion.INITIAL,
                 AuditMetadata.create(),
-                Map.of()
+                new HashMap<>() // Use mutable map for initial creation
         );
     }
 
     /**
      * Reconstitutes an existing PriceList from persistence data.
-     * Essential for mapping technical data structures back into valid domain objects.
      */
     public static PriceListAggregate reconstitute(
-            PkId id,
-            UuId uuId,
-            UuId businessId,
+            PriceListId id,
+            PriceListUuId uuId,
+            PriceListBusinessUuId businessId,
             Class<? extends PurchasePricing> boundary,
-            Version version,
+            PriceListVersion version,
             AuditMetadata audit,
             Map<UuId, Map<Currency, PurchasePricing>> prices) {
 

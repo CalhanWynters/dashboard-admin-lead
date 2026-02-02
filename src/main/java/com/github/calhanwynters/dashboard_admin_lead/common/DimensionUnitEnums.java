@@ -12,7 +12,8 @@ public enum DimensionUnitEnums {
     CM("CM"),   // Centimeters
     MM("MM"),   // Millimeters
     IN("IN"),   // Inches
-    FT("FT");   // Feet
+    FT("FT"),   // Feet
+    NONE("NONE");
 
     private final String code;
 

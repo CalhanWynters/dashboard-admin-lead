@@ -15,8 +15,12 @@ public record CareInstruction(String instructions) {
     private static final int MAX_LENGTH = 500;
     private static final double SAFETY_FACTOR = 1.5;
 
-    // The "Null Object" constant
-    public static final CareInstruction NONE = null;
+    /**
+     * The "Null Object" constant.
+     * Satisfies: NotBlank, MinLength (5), and Semantic Style (Hyphen).
+     */
+    public static final CareInstruction NONE = new CareInstruction("- N/A");
+
 
     // Prefix Patterns for Semantic Consistency
     private static final Pattern HYPHEN_PREFIX = Pattern.compile("^-");
@@ -85,5 +89,12 @@ public record CareInstruction(String instructions) {
                 );
             }
         }
+    }
+
+    /**
+     * Domain logic check for existence.
+     */
+    public boolean isNone() {
+        return this.equals(NONE);
     }
 }

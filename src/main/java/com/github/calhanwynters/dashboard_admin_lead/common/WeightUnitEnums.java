@@ -14,7 +14,8 @@ public enum WeightUnitEnums {
     POUND,
     OUNCE,
     CARAT,
-    TROY_OUNCE;
+    TROY_OUNCE,
+    NONE;
 
     /**
      * Safe parser for weight units using DomainGuard.

@@ -15,8 +15,19 @@ public record Dimensions(BigDecimal length, BigDecimal width, BigDecimal height,
     private static final BigDecimal ABSOLUTE_MAX_LIMIT = new BigDecimal("10000.0");
     private static final int MAX_INPUT_STR_LENGTH = 16;
 
-    // The "Null Object" constant
-    public static final Dimensions NONE = null;
+    // Define the Null Object with values that pass the guards
+    // or signify a "Neutral" state.
+    public static final Dimensions NONE = new Dimensions(
+            new BigDecimal("0.0000000001"), // Smallest positive value to pass DomainGuard.positive
+            new BigDecimal("0.0000000001"),
+            new BigDecimal("0.0000000001"),
+            DimensionUnitEnums.NONE
+    );
+
+    // Helper to check for the Null Object state
+    public boolean isNone() {
+        return this.equals(NONE) || this.sizeUnit == DimensionUnitEnums.NONE;
+    }
 
     /**
      * Factory method: Strictly enforces non-scientific notation from String inputs.
