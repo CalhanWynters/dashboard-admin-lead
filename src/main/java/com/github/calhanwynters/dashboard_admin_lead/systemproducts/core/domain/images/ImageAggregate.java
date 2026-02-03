@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.BaseAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.ImageUrl;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.images.ImagesDomainWrapper.*;
@@ -12,8 +12,8 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
     private final ImageId imageId;
     private final ImageUuId imageUuId;
     private final ImageBusinessUuId imageBusinessUuId;
-    private final ImageName imageName;
-    private final ImageDescription imageDescription;
+    private ImageName imageName;
+    private ImageDescription imageDescription;
     private final ImageUrl imageUrl;
 
     public ImageAggregate(ImageId imageId,

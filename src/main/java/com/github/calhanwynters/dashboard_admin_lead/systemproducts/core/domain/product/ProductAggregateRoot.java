@@ -8,7 +8,7 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.BaseAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 
 public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot> {

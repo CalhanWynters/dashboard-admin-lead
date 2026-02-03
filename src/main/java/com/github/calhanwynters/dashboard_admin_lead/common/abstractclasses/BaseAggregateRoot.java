@@ -1,5 +1,7 @@
-package com.github.calhanwynters.dashboard_admin_lead.common;
+package com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses;
 
+import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
+import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.MappedSuperclass;
 import org.springframework.data.domain.AbstractAggregateRoot;
