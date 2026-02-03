@@ -63,4 +63,26 @@ public class TypesAggregate extends BaseAggregateRoot<TypesAggregate> {
     public TypesBusinessUuId getTypesBusinessUuId() { return typesBusinessUuId; }
     public TypesName getTypesName() { return typesName; }
     public TypesPhysicalSpecs getTypesPhysicalSpecs() { return typesPhysicalSpecs; }
+
+    /**
+     * Atomic update for the Type name and audit metadata.
+     */
+    public void rename(TypesName newName, Actor actor) {
+        DomainGuard.notNull(newName, "New Type Name");
+        DomainGuard.notNull(actor, "Actor");
+
+        this.typesName = newName;
+        this.recordUpdate(actor); // Single source of audit truth
+    }
+
+    /**
+     * Atomic update for physical specifications and audit metadata.
+     */
+    public void updatePhysicalSpecs(TypesPhysicalSpecs newSpecs, Actor actor) {
+        DomainGuard.notNull(newSpecs, "New Physical Specs");
+        DomainGuard.notNull(actor, "Actor");
+
+        this.typesPhysicalSpecs = newSpecs;
+        this.recordUpdate(actor);
+    }
 }

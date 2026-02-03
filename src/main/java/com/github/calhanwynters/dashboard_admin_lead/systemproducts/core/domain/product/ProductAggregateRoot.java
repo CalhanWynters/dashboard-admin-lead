@@ -11,10 +11,7 @@ import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 
-/**
- * Pure Domain Aggregate - No JPA/Infrastructure annotations.
- */
-public class ProductAggregate extends BaseAggregateRoot<ProductAggregate> {
+public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot> {
 
     private final ProductId productId;
     private final ProductUuId productUuId;
@@ -23,32 +20,30 @@ public class ProductAggregate extends BaseAggregateRoot<ProductAggregate> {
     private ProductVersion productVersion;
     private ProductStatus productStatus;
 
-    // Grouped Domain Logic
     private final ProductManifest manifest;
     private final ProductPhysicalSpecs physicalSpecs;
 
-    // Aggregation References
     private final GalleryUuId galleryUuId;
     private final VariantListUuId variantListUuId;
     private final TypeListUuId typeListUuId;
     private final PriceListUuId priceListUuId;
 
-    protected ProductAggregate(ProductId productId,
-                               ProductUuId productUuId,
-                               ProductBusinessUuId productBusinessUuId,
-                               ProductManifest manifest,
-                               ProductVersion productVersion,
-                               ProductStatus productStatus,
-                               ProductPhysicalSpecs physicalSpecs,
-                               GalleryUuId galleryUuId,
-                               VariantListUuId variantListUuId,
-                               TypeListUuId typeListUuId,
-                               PriceListUuId priceListUuId,
-                               AuditMetadata auditMetadata) {
+    protected ProductAggregateRoot(ProductId productId,
+                                   ProductUuId productUuId,
+                                   ProductBusinessUuId productBusinessUuId,
+                                   ProductManifest manifest,
+                                   ProductVersion productVersion,
+                                   ProductStatus productStatus,
+                                   ProductPhysicalSpecs physicalSpecs,
+                                   GalleryUuId galleryUuId,
+                                   VariantListUuId variantListUuId,
+                                   TypeListUuId typeListUuId,
+                                   PriceListUuId priceListUuId,
+                                   AuditMetadata auditMetadata) {
 
-        super(auditMetadata); // Handles temporal business logic
+        super(auditMetadata);
 
-        // 1. Validate Mandatory Identity & Metadata
+        // 1. Mandatory Identity & Metadata
         DomainGuard.notNull(productId, "Product ID");
         DomainGuard.notNull(productUuId, "Product UUID");
         DomainGuard.notNull(productBusinessUuId, "Business UUID");
@@ -63,25 +58,20 @@ public class ProductAggregate extends BaseAggregateRoot<ProductAggregate> {
         this.productStatus = productStatus;
         this.manifest = manifest;
 
-        // 2. XOR Logic: Handle Physical Composition
-        boolean hasType = typeListUuId != null && !typeListUuId.equals(TypeListUuId.NONE);
-
-        if (hasType) {
-            this.typeListUuId = typeListUuId;
-            this.physicalSpecs = ProductPhysicalSpecs.NONE;
-        } else {
-            this.typeListUuId = TypeListUuId.NONE;
-            DomainGuard.ensure(
-                    physicalSpecs != null && !physicalSpecs.isNone(),
-                    "Bespoke Product requires Physical Specs",
-                    "VAL-015", "INVARIANT_VIOLATION"
-            );
-            this.physicalSpecs = physicalSpecs;
-        }
-
+        // 2. Optional/XOR Fields (Null-to-NONE safety)
+        this.typeListUuId = (typeListUuId != null) ? typeListUuId : TypeListUuId.NONE;
+        this.physicalSpecs = (physicalSpecs != null) ? physicalSpecs : ProductPhysicalSpecs.NONE;
+        this.priceListUuId = (priceListUuId != null) ? priceListUuId : PriceListUuId.NONE;
         this.galleryUuId = (galleryUuId != null) ? galleryUuId : GalleryUuId.NONE;
         this.variantListUuId = (variantListUuId != null) ? variantListUuId : VariantListUuId.NONE;
-        this.priceListUuId = (priceListUuId != null) ? priceListUuId : PriceListUuId.NONE;
+
+        // 3. Business Invariant Validation
+        DomainGuard.ensure(
+                new ProductCompositionSpecification().isSatisfiedBy(this),
+                "Invalid Product Type: Standard products (with TypeList) cannot have local Price/Specs. " +
+                        "Bespoke products (without TypeList) require both Price and Specs.",
+                "VAL-016", "INVARIANT_VIOLATION"
+        );
     }
 
     public void updateStatus(ProductStatus newStatus, Actor actor) {
@@ -103,6 +93,7 @@ public class ProductAggregate extends BaseAggregateRoot<ProductAggregate> {
     public ProductVersion getProductVersion() { return productVersion; }
     public ProductDescription getProductDescription() { return manifest.description(); }
     public ProductStatus getProductStatus() { return productStatus; }
+    public ProductPhysicalSpecs getProductPhysicalSpecs() { return physicalSpecs; }
 
     public ProductWeight getProductWeight() {
         return new ProductWeight(physicalSpecs.value().weight());
@@ -118,4 +109,11 @@ public class ProductAggregate extends BaseAggregateRoot<ProductAggregate> {
     public VariantListUuId getVariantListUuId() { return variantListUuId; }
     public TypeListUuId getTypeListUuId() { return typeListUuId; }
     public PriceListUuId getPriceListUuId() { return priceListUuId; }
+
+    public void performStatusTransition(ProductStatus nextStatus, Actor actor) {
+        this.productStatus = nextStatus;
+        this.productVersion = new ProductVersion(this.productVersion.value().next());
+        this.recordUpdate(actor); // Single audit entry for the entire transition
+    }
+
 }

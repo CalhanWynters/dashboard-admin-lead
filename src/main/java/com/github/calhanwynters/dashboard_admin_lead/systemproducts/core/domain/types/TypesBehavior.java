@@ -18,11 +18,10 @@ public class TypesBehavior {
      * Renames the type and refreshes the audit trail.
      */
     public TypesAggregate rename(TypesName newName, Actor actor) {
-        DomainGuard.notNull(newName, "New Type Name");
+        // Behavior service still ensures we have a valid actor context
+        DomainGuard.notNull(actor, "Actor performing the rename");
 
-        type.updateNameInternal(newName);
-        type.triggerAuditUpdate(actor);
-
+        type.rename(newName, actor);
         return type;
     }
 
@@ -30,13 +29,9 @@ public class TypesBehavior {
      * Updates physical dimensions/weight and refreshes the audit trail.
      */
     public TypesAggregate updatePhysicalSpecs(TypesPhysicalSpecs newSpecs, Actor actor) {
-        DomainGuard.notNull(newSpecs, "New Physical Specs");
+        DomainGuard.notNull(actor, "Actor performing the update");
 
-        // Note: You will need to add updatePhysicalSpecsInternal(newSpecs)
-        // to your TypesAggregate class
-        type.updatePhysicalSpecsInternal(newSpecs);
-        type.triggerAuditUpdate(actor);
-
+        type.updatePhysicalSpecs(newSpecs, actor);
         return type;
     }
 }

@@ -22,15 +22,11 @@ public class FeaturesBehavior {
      * Updates the name and compatibility tag of the feature.
      */
     public FeaturesAggregate updateDetails(FeatureName newName, FeatureLabel newTag, Actor actor) {
-        DomainGuard.notNull(newName, "New Feature Name");
-        DomainGuard.notNull(newTag, "New Compatibility Tag");
+        // Behavior service still validates the actor exists before calling the aggregate
         DomainGuard.notNull(actor, "Actor performing the update");
 
-        // 1. Update domain fields
-        feature.updateDetails(newName, newTag);
-
-        // 2. Refresh audit trail
-        feature.recordUpdate(actor);
+        // Delegate the entire atomic operation to the aggregate
+        feature.updateDetails(newName, newTag, actor);
 
         return feature;
     }

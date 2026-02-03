@@ -52,4 +52,29 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
     public VariantListUuId getVariantListUuId() { return variantListUuId; }
     public VariantListBusinessUuId getVariantListBusinessUuId() { return variantListBusinessUuId; }
     public Set<VariantsUuId> getVariantUuIds() { return Collections.unmodifiableSet(variantUuIds); }
+
+    /**
+     * Attaches a variant and refreshes the audit trail in one atomic action.
+     */
+    public void attachVariant(VariantsUuId variantUuId, Actor actor) {
+        DomainGuard.notNull(variantUuId, "Variant UUID to attach");
+        DomainGuard.notNull(actor, "Actor performing the update");
+
+        // Only update audit if a new variant was actually added (Set logic)
+        if (this.variantUuIds.add(variantUuId)) {
+            this.recordUpdate(actor);
+        }
+    }
+
+    /**
+     * Detaches a variant and refreshes the audit trail.
+     */
+    public void detachVariant(VariantsUuId variantUuId, Actor actor) {
+        DomainGuard.notNull(actor, "Actor performing the update");
+
+        if (this.variantUuIds.remove(variantUuId)) {
+            this.recordUpdate(actor);
+        }
+    }
+
 }

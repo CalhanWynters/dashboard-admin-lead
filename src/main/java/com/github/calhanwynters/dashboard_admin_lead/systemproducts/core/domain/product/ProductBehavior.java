@@ -10,35 +10,29 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
  */
 public class ProductBehavior {
 
-    private final ProductAggregate product;
+    private final ProductAggregateRoot product;
 
-    public ProductBehavior(ProductAggregate product) {
+    public ProductBehavior(ProductAggregateRoot product) {
         DomainGuard.notNull(product, "Product Aggregate instance");
         this.product = product;
     }
 
     // Behavior methods now demand an Actor
-    public ProductAggregate activate(Actor actor) { return transitionTo(ProductStatus.ACTIVE, actor); }
-    public ProductAggregate deactivate(Actor actor) { return transitionTo(ProductStatus.INACTIVE, actor); }
-    public ProductAggregate discontinue(Actor actor) { return transitionTo(ProductStatus.DISCONTINUED, actor); }
+    public ProductAggregateRoot activate(Actor actor) { return transitionTo(ProductStatus.ACTIVE, actor); }
+    public ProductAggregateRoot deactivate(Actor actor) { return transitionTo(ProductStatus.INACTIVE, actor); }
+    public ProductAggregateRoot discontinue(Actor actor) { return transitionTo(ProductStatus.DISCONTINUED, actor); }
 
-    /**
-     * Executes state transitions, increments versioning, and attributes the change to an Actor.
-     */
-    private ProductAggregate transitionTo(ProductStatus nextStatus, Actor actor) {
-        // 1. Semantic Check via delegated Enum Logic
+    private ProductAggregateRoot transitionTo(ProductStatus nextStatus, Actor actor) {
         DomainGuard.ensure(
                 product.getProductStatus().canTransitionTo(nextStatus),
-                "Illegal state transition: Cannot change from %s to %s."
-                        .formatted(product.getProductStatus(), nextStatus),
+                "Illegal transition from %s to %s.".formatted(product.getProductStatus(), nextStatus),
                 "VAL-016", "STATE_VIOLATION"
         );
 
-        // 2. Apply State Changes with Audit Trail
-        // These calls now trigger recordUpdate(actor) inside the aggregate
-        product.updateStatus(nextStatus, actor);
-        product.incrementVersion(actor);
+        // Atomic update: Status + Version + Audit
+        product.performStatusTransition(nextStatus, actor);
 
         return product;
     }
+
 }

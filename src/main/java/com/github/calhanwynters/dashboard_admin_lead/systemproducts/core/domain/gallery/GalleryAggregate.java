@@ -35,4 +35,9 @@ public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
     public GalleryId getGalleryId() { return galleryId; }
     public GalleryUuId getGalleryUuId() { return galleryUuId; }
     public GalleryBusinessUuId getGalleryBusinessUuId() { return galleryBusinessUuId; }
+
+    public void touch(Actor actor) {
+        // Logic for marking the gallery as modified (reordering, etc.) would trigger this
+        this.recordUpdate(actor);
+    }
 }

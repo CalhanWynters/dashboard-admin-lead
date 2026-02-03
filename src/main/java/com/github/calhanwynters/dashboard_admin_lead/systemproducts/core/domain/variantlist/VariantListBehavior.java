@@ -14,11 +14,15 @@ public class VariantListBehavior {
     }
 
     public VariantListAggregate attachVariant(VariantsUuId variantUuId, Actor actor) {
-        DomainGuard.notNull(variantUuId, "Variant UUID to attach");
+        // Ensure the actor exists before calling the domain
+        DomainGuard.notNull(actor, "Actor performing the attachment");
 
-        variantList.addVariantInternal(variantUuId);
-        variantList.triggerAuditUpdate(actor);
+        variantList.attachVariant(variantUuId, actor);
+        return variantList;
+    }
 
+    public VariantListAggregate detachVariant(VariantsUuId variantUuId, Actor actor) {
+        variantList.detachVariant(variantUuId, actor);
         return variantList;
     }
 }

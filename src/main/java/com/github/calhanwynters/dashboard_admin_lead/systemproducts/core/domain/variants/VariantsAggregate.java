@@ -61,4 +61,38 @@ public class VariantsAggregate extends BaseAggregateRoot<VariantsAggregate> {
     public VariantsBusinessUuId getVariantsBusinessUuId() { return variantsBusinessUuId; }
     public VariantsName getVariantsName() { return variantsName; }
     public Set<FeatureUuId> getAssignedFeatureUuIds() { return Collections.unmodifiableSet(assignedFeatureUuIds); }
+
+    /**
+     * Renames the variant and refreshes the audit trail.
+     */
+    public void rename(VariantsName newName, Actor actor) {
+        DomainGuard.notNull(newName, "New Variant Name");
+        DomainGuard.notNull(actor, "Actor");
+
+        this.variantsName = newName;
+        this.recordUpdate(actor);
+    }
+
+    /**
+     * Assigns a feature and refreshes the audit trail if the state changed.
+     */
+    public void assignFeature(FeatureUuId featureUuId, Actor actor) {
+        DomainGuard.notNull(featureUuId, "Feature UUID");
+        DomainGuard.notNull(actor, "Actor");
+
+        if (this.assignedFeatureUuIds.add(featureUuId)) {
+            this.recordUpdate(actor);
+        }
+    }
+
+    /**
+     * Removes a feature and refreshes the audit trail.
+     */
+    public void unassignFeature(FeatureUuId featureUuId, Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+
+        if (this.assignedFeatureUuIds.remove(featureUuId)) {
+            this.recordUpdate(actor);
+        }
+    }
 }

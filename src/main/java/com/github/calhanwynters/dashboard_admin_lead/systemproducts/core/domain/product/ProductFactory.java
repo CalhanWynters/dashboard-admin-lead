@@ -12,28 +12,30 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 
 public class ProductFactory {
 
+    private ProductFactory() {}
+
     /**
-     * Bespoke Product: Requires direct physical attributes.
+     * Creates a Bespoke Product (Type 1 or 3).
+     * Requires PriceList and PhysicalSpecs.
      */
-    public static ProductAggregate createBespoke(
+    public static ProductAggregateRoot createBespoke(
             ProductBusinessUuId businessId,
             ProductName name,
             ProductCategory category,
-            ProductDescription desc,
+            ProductDescription description,
             ProductWeight weight,
-            ProductDimensions dim,
-            ProductCareInstructions care,
-            VariantListUuId variantListId,
+            ProductDimensions dimensions,
+            ProductCareInstructions careInstructions,
+            PriceListUuId priceListId, // REQUIRED for Type 1/3
+            VariantListUuId variantListId, // Can be NONE (Type 1) or ID (Type 3)
             Actor creator) {
 
-        ProductManifest manifest = new ProductManifest(name, category, desc);
-
-        // Wrap the common PhysicalSpecs into the Product domain wrapper
+        ProductManifest manifest = new ProductManifest(name, category, description);
         ProductPhysicalSpecs physicalSpecs = new ProductPhysicalSpecs(
-                new PhysicalSpecs(weight.value(), dim.value(), care.value())
+                new PhysicalSpecs(weight.value(), dimensions.value(), careInstructions.value())
         );
 
-        return new ProductAggregate(
+        return new ProductAggregateRoot(
                 ProductId.of(0L),
                 ProductUuId.generate(),
                 businessId,
@@ -42,57 +44,51 @@ public class ProductFactory {
                 ProductStatus.DRAFT,
                 physicalSpecs,
                 GalleryUuId.generate(),
-                variantListId,
+                (variantListId != null) ? variantListId : VariantListUuId.NONE,
                 TypeListUuId.NONE,
-                PriceListUuId.NONE,
+                priceListId, // Correctly assigned
                 AuditMetadata.create(creator)
         );
     }
 
     /**
-     * Standard Product: Inherits physical attributes from a Type.
+     * Creates a Standard Product (Type 2 or 4).
+     * Inherits attributes; PriceList and PhysicalSpecs must be NONE.
      */
-    public static ProductAggregate createStandard(
+    public static ProductAggregateRoot createStandard(
             ProductBusinessUuId businessId,
             ProductName name,
             ProductCategory category,
-            ProductDescription desc,
-            TypeListUuId typeListId,
-            VariantListUuId variantListId,
+            ProductDescription description,
+            TypeListUuId typeListId, // REQUIRED for Type 2/4
+            VariantListUuId variantListId, // Can be NONE (Type 2) or ID (Type 4)
             Actor creator) {
 
-        ProductManifest manifest = new ProductManifest(name, category, desc);
-
-        return new ProductAggregate(
+        return new ProductAggregateRoot(
                 ProductId.of(0L),
                 ProductUuId.generate(),
                 businessId,
-                manifest,
+                new ProductManifest(name, category, description),
                 ProductVersion.INITIAL,
                 ProductStatus.DRAFT,
                 ProductPhysicalSpecs.NONE,
                 GalleryUuId.generate(),
-                variantListId,
+                (variantListId != null) ? variantListId : VariantListUuId.NONE,
                 typeListId,
                 PriceListUuId.NONE,
                 AuditMetadata.create(creator)
         );
     }
 
-    /**
-     * Reconstitution Factory: Used by Repositories to load existing data.
-     */
-    public static ProductAggregate reconstitute(
-            ProductId id, ProductUuId uuId, ProductBusinessUuId bizId,
-            ProductManifest manifest, ProductVersion ver, ProductStatus status,
+    public static ProductAggregateRoot reconstitute(
+            ProductId id, ProductUuId uuId, ProductBusinessUuId businessId,
+            ProductManifest manifest, ProductVersion version, ProductStatus status,
             ProductPhysicalSpecs physicalSpecs, GalleryUuId galleryId,
             VariantListUuId variantId, TypeListUuId typeId, PriceListUuId priceId,
             AuditMetadata auditMetadata) {
 
-        return new ProductAggregate(
-                id, uuId, bizId, manifest, ver, status,
-                physicalSpecs, galleryId, variantId, typeId, priceId,
-                auditMetadata
-        );
+        return new ProductAggregateRoot(id, uuId, businessId, manifest, version,
+                status, physicalSpecs, galleryId, variantId,
+                typeId, priceId, auditMetadata);
     }
 }

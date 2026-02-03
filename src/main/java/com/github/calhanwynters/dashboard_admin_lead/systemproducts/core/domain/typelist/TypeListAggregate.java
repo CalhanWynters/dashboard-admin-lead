@@ -50,4 +50,28 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
     public TypeListUuId getTypeListUuId() { return typeListUuId; }
     public TypeListBusinessUuId getTypeListBusinessUuId() { return typeListBusinessUuId; }
     public Set<TypesUuId> getTypeUuIds() { return Collections.unmodifiableSet(typeUuIds); }
+
+    /**
+     * Attaches a new Type to this list and refreshes the audit trail.
+     */
+    public void attachType(TypesUuId typeUuId, Actor actor) {
+        DomainGuard.notNull(typeUuId, "Type UUID to attach");
+        DomainGuard.notNull(actor, "Actor performing the update");
+
+        // Only update and audit if it's a new addition
+        if (this.typeUuIds.add(typeUuId)) {
+            this.recordUpdate(actor);
+        }
+    }
+
+    /**
+     * Removes a Type from this list and refreshes the audit trail.
+     */
+    public void detachType(TypesUuId typeUuId, Actor actor) {
+        DomainGuard.notNull(actor, "Actor performing the update");
+
+        if (this.typeUuIds.remove(typeUuId)) {
+            this.recordUpdate(actor);
+        }
+    }
 }

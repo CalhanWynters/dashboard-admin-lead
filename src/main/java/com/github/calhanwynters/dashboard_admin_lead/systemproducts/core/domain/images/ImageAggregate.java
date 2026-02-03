@@ -52,4 +52,15 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
     public ImageName getImageName() { return imageName; }
     public ImageDescription getImageDescription() { return imageDescription; }
     public ImageUrl getImageUrl() { return imageUrl; }
+
+    public void updateMetadata(ImageName name, ImageDescription description, Actor actor) {
+        DomainGuard.notNull(name, "Name");
+        DomainGuard.notNull(description, "Description");
+
+        this.imageName = name;
+        this.imageDescription = description;
+
+        this.recordUpdate(actor); // Atomic audit
+    }
+
 }

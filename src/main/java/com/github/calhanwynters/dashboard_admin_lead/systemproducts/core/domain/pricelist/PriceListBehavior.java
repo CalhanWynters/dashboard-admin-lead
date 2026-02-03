@@ -25,22 +25,7 @@ public class PriceListBehavior {
      * Injects or updates a specific currency price.
      */
     public PriceListAggregate addOrUpdatePrice(UuId targetId, Currency currency, PurchasePricing pricing, Actor actor) {
-        // 1. Enforce strategy boundary
-        priceListAggregate.validateStrategyMatch(pricing);
-
-        // 2. Perform deep copy for mutation safety
-        Map<UuId, Map<Currency, PurchasePricing>> currentPrices = priceListAggregate.getMultiCurrencyPrices();
-        Map<UuId, Map<Currency, PurchasePricing>> newOuterMap = new HashMap<>(currentPrices);
-        Map<Currency, PurchasePricing> newCurrencyMap = new HashMap<>(
-                newOuterMap.getOrDefault(targetId, new HashMap<>())
-        );
-
-        newCurrencyMap.put(currency, pricing);
-        newOuterMap.put(targetId, newCurrencyMap);
-
-        // 3. Apply changes to existing aggregate to maintain lifecycle
-        this.applyChanges(newOuterMap, actor);
-
+        priceListAggregate.updatePrice(targetId, currency, pricing, actor);
         return priceListAggregate;
     }
 
@@ -48,23 +33,7 @@ public class PriceListBehavior {
      * Removes a price and purges empty target entries.
      */
     public PriceListAggregate removePrice(UuId targetId, Currency currency, Actor actor) {
-        if (!priceListAggregate.getMultiCurrencyPrices().containsKey(targetId)) {
-            return this.priceListAggregate;
-        }
-
-        Map<UuId, Map<Currency, PurchasePricing>> newOuterMap = new HashMap<>(priceListAggregate.getMultiCurrencyPrices());
-        Map<Currency, PurchasePricing> newCurrencyMap = new HashMap<>(newOuterMap.get(targetId));
-
-        newCurrencyMap.remove(currency);
-
-        if (newCurrencyMap.isEmpty()) {
-            newOuterMap.remove(targetId);
-        } else {
-            newOuterMap.put(targetId, newCurrencyMap);
-        }
-
-        this.applyChanges(newOuterMap, actor);
-
+        priceListAggregate.removePrice(targetId, currency, actor);
         return priceListAggregate;
     }
 
@@ -78,4 +47,6 @@ public class PriceListBehavior {
         // Call the bridge method instead of recordUpdate directly
         priceListAggregate.triggerAuditUpdate(actor);
     }
+
+
 }

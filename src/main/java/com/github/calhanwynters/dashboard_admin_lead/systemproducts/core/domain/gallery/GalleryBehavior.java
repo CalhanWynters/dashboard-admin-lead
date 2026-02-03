@@ -16,7 +16,8 @@ public class GalleryBehavior {
      * Use this when the gallery state is modified (e.g., reordering images).
      */
     public void markAsUpdated(Actor actor) {
-        // Triggers the BaseAggregateRoot audit refresh
-        this.gallery.recordUpdate(actor);
+        DomainGuard.notNull(actor, "Actor");
+        this.gallery.touch(actor); // Delegate to aggregate
     }
+
 }

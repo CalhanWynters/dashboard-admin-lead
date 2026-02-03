@@ -57,4 +57,15 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
     public FeatureBusinessUuId getFeaturesBusinessUuId() { return featuresBusinessUuId; }
     public FeatureName getFeaturesName() { return featuresName; }
     public FeatureLabel getCompatibilityTag() { return compatibilityTag; }
+
+    public void updateDetails(FeatureName newName, FeatureLabel newTag, Actor actor) {
+        DomainGuard.notNull(newName, "New Feature Name");
+        DomainGuard.notNull(newTag, "New Compatibility Tag");
+
+        this.featuresName = newName;
+        this.compatibilityTag = newTag;
+
+        // Audit is now part of the atomic domain action
+        this.recordUpdate(actor);
+    }
 }

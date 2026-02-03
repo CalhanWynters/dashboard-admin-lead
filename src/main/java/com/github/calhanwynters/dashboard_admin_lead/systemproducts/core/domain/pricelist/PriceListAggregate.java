@@ -88,4 +88,36 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
     }
 
     public PriceListBehavior act() { return new PriceListBehavior(this); }
+
+
+    public void updatePrice(UuId targetId, Currency currency, PurchasePricing pricing, Actor actor) {
+        DomainGuard.notNull(pricing, "Pricing strategy");
+        DomainGuard.notNull(actor, "Actor");
+        validateStrategyMatch(pricing);
+
+        // Update internal state
+        Map<Currency, PurchasePricing> currencyMap = multiCurrencyPrices.computeIfAbsent(targetId, k -> new HashMap<>());
+        currencyMap.put(currency, pricing);
+
+        // Atomic version bump and audit
+        this.priceListVersion = new PriceListVersion(this.priceListVersion.value().next());
+        this.recordUpdate(actor);
+    }
+
+    public void removePrice(UuId targetId, Currency currency, Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+
+        if (multiCurrencyPrices.containsKey(targetId)) {
+            Map<Currency, PurchasePricing> currencyMap = multiCurrencyPrices.get(targetId);
+            currencyMap.remove(currency);
+
+            if (currencyMap.isEmpty()) {
+                multiCurrencyPrices.remove(targetId);
+            }
+
+            this.priceListVersion = new PriceListVersion(this.priceListVersion.value().next());
+            this.recordUpdate(actor);
+        }
+    }
+
 }

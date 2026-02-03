@@ -12,8 +12,9 @@ public class ImageBehavior {
         this.image = image;
     }
 
-    public void updateMetadata(Actor actor) {
-        // Business logic for metadata updates would go here
-        this.image.recordUpdate(actor);
+    public void updateMetadata(ImageName name, ImageDescription description, Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        this.image.updateMetadata(name, description, actor);
     }
+
 }

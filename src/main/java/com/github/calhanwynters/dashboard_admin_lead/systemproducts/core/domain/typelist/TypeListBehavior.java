@@ -14,11 +14,13 @@ public class TypeListBehavior {
     }
 
     public TypeListAggregate attachType(TypesUuId typeUuId, Actor actor) {
-        DomainGuard.notNull(typeUuId, "Type UUID to attach");
+        // Orchestrate the call to the aggregate
+        typeList.attachType(typeUuId, actor);
+        return typeList;
+    }
 
-        typeList.addTypeInternal(typeUuId);
-        typeList.triggerAuditUpdate(actor);
-
+    public TypeListAggregate detachType(TypesUuId typeUuId, Actor actor) {
+        typeList.detachType(typeUuId, actor);
         return typeList;
     }
 }

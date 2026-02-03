@@ -15,15 +15,14 @@ public class VariantBehavior {
     }
 
     public VariantsAggregate rename(VariantsName newName, Actor actor) {
-        variant.updateNameInternal(newName);
-        variant.triggerAuditUpdate(actor);
+        DomainGuard.notNull(actor, "Actor");
+        variant.rename(newName, actor);
         return variant;
     }
 
     public VariantsAggregate assignFeature(FeatureUuId featureUuId, Actor actor) {
-        DomainGuard.notNull(featureUuId, "Feature UUID");
-        variant.assignFeatureInternal(featureUuId);
-        variant.triggerAuditUpdate(actor);
+        DomainGuard.notNull(actor, "Actor");
+        variant.assignFeature(featureUuId, actor);
         return variant;
     }
 }
