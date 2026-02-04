@@ -7,14 +7,19 @@ import com.github.calhanwynters.dashboard_admin_lead.common.ImageUrl;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.images.ImagesDomainWrapper.*;
 
+/**
+ * Aggregate Root for Image assets.
+ * Encapsulates metadata updates and ensures mandatory audit attribution.
+ */
 public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
 
     private final ImageId imageId;
     private final ImageUuId imageUuId;
     private final ImageBusinessUuId imageBusinessUuId;
+    private final ImageUrl imageUrl;
+
     private ImageName imageName;
     private ImageDescription imageDescription;
-    private final ImageUrl imageUrl;
 
     public ImageAggregate(ImageId imageId,
                           ImageUuId imageUuId,
@@ -40,9 +45,18 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
         this.imageUrl = imageUrl;
     }
 
-    @Override
-    public void recordUpdate(Actor actor) {
-        super.recordUpdate(actor);
+    /**
+     * Atomically updates image metadata and refreshes the audit trail.
+     */
+    public void updateMetadata(ImageName name, ImageDescription description, Actor actor) {
+        DomainGuard.notNull(name, "New Image Name");
+        DomainGuard.notNull(description, "New Image Description");
+        DomainGuard.notNull(actor, "Actor performing the update");
+
+        this.imageName = name;
+        this.imageDescription = description;
+
+        this.recordUpdate(actor);
     }
 
     // Getters
@@ -52,15 +66,4 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
     public ImageName getImageName() { return imageName; }
     public ImageDescription getImageDescription() { return imageDescription; }
     public ImageUrl getImageUrl() { return imageUrl; }
-
-    public void updateMetadata(ImageName name, ImageDescription description, Actor actor) {
-        DomainGuard.notNull(name, "Name");
-        DomainGuard.notNull(description, "Description");
-
-        this.imageName = name;
-        this.imageDescription = description;
-
-        this.recordUpdate(actor); // Atomic audit
-    }
-
 }

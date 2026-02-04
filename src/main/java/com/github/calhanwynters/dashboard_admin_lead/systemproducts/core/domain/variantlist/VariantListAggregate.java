@@ -11,6 +11,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Aggregate Root for VariantList.
+ * Manages the collection of associated Variants with mandatory actor attribution for all updates.
+ */
 public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate> {
 
     private final VariantListId variantListId;
@@ -36,22 +40,7 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
         this.variantUuIds = new HashSet<>(variantUuIds);
     }
 
-    /**
-     * Bridge method for Behavior access to protected audit logic.
-     */
-    void triggerAuditUpdate(Actor actor) {
-        this.recordUpdate(actor);
-    }
-
-    void addVariantInternal(VariantsUuId variantsUuId) {
-        this.variantUuIds.add(variantsUuId);
-    }
-
-    // Getters
-    public VariantListId getVariantListId() { return variantListId; }
-    public VariantListUuId getVariantListUuId() { return variantListUuId; }
-    public VariantListBusinessUuId getVariantListBusinessUuId() { return variantListBusinessUuId; }
-    public Set<VariantsUuId> getVariantUuIds() { return Collections.unmodifiableSet(variantUuIds); }
+    // --- DOMAIN ACTIONS ---
 
     /**
      * Attaches a variant and refreshes the audit trail in one atomic action.
@@ -60,7 +49,7 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
         DomainGuard.notNull(variantUuId, "Variant UUID to attach");
         DomainGuard.notNull(actor, "Actor performing the update");
 
-        // Only update audit if a new variant was actually added (Set logic)
+        // Set logic ensures idempotency; we only audit if the collection actually changed
         if (this.variantUuIds.add(variantUuId)) {
             this.recordUpdate(actor);
         }
@@ -70,6 +59,7 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
      * Detaches a variant and refreshes the audit trail.
      */
     public void detachVariant(VariantsUuId variantUuId, Actor actor) {
+        DomainGuard.notNull(variantUuId, "Variant UUID to detach");
         DomainGuard.notNull(actor, "Actor performing the update");
 
         if (this.variantUuIds.remove(variantUuId)) {
@@ -77,4 +67,15 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
         }
     }
 
+    // --- ACCESSORS ---
+    public VariantListId getVariantListId() { return variantListId; }
+    public VariantListUuId getVariantListUuId() { return variantListUuId; }
+    public VariantListBusinessUuId getVariantListBusinessUuId() { return variantListBusinessUuId; }
+
+    /**
+     * Returns an unmodifiable view of variants to enforce the Rich Domain Model pattern.
+     */
+    public Set<VariantsUuId> getVariantUuIds() {
+        return Collections.unmodifiableSet(variantUuIds);
+    }
 }

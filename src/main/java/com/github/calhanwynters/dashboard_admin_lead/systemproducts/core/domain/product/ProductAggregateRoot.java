@@ -74,12 +74,28 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
         );
     }
 
-    public void updateStatus(ProductStatus newStatus, Actor actor) {
-        this.productStatus = newStatus;
-        this.recordUpdate(actor);
+    // --- BEHAVIORAL METHODS
+
+    public void activate(Actor actor) {
+        applyTransition(ProductStatus.ACTIVE, actor);
     }
 
-    public void incrementVersion(Actor actor) {
+    public void deactivate(Actor actor) {
+        applyTransition(ProductStatus.INACTIVE, actor);
+    }
+
+    public void discontinue(Actor actor) {
+        applyTransition(ProductStatus.DISCONTINUED, actor);
+    }
+
+    private void applyTransition(ProductStatus nextStatus, Actor actor) {
+        DomainGuard.ensure(
+                this.productStatus.canTransitionTo(nextStatus),
+                "Illegal transition from %s to %s.".formatted(this.productStatus, nextStatus),
+                "VAL-016", "STATE_VIOLATION"
+        );
+
+        this.productStatus = nextStatus;
         this.productVersion = new ProductVersion(this.productVersion.value().next());
         this.recordUpdate(actor);
     }
@@ -109,11 +125,5 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     public VariantListUuId getVariantListUuId() { return variantListUuId; }
     public TypeListUuId getTypeListUuId() { return typeListUuId; }
     public PriceListUuId getPriceListUuId() { return priceListUuId; }
-
-    public void performStatusTransition(ProductStatus nextStatus, Actor actor) {
-        this.productStatus = nextStatus;
-        this.productVersion = new ProductVersion(this.productVersion.value().next());
-        this.recordUpdate(actor); // Single audit entry for the entire transition
-    }
 
 }

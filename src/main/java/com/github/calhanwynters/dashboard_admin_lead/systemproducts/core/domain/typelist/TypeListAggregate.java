@@ -11,6 +11,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Aggregate Root for TypeList.
+ * Manages the collection of associated Types with mandatory audit attribution.
+ */
 public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
 
     private final TypeListId typeListId;
@@ -36,20 +40,7 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
         this.typeUuIds = new HashSet<>(typeUuIds);
     }
 
-    // Bridge method for Behavior access
-    void triggerAuditUpdate(Actor actor) {
-        this.recordUpdate(actor);
-    }
-
-    void addTypeInternal(TypesUuId typeUuId) {
-        this.typeUuIds.add(typeUuId);
-    }
-
-    // Getters
-    public TypeListId getTypeListId() { return typeListId; }
-    public TypeListUuId getTypeListUuId() { return typeListUuId; }
-    public TypeListBusinessUuId getTypeListBusinessUuId() { return typeListBusinessUuId; }
-    public Set<TypesUuId> getTypeUuIds() { return Collections.unmodifiableSet(typeUuIds); }
+    // --- DOMAIN ACTIONS ---
 
     /**
      * Attaches a new Type to this list and refreshes the audit trail.
@@ -58,7 +49,7 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
         DomainGuard.notNull(typeUuId, "Type UUID to attach");
         DomainGuard.notNull(actor, "Actor performing the update");
 
-        // Only update and audit if it's a new addition
+        // Only record an update if the set actually changes
         if (this.typeUuIds.add(typeUuId)) {
             this.recordUpdate(actor);
         }
@@ -68,10 +59,24 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
      * Removes a Type from this list and refreshes the audit trail.
      */
     public void detachType(TypesUuId typeUuId, Actor actor) {
+        DomainGuard.notNull(typeUuId, "Type UUID to detach");
         DomainGuard.notNull(actor, "Actor performing the update");
 
         if (this.typeUuIds.remove(typeUuId)) {
             this.recordUpdate(actor);
         }
+    }
+
+    // --- ACCESSORS ---
+    public TypeListId getTypeListId() { return typeListId; }
+    public TypeListUuId getTypeListUuId() { return typeListUuId; }
+    public TypeListBusinessUuId getTypeListBusinessUuId() { return typeListBusinessUuId; }
+
+    /**
+     * Returns an immutable view of the internal set to prevent external mutation
+     * bypassing the audit trail.
+     */
+    public Set<TypesUuId> getTypeUuIds() {
+        return Collections.unmodifiableSet(typeUuIds);
     }
 }

@@ -6,13 +6,17 @@ import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.Base
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.types.TypesDomainWrapper.*;
 
+/**
+ * Aggregate Root for Product Types.
+ * Encapsulates naming and physical specifications with mandatory audit attribution.
+ */
 public class TypesAggregate extends BaseAggregateRoot<TypesAggregate> {
 
     private final TypesId typesId;
     private final TypesUuId typesUuId;
     private final TypesBusinessUuId typesBusinessUuId;
-    private TypesName typesName;
 
+    private TypesName typesName;
     private TypesPhysicalSpecs typesPhysicalSpecs;
 
     public TypesAggregate(TypesId typesId,
@@ -36,53 +40,34 @@ public class TypesAggregate extends BaseAggregateRoot<TypesAggregate> {
         this.typesPhysicalSpecs = typesPhysicalSpecs;
     }
 
+    // --- DOMAIN ACTIONS ---
+
     /**
-     * Internal state change for the name.
+     * Atomically renames the Type and refreshes the audit trail.
      */
-    void updateNameInternal(TypesName newName) {
+    public void rename(TypesName newName, Actor actor) {
+        DomainGuard.notNull(newName, "New Type Name");
+        DomainGuard.notNull(actor, "Actor performing the rename");
+
         this.typesName = newName;
+        this.recordUpdate(actor);
     }
 
     /**
-     * Internal state change for physical specs.
+     * Atomically updates physical dimensions/weight and refreshes the audit trail.
      */
-    void updatePhysicalSpecsInternal(TypesPhysicalSpecs newSpecs) {
+    public void updatePhysicalSpecs(TypesPhysicalSpecs newSpecs, Actor actor) {
+        DomainGuard.notNull(newSpecs, "New Physical Specs");
+        DomainGuard.notNull(actor, "Actor performing the update");
+
         this.typesPhysicalSpecs = newSpecs;
+        this.recordUpdate(actor);
     }
 
-    public void triggerAuditUpdate(Actor actor) {
-        DomainGuard.notNull(actor, "Actor");
-        // Assuming your BaseAggregateRoot holds an AuditMetadata field
-        this.auditMetadata = this.auditMetadata.update(actor);
-    }
-
-
-    // Getters
+    // --- ACCESSORS ---
     public TypesId getTypesId() { return typesId; }
     public TypesUuId getTypesUuId() { return typesUuId; }
     public TypesBusinessUuId getTypesBusinessUuId() { return typesBusinessUuId; }
     public TypesName getTypesName() { return typesName; }
     public TypesPhysicalSpecs getTypesPhysicalSpecs() { return typesPhysicalSpecs; }
-
-    /**
-     * Atomic update for the Type name and audit metadata.
-     */
-    public void rename(TypesName newName, Actor actor) {
-        DomainGuard.notNull(newName, "New Type Name");
-        DomainGuard.notNull(actor, "Actor");
-
-        this.typesName = newName;
-        this.recordUpdate(actor); // Single source of audit truth
-    }
-
-    /**
-     * Atomic update for physical specifications and audit metadata.
-     */
-    public void updatePhysicalSpecs(TypesPhysicalSpecs newSpecs, Actor actor) {
-        DomainGuard.notNull(newSpecs, "New Physical Specs");
-        DomainGuard.notNull(actor, "Actor");
-
-        this.typesPhysicalSpecs = newSpecs;
-        this.recordUpdate(actor);
-    }
 }

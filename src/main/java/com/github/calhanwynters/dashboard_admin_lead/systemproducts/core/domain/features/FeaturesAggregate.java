@@ -9,7 +9,7 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 
 /**
  * Aggregate Root for Product Features.
- * Inherits standardized business auditing via BaseAggregateRoot.
+ * Standardized via Rich Domain Model pattern to ensure atomic updates and auditing.
  */
 public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
 
@@ -42,13 +42,20 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
         this.compatibilityTag = compatibilityTag;
     }
 
-    public void updateDetails(FeatureName newName, FeatureLabel newTag) {
+    /**
+     * Updates feature metadata.
+     * Mandatory Actor ensures every change is attributed in the AuditMetadata.
+     */
+    public void updateDetails(FeatureName newName, FeatureLabel newTag, Actor actor) {
+        DomainGuard.notNull(newName, "New Feature Name");
+        DomainGuard.notNull(newTag, "New Compatibility Tag");
+        DomainGuard.notNull(actor, "Actor performing the update");
+
         this.featuresName = newName;
         this.compatibilityTag = newTag;
-    }
 
-    public void recordUpdate(Actor actor) {
-        super.recordUpdate(actor);
+        // Atomic update of state and audit timestamp/actor
+        this.recordUpdate(actor);
     }
 
     // Getters
@@ -57,15 +64,4 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
     public FeatureBusinessUuId getFeaturesBusinessUuId() { return featuresBusinessUuId; }
     public FeatureName getFeaturesName() { return featuresName; }
     public FeatureLabel getCompatibilityTag() { return compatibilityTag; }
-
-    public void updateDetails(FeatureName newName, FeatureLabel newTag, Actor actor) {
-        DomainGuard.notNull(newName, "New Feature Name");
-        DomainGuard.notNull(newTag, "New Compatibility Tag");
-
-        this.featuresName = newName;
-        this.compatibilityTag = newTag;
-
-        // Audit is now part of the atomic domain action
-        this.recordUpdate(actor);
-    }
 }
