@@ -42,26 +42,33 @@ public class TypesAggregate extends BaseAggregateRoot<TypesAggregate> {
 
     // --- DOMAIN ACTIONS ---
 
-    /**
-     * Atomically renames the Type and refreshes the audit trail.
-     */
     public void rename(TypesName newName, Actor actor) {
         DomainGuard.notNull(newName, "New Type Name");
         DomainGuard.notNull(actor, "Actor performing the rename");
 
         this.typesName = newName;
         this.recordUpdate(actor);
+        this.registerEvent(new TypeRenamedEvent(this.typesUuId, newName, actor));
     }
 
-    /**
-     * Atomically updates physical dimensions/weight and refreshes the audit trail.
-     */
     public void updatePhysicalSpecs(TypesPhysicalSpecs newSpecs, Actor actor) {
         DomainGuard.notNull(newSpecs, "New Physical Specs");
         DomainGuard.notNull(actor, "Actor performing the update");
 
         this.typesPhysicalSpecs = newSpecs;
         this.recordUpdate(actor);
+        this.registerEvent(new TypePhysicalSpecsUpdatedEvent(this.typesUuId, newSpecs, actor));
+    }
+
+    public void softDelete(Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        this.recordUpdate(actor);
+        this.registerEvent(new TypeSoftDeletedEvent(this.typesUuId, actor));
+    }
+
+    public void hardDelete(Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        this.registerEvent(new TypeHardDeletedEvent(this.typesUuId, actor));
     }
 
     // --- ACCESSORS ---

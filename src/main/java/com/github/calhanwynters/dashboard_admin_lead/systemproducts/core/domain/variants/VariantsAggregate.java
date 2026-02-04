@@ -48,7 +48,7 @@ public class VariantsAggregate extends BaseAggregateRoot<VariantsAggregate> {
     // --- DOMAIN ACTIONS ---
 
     /**
-     * Renames the variant and refreshes the audit trail.
+     * Renames the variant, refreshes audit, and triggers rename event.
      */
     public void rename(VariantsName newName, Actor actor) {
         DomainGuard.notNull(newName, "New Variant Name");
@@ -56,30 +56,52 @@ public class VariantsAggregate extends BaseAggregateRoot<VariantsAggregate> {
 
         this.variantsName = newName;
         this.recordUpdate(actor);
+
+        // Publish the specific rename event
+        this.registerEvent(new VariantRenamedEvent(this.variantsUuId, newName, actor));
     }
 
     /**
-     * Assigns a feature and refreshes the audit trail only if the collection changed.
+     * Assigns a feature and triggers event if state changed.
      */
     public void assignFeature(FeatureUuId featureUuId, Actor actor) {
         DomainGuard.notNull(featureUuId, "Feature UUID to assign");
-        DomainGuard.notNull(actor, "Actor performing the assignment");
+        DomainGuard.notNull(actor, "Actor");
 
         if (this.assignedFeatureUuIds.add(featureUuId)) {
             this.recordUpdate(actor);
+            this.registerEvent(new FeatureAssignedEvent(this.variantsUuId, featureUuId, actor));
         }
     }
 
     /**
-     * Removes a feature assignment and refreshes the audit trail.
+     * Unassigns a feature and triggers event if state changed.
      */
     public void unassignFeature(FeatureUuId featureUuId, Actor actor) {
         DomainGuard.notNull(featureUuId, "Feature UUID to unassign");
-        DomainGuard.notNull(actor, "Actor performing the removal");
+        DomainGuard.notNull(actor, "Actor");
 
         if (this.assignedFeatureUuIds.remove(featureUuId)) {
             this.recordUpdate(actor);
+            this.registerEvent(new FeatureUnassignedEvent(this.variantsUuId, featureUuId, actor));
         }
+    }
+
+    /**
+     * Marks the variant as soft-deleted and triggers associated event.
+     */
+    public void softDelete(Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        this.recordUpdate(actor);
+        this.registerEvent(new VariantSoftDeletedEvent(this.variantsUuId, actor));
+    }
+
+    /**
+     * Triggers the hard delete event (usually handled by the repository/service afterwards).
+     */
+    public void hardDelete(Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        this.registerEvent(new VariantHardDeletedEvent(this.variantsUuId, actor));
     }
 
     // --- ACCESSORS ---

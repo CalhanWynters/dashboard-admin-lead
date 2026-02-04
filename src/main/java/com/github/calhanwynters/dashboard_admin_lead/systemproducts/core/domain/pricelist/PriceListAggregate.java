@@ -5,11 +5,9 @@ import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.purchasepricingmodel.Money;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.purchasepricingmodel.PurchasePricing;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.PriceListDomainWrapper.*;
 
-import java.math.BigDecimal;
 import java.util.*;
 
 /**
@@ -53,9 +51,6 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
 
     // --- DOMAIN ACTIONS ---
 
-    /**
-     * Injects or updates a specific currency price for a target.
-     */
     public void addOrUpdatePrice(UuId targetId, Currency currency, PurchasePricing pricing, Actor actor) {
         DomainGuard.notNull(targetId, "Target Identity");
         DomainGuard.notNull(currency, "Currency");
@@ -69,33 +64,64 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
                 .put(currency, pricing);
 
         applyChangeMetadata(actor);
+        this.registerEvent(new PriceUpdatedEvent(this.priceListUuId, targetId, currency, pricing, this.priceListVersion, actor));
     }
 
-    /**
-     * Removes a price and purges empty target entries.
-     */
     public void removePrice(UuId targetId, Currency currency, Actor actor) {
         DomainGuard.notNull(targetId, "Target Identity");
         DomainGuard.notNull(currency, "Currency");
         DomainGuard.notNull(actor, "Actor");
 
         Map<Currency, PurchasePricing> currencyMap = multiCurrencyPrices.get(targetId);
-        if (currencyMap != null) {
+        if (currencyMap != null && currencyMap.containsKey(currency)) {
             currencyMap.remove(currency);
             if (currencyMap.isEmpty()) {
                 multiCurrencyPrices.remove(targetId);
             }
             applyChangeMetadata(actor);
+            this.registerEvent(new PriceRemovedEvent(this.priceListUuId, targetId, currency, this.priceListVersion, actor));
         }
     }
 
+    public void softDelete(Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        this.recordUpdate(actor);
+        this.registerEvent(new PriceListSoftDeletedEvent(this.priceListUuId, actor));
+    }
+
+    public void hardDelete(Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        this.registerEvent(new PriceListHardDeletedEvent(this.priceListUuId, actor));
+    }
+
     /**
-     * Resolves a price based on quantity and currency.
+     * Purges all currency pricing for a specific target in a single atomic action.
      */
-    public Optional<Money> resolve(UuId targetId, Currency currency, BigDecimal quantity) {
-        return Optional.ofNullable(multiCurrencyPrices.get(targetId))
-                .map(currencyMap -> currencyMap.get(currency))
-                .map(pricing -> pricing.calculate(quantity));
+    public void purgeTargetPricing(UuId targetId, Actor actor) {
+        DomainGuard.notNull(targetId, "Target Identity");
+        DomainGuard.notNull(actor, "Actor");
+
+        if (this.multiCurrencyPrices.containsKey(targetId)) {
+            this.multiCurrencyPrices.remove(targetId);
+            applyChangeMetadata(actor);
+            this.registerEvent(new TargetPricingPurgedEvent(this.priceListUuId, targetId, this.priceListVersion, actor));
+        }
+    }
+
+    /*
+       Note: strategyBoundary is currently 'final' in your root.
+       If the business requires shifting strategies, you would remove 'final'
+       and implement this method:
+    */
+    public void shiftStrategy(Class<? extends PurchasePricing> newStrategy, Actor actor) {
+        DomainGuard.notNull(newStrategy, "New Strategy");
+        DomainGuard.notNull(actor, "Actor");
+
+        String oldName = this.strategyBoundary.getSimpleName();
+        // this.strategyBoundary = newStrategy; // Requires removing 'final'
+
+        this.recordUpdate(actor);
+        this.registerEvent(new PriceListStrategyChangedEvent(this.priceListUuId, oldName, newStrategy.getSimpleName(), actor));
     }
 
     // --- PRIVATE INVARIANTS & HELPERS ---

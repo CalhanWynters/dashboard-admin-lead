@@ -46,7 +46,7 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
     }
 
     /**
-     * Atomically updates image metadata and refreshes the audit trail.
+     * Updates image metadata and triggers the metadata updated event.
      */
     public void updateMetadata(ImageName name, ImageDescription description, Actor actor) {
         DomainGuard.notNull(name, "New Image Name");
@@ -57,6 +57,18 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
         this.imageDescription = description;
 
         this.recordUpdate(actor);
+        this.registerEvent(new ImageMetadataUpdatedEvent(this.imageUuId, name, actor));
+    }
+
+    public void softDelete(Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        this.recordUpdate(actor);
+        this.registerEvent(new ImageSoftDeletedEvent(this.imageUuId, actor));
+    }
+
+    public void hardDelete(Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        this.registerEvent(new ImageHardDeletedEvent(this.imageUuId, actor));
     }
 
     // Getters

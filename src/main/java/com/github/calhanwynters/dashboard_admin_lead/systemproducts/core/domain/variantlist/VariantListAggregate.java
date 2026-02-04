@@ -42,29 +42,36 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
 
     // --- DOMAIN ACTIONS ---
 
-    /**
-     * Attaches a variant and refreshes the audit trail in one atomic action.
-     */
     public void attachVariant(VariantsUuId variantUuId, Actor actor) {
         DomainGuard.notNull(variantUuId, "Variant UUID to attach");
         DomainGuard.notNull(actor, "Actor performing the update");
 
-        // Set logic ensures idempotency; we only audit if the collection actually changed
         if (this.variantUuIds.add(variantUuId)) {
             this.recordUpdate(actor);
+            this.registerEvent(new VariantAttachedEvent(this.variantListUuId, variantUuId, actor));
         }
     }
 
-    /**
-     * Detaches a variant and refreshes the audit trail.
-     */
     public void detachVariant(VariantsUuId variantUuId, Actor actor) {
         DomainGuard.notNull(variantUuId, "Variant UUID to detach");
         DomainGuard.notNull(actor, "Actor performing the update");
 
         if (this.variantUuIds.remove(variantUuId)) {
             this.recordUpdate(actor);
+            this.registerEvent(new VariantDetachedEvent(this.variantListUuId, variantUuId, actor));
         }
+    }
+
+    public void softDelete(Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        this.recordUpdate(actor);
+        this.registerEvent(new VariantListSoftDeletedEvent(this.variantListUuId, actor));
+    }
+
+    public void hardDelete(Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        // Hard delete usually implies immediate removal, but event triggers cleanup in other contexts
+        this.registerEvent(new VariantListHardDeletedEvent(this.variantListUuId, actor));
     }
 
     // --- ACCESSORS ---
@@ -72,9 +79,6 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
     public VariantListUuId getVariantListUuId() { return variantListUuId; }
     public VariantListBusinessUuId getVariantListBusinessUuId() { return variantListBusinessUuId; }
 
-    /**
-     * Returns an unmodifiable view of variants to enforce the Rich Domain Model pattern.
-     */
     public Set<VariantsUuId> getVariantUuIds() {
         return Collections.unmodifiableSet(variantUuIds);
     }

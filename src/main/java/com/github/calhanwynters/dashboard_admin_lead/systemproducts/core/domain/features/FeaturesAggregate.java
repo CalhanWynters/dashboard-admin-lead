@@ -29,23 +29,13 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
 
         super(auditMetadata);
 
-        DomainGuard.notNull(featuresId, "Feature PK ID");
-        DomainGuard.notNull(featuresUuId, "Feature UUID");
-        DomainGuard.notNull(featuresBusinessUuId, "Feature Business UUID");
-        DomainGuard.notNull(featuresName, "Feature Name");
-        DomainGuard.notNull(compatibilityTag, "Compatibility Tag");
-
-        this.featuresId = featuresId;
-        this.featuresUuId = featuresUuId;
-        this.featuresBusinessUuId = featuresBusinessUuId;
-        this.featuresName = featuresName;
-        this.compatibilityTag = compatibilityTag;
+        this.featuresId = DomainGuard.notNull(featuresId, "Feature PK ID");
+        this.featuresUuId = DomainGuard.notNull(featuresUuId, "Feature UUID");
+        this.featuresBusinessUuId = DomainGuard.notNull(featuresBusinessUuId, "Feature Business UUID");
+        this.featuresName = DomainGuard.notNull(featuresName, "Feature Name");
+        this.compatibilityTag = DomainGuard.notNull(compatibilityTag, "Compatibility Tag");
     }
 
-    /**
-     * Updates feature metadata.
-     * Mandatory Actor ensures every change is attributed in the AuditMetadata.
-     */
     public void updateDetails(FeatureName newName, FeatureLabel newTag, Actor actor) {
         DomainGuard.notNull(newName, "New Feature Name");
         DomainGuard.notNull(newTag, "New Compatibility Tag");
@@ -54,8 +44,19 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
         this.featuresName = newName;
         this.compatibilityTag = newTag;
 
-        // Atomic update of state and audit timestamp/actor
         this.recordUpdate(actor);
+        this.registerEvent(new FeatureDetailsUpdatedEvent(this.featuresUuId, newName, newTag, actor));
+    }
+
+    public void softDelete(Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        this.recordUpdate(actor);
+        this.registerEvent(new FeatureSoftDeletedEvent(this.featuresUuId, actor));
+    }
+
+    public void hardDelete(Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        this.registerEvent(new FeatureHardDeletedEvent(this.featuresUuId, actor));
     }
 
     // Getters

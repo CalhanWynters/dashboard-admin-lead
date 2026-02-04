@@ -1,4 +1,13 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.features;
 
-public class FeatureDetailsUpdatedEvent {
-}
+import org.jmolecules.event.annotation.DomainEvent;
+import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.features.FeaturesDomainWrapper.*;
+
+@DomainEvent(name = "Feature Details Updated", namespace = "features")
+public record FeatureDetailsUpdatedEvent(
+        FeatureUuId featureUuId,
+        FeatureName newName,
+        FeatureLabel newTag,
+        Actor actor
+) {}

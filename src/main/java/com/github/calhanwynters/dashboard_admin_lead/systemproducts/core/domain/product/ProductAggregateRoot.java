@@ -95,9 +95,26 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
                 "VAL-016", "STATE_VIOLATION"
         );
 
+        ProductStatus oldStatus = this.productStatus;
         this.productStatus = nextStatus;
         this.productVersion = new ProductVersion(this.productVersion.value().next());
         this.recordUpdate(actor);
+
+        // Notify downstream systems of the transition
+        this.registerEvent(new ProductStatusChangedEvent(
+                this.productUuId, oldStatus, nextStatus, this.productVersion, actor
+        ));
+    }
+
+    public void softDelete(Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        this.recordUpdate(actor);
+        this.registerEvent(new ProductSoftDeletedEvent(this.productUuId, actor));
+    }
+
+    public void hardDelete(Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        this.registerEvent(new ProductHardDeletedEvent(this.productUuId, actor));
     }
 
     // Getters

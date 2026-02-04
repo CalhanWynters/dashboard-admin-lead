@@ -42,29 +42,35 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
 
     // --- DOMAIN ACTIONS ---
 
-    /**
-     * Attaches a new Type to this list and refreshes the audit trail.
-     */
     public void attachType(TypesUuId typeUuId, Actor actor) {
         DomainGuard.notNull(typeUuId, "Type UUID to attach");
         DomainGuard.notNull(actor, "Actor performing the update");
 
-        // Only record an update if the set actually changes
         if (this.typeUuIds.add(typeUuId)) {
             this.recordUpdate(actor);
+            this.registerEvent(new TypeAttachedEvent(this.typeListUuId, typeUuId, actor));
         }
     }
 
-    /**
-     * Removes a Type from this list and refreshes the audit trail.
-     */
     public void detachType(TypesUuId typeUuId, Actor actor) {
         DomainGuard.notNull(typeUuId, "Type UUID to detach");
         DomainGuard.notNull(actor, "Actor performing the update");
 
         if (this.typeUuIds.remove(typeUuId)) {
             this.recordUpdate(actor);
+            this.registerEvent(new TypeDetachedEvent(this.typeListUuId, typeUuId, actor));
         }
+    }
+
+    public void softDelete(Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        this.recordUpdate(actor);
+        this.registerEvent(new TypeListSoftDeletedEvent(this.typeListUuId, actor));
+    }
+
+    public void hardDelete(Actor actor) {
+        DomainGuard.notNull(actor, "Actor");
+        this.registerEvent(new TypeListHardDeletedEvent(this.typeListUuId, actor));
     }
 
     // --- ACCESSORS ---
