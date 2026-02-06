@@ -4,6 +4,8 @@ import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.types.events.*;
+
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.types.TypesDomainWrapper.*;
 
 public class TypesAggregate extends BaseAggregateRoot<TypesAggregate> {

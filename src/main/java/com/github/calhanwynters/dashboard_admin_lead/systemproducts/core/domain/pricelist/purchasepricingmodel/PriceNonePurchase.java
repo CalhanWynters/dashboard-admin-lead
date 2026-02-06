@@ -15,4 +15,10 @@ public record PriceNonePurchase(Currency currency) implements SimplePurchasePric
         // Return a valid Money with amount 0 instead of null
         return Money.zero(currency);
     }
+
+    @Override
+    public PurchasePricing adjustedBy(double factor) {
+        // Zero remains zero regardless of the adjustment factor.
+        return this;
+    }
 }

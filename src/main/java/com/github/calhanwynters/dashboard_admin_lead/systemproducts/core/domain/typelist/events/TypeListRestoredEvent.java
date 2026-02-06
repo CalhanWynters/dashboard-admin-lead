@@ -1,0 +1,8 @@
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.typelist.events;
+
+import org.jmolecules.event.annotation.DomainEvent;
+import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.typelist.TypeListDomainWrapper.*;
+
+@DomainEvent(name = "Type List Restored", namespace = "typelist")
+public record TypeListRestoredEvent(TypeListUuId typeListId, Actor actor) {}

@@ -3,7 +3,15 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.product.ProductDomainWrapper.*;
 
+/**
+ * Pure Behavioral Logic for Product Aggregate.
+ * Performs invariant checks and state transition evaluations.
+ */
 public final class ProductBehavior {
+
+    private ProductBehavior() {
+        // Prevent instantiation of utility class
+    }
 
     public static void validateStatusTransition(ProductStatus current, ProductStatus next) {
         DomainGuard.ensure(
@@ -19,6 +27,14 @@ public final class ProductBehavior {
                 "Invalid Product Type: Standard products (with TypeList) cannot have local Price/Specs. " +
                         "Bespoke products (without TypeList) require both Price and Specs.",
                 "VAL-016", "INVARIANT_VIOLATION"
+        );
+    }
+
+    public static void ensureDependencyResolution(String type, boolean exists) {
+        DomainGuard.ensure(
+                exists,
+                "Critical dependency [%s] is missing. Product must enter a safe state.".formatted(type),
+                "VAL-017", "DEPENDENCY_MISSING"
         );
     }
 

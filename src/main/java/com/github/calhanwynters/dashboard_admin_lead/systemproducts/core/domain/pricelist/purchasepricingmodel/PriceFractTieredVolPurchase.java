@@ -59,4 +59,21 @@ public record PriceFractTieredVolPurchase(List<TierBucket> buckets) implements P
         // Use the BigDecimal multiply overload to support fractional math
         return selectedBucket.pricePerUnit().multiply(qty);
     }
+
+    @Override
+    public PurchasePricing adjustedBy(double factor) {
+        BigDecimal bigFactor = BigDecimal.valueOf(factor);
+
+        // Map over the existing buckets to create a new list with adjusted prices
+        List<TierBucket> adjustedBuckets = this.buckets.stream()
+                .map(bucket -> new TierBucket(
+                        bucket.minQty(),
+                        bucket.maxQty(),
+                        bucket.pricePerUnit().multiply(bigFactor)
+                ))
+                .toList();
+
+        return new PriceFractTieredVolPurchase(adjustedBuckets);
+    }
+
 }

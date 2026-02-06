@@ -32,6 +32,21 @@ public sealed interface PurchasePricing
      * @return the calculated Money result
      */
     Money calculate(BigDecimal quantity);
+
+    /**
+     * Creates a new pricing model with all monetary values adjusted by the given factor.
+     * factor 1.05 = 5% increase; 0.90 = 10% decrease.
+     */
+    PurchasePricing adjustedBy(double factor);
+
+    /**
+     * Compares the "baseline" cost (at 1 unit) to detect price increases.
+     */
+    default boolean isMoreExpensiveThan(PurchasePricing other) {
+        if (other == null) return true;
+        BigDecimal unit = BigDecimal.ONE;
+        return this.calculate(unit).amount().compareTo(other.calculate(unit).amount()) > 0;
+    }
 }
 
 /*

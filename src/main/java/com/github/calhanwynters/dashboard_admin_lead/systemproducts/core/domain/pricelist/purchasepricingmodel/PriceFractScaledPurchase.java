@@ -46,11 +46,21 @@ public record PriceFractScaledPurchase(Money basePrice, Money ratePerUnit) imple
             throw new IllegalArgumentException("Quantity must be non-negative.");
         }
 
-        // The Java compiler automatically selects the multiply(BigDecimal) overload here,
-        // allowing fractional quantities without throwing ArithmeticException.
+        // Calculation: Base + (Rate * Qty)
         Money scaledAmount = ratePerUnit.multiply(quantity);
-
         return this.basePrice.add(scaledAmount);
+    }
+
+    @Override
+    public PurchasePricing adjustedBy(double factor) {
+        // Line 1: Convert double factor to BigDecimal for precision
+        BigDecimal bigFactor = BigDecimal.valueOf(factor);
+
+        // Line 2: Create a new instance with BOTH components adjusted
+        return new PriceFractScaledPurchase(
+                this.basePrice.multiply(bigFactor),
+                this.ratePerUnit.multiply(bigFactor)
+        );
     }
 
     // You would also need to update your sealed interface to permit this class:

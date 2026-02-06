@@ -57,4 +57,17 @@ public record PriceIntScaledPurchase(
     public String toString() {
         return String.format("PriceScaledPurchase{basePrice=%s, scalingFactorPerUnit=%s}", basePrice, scalingFactorPerUnit);
     }
+
+    @Override
+    public PurchasePricing adjustedBy(double factor) {
+        // Adjusts both the base and the scaling factor by the percentage/factor
+        BigDecimal bdFactor = BigDecimal.valueOf(factor);
+
+        // Note: This assumes your Money class has a multiply(BigDecimal) method.
+        // If it only has multiply(int), you must implement multiply(BigDecimal) first.
+        return new PriceIntScaledPurchase(
+                this.basePrice.multiply(bdFactor),
+                this.scalingFactorPerUnit.multiply(bdFactor)
+        );
+    }
 }

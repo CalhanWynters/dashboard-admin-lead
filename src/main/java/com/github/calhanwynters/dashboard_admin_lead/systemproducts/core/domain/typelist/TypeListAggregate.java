@@ -4,6 +4,8 @@ import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.typelist.events.*;
+
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.typelist.TypeListDomainWrapper.*;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.types.TypesDomainWrapper.TypesUuId;
 
@@ -34,7 +36,10 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
     }
 
     public static TypeListAggregate create(TypeListUuId uuId, TypeListBusinessUuId bUuId, Actor actor) {
-        TypeListAggregate aggregate = new TypeListAggregate(null, uuId, bUuId, new HashSet<>(), AuditMetadata.create(actor));
+        // Added 'false' to match your updated 6-argument constructor
+        TypeListAggregate aggregate = new TypeListAggregate(
+                null, uuId, bUuId, new HashSet<>(), false, AuditMetadata.create(actor)
+        );
         aggregate.registerEvent(new TypeListCreatedEvent(uuId, bUuId, actor));
         return aggregate;
     }
@@ -65,6 +70,16 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
         this.applyChange(actor,
                 new TypeListSoftDeletedEvent(this.typeListUuId, actor),
                 () -> this.deleted = true
+        );
+    }
+
+    public void hardDelete(Actor actor) {
+        // Line 1: Logic (Optional: check if already soft-deleted or special permissions)
+
+        // Line 2: Side-effect (Mutation is null as the entity is being destroyed)
+        this.applyChange(actor,
+                new TypeListHardDeletedEvent(this.typeListUuId, actor),
+                null
         );
     }
 

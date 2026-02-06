@@ -84,4 +84,16 @@ public record PriceIntTieredGradPurchase(List<TierBucket> buckets) implements Pu
         // Contribution is the smaller of what's left vs the bucket's total capacity
         return remaining.min(capacity);
     }
+
+    @Override
+    public PurchasePricing adjustedBy(double factor) {
+        BigDecimal bdFactor = BigDecimal.valueOf(factor);
+
+        // Transform every bucket price by the factor
+        List<TierBucket> adjustedBuckets = this.buckets.stream()
+                .map(b -> new TierBucket(b.minQty(), b.maxQty(), b.pricePerUnit().multiply(bdFactor)))
+                .toList();
+
+        return new PriceIntTieredGradPurchase(adjustedBuckets);
+    }
 }

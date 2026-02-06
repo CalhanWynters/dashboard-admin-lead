@@ -34,4 +34,16 @@ public record PriceIntTieredVolPurchase(List<TierBucket> buckets) implements Pur
         // Assuming Volume Pricing: Total = (Rate for that bucket) * (Quantity)
         return selectedBucket.pricePerUnit().multiply(qty.intValueExact());
     }
+
+    @Override
+    public PurchasePricing adjustedBy(double factor) {
+        BigDecimal bdFactor = BigDecimal.valueOf(factor);
+
+        // Correctly map over all buckets to adjust the internal pricePerUnit
+        List<TierBucket> adjustedBuckets = this.buckets.stream()
+                .map(b -> new TierBucket(b.minQty(), b.maxQty(), b.pricePerUnit().multiply(bdFactor)))
+                .toList();
+
+        return new PriceIntTieredVolPurchase(adjustedBuckets);
+    }
 }

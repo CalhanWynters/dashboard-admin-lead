@@ -39,4 +39,16 @@ public final class PriceListBehavior {
             throw new IllegalArgumentException("Pricing for target %s in %s not found.".formatted(targetId.value(), currency.getCurrencyCode()));
         }
     }
+
+    public static void ensureActivationTransition(boolean current, boolean target) {
+        if (current == target) {
+            throw new IllegalArgumentException("Price List is already " + (current ? "active" : "inactive"));
+        }
+    }
+
+    public static void validateBulkAdjustment(double percentage) {
+        if (percentage < -100.0) {
+            throw new IllegalArgumentException("Price decrease cannot exceed 100%");
+        }
+    }
 }

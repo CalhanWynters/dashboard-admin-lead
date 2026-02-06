@@ -32,6 +32,12 @@ public record PriceFixedPurchase(Money fixedPrice) implements SimplePurchasePric
     }
 
     @Override
+    public PurchasePricing adjustedBy(double factor) {
+        // Returns a new record instance with the math applied to the Money VO
+        return new PriceFixedPurchase(this.fixedPrice.multiply(BigDecimal.valueOf(factor)));
+    }
+
+    @Override
     public String toString() {
         return String.format("PriceFixedPurchase{fixedPrice=%s}", fixedPrice);
     }

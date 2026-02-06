@@ -8,8 +8,10 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
+import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.product.events.*;
 
 public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot> {
 
@@ -23,7 +25,7 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     private ProductPhysicalSpecs physicalSpecs;
 
     private GalleryUuId galleryUuId;
-    private VariantListUuId variantListUuId;
+    private final VariantListUuId variantListUuId;
     private TypeListUuId typeListUuId;
     private PriceListUuId priceListUuId;
 
@@ -71,6 +73,18 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     }
 
     // --- DOMAIN ACTIONS ---
+
+    public void changeTypeConfiguration(TypeListUuId newTypeListId, Actor actor) {
+        DomainGuard.notNull(newTypeListId, "Type List ID");
+
+        this.applyChange(actor,
+                new ProductTypeConfigurationChangedEvent(this.productUuId, newTypeListId, actor),
+                () -> {
+                    this.typeListUuId = newTypeListId;
+                    ProductBehavior.validateComposition(this);
+                }
+        );
+    }
 
     public void updateManifest(ProductManifest newManifest, Actor actor) {
         ProductBehavior.validateManifest(newManifest);
@@ -127,9 +141,34 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
         );
     }
 
+    /**
+     * Self-healing action triggered when a weak reference (PriceList, Gallery, etc.)
+     * is found to be missing in the system.
+     */
+    public void recordMissingDependency(String dependencyType, UuId missingId, Actor actor) {
+        ProductBehavior.ensureDependencyResolution(dependencyType, false);
+
+        this.applyChange(actor,
+                // Now matches the record which expects com.github.calhanwynters.dashboard_admin_lead.common.UuId
+                new ProductDependencyMissingEvent(this.productUuId, dependencyType, missingId, actor),
+                () -> this.productStatus = ProductStatus.DRAFT
+        );
+    }
+
+
+    // Remove the old one-line discontinue and use this one:
+    public void discontinue(Actor actor) {
+        ProductBehavior.validateStatusTransition(this.productStatus, ProductStatus.DISCONTINUED);
+
+        this.applyChange(actor,
+                new ProductDiscontinuedEvent(this.productUuId, actor),
+                () -> applyTransition(ProductStatus.DISCONTINUED, actor)
+        );
+    }
+
+
     public void activate(Actor actor) { applyTransition(ProductStatus.ACTIVE, actor); }
     public void deactivate(Actor actor) { applyTransition(ProductStatus.INACTIVE, actor); }
-    public void discontinue(Actor actor) { applyTransition(ProductStatus.DISCONTINUED, actor); }
     public void softDelete(Actor actor) { this.applyChange(actor, new ProductSoftDeletedEvent(this.productUuId, actor), null); }
     public void hardDelete(Actor actor) { this.applyChange(actor, new ProductHardDeletedEvent(this.productUuId, actor), null); }
 
@@ -139,6 +178,7 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     public ProductStatus getProductStatus() { return productStatus; }
     public ProductVersion getProductVersion() { return productVersion; }
     public ProductPhysicalSpecs getProductPhysicalSpecs() { return physicalSpecs; }
+    public ProductManifest getManifest() { return manifest; }
     public GalleryUuId getGalleryUuId() { return galleryUuId; }
     public VariantListUuId getVariantListUuId() { return variantListUuId; }
     public TypeListUuId getTypeListUuId() { return typeListUuId; }

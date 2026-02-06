@@ -87,4 +87,20 @@ public record PriceFractTieredGradPurchase(List<TierBucket> buckets) implements 
         // Contribution is the smaller of what's left vs the bucket's total capacity
         return remaining.min(capacity);
     }
+
+    @Override
+    public PurchasePricing adjustedBy(double factor) {
+        BigDecimal bigFactor = BigDecimal.valueOf(factor);
+
+        // Map over the buckets and adjust each bucket's pricePerUnit
+        List<TierBucket> adjustedBuckets = this.buckets.stream()
+                .map(bucket -> new TierBucket(
+                        bucket.minQty(),
+                        bucket.maxQty(),
+                        bucket.pricePerUnit().multiply(bigFactor)
+                ))
+                .toList();
+
+        return new PriceFractTieredGradPurchase(adjustedBuckets);
+    }
 }

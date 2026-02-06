@@ -6,6 +6,8 @@ import com.github.calhanwynters.dashboard_admin_lead.common.ImageUrl;
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.images.events.*;
+
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.images.ImagesDomainWrapper.*;
 
 public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
