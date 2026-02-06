@@ -6,8 +6,4 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.types.TypesDomainWrapper.TypesUuId;
 
 @DomainEvent(name = "Type Detached", namespace = "typelist")
-public record TypeDetachedEvent(
-        TypeListUuId typeListUuId,
-        TypesUuId detachedTypeUuId,
-        Actor actor
-) {}
+public record TypeDetachedEvent(TypeListUuId typeListId, TypesUuId typeId, Actor actor) {}

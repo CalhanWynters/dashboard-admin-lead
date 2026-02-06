@@ -7,27 +7,50 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 
 public class ImageFactory {
 
+    /**
+     * Delegates to the Aggregate's static factory to ensure the
+     * ImageUploadedEvent is properly registered.
+     */
     public static ImageAggregate create(
             ImageBusinessUuId bizId,
             ImageName name,
             ImageDescription desc,
             ImageUrl url,
             Actor creator) {
-        return new ImageAggregate(
-                ImageId.of(0L),
+
+        return ImageAggregate.create(
                 ImageUuId.generate(),
                 bizId,
                 name,
                 desc,
                 url,
-                AuditMetadata.create(creator)
+                creator
         );
     }
 
+    /**
+     * Used by the Repository/Infrastructure layer to rebuild an existing entity.
+     * Note: Reconstitution does NOT fire domain events.
+     */
     public static ImageAggregate reconstitute(
-            ImageId id, ImageUuId uuId, ImageBusinessUuId bizId,
-            ImageName name, ImageDescription desc, ImageUrl url,
+            ImageId id,
+            ImageUuId uuId,
+            ImageBusinessUuId bizId,
+            ImageName name,
+            ImageDescription desc,
+            ImageUrl url,
+            boolean isArchived, // Added state for reconstitution
             AuditMetadata auditMetadata) {
-        return new ImageAggregate(id, uuId, bizId, name, desc, url, auditMetadata);
+
+        return new ImageAggregate(
+                id,
+                uuId,
+                bizId,
+                name,
+                desc,
+                url,
+                isArchived, // 7th Arg
+                auditMetadata // 8th Arg
+        );
     }
 }

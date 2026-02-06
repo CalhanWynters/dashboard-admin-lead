@@ -15,11 +15,15 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
 
     private final FeatureId featuresId;
     private final FeatureUuId featuresUuId;
-    private final FeatureBusinessUuId featuresBusinessUuId;
 
+    // Removed final to allow the changeBusinessId domain action
+    private FeatureBusinessUuId featuresBusinessUuId;
     private FeatureName featuresName;
     private FeatureLabel compatibilityTag;
 
+    /**
+     * Standard constructor for reconstitution.
+     */
     public FeaturesAggregate(FeatureId featuresId,
                              FeatureUuId featuresUuId,
                              FeatureBusinessUuId featuresBusinessUuId,
@@ -28,7 +32,6 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
                              AuditMetadata auditMetadata) {
 
         super(auditMetadata);
-
         this.featuresId = DomainGuard.notNull(featuresId, "Feature PK ID");
         this.featuresUuId = DomainGuard.notNull(featuresUuId, "Feature UUID");
         this.featuresBusinessUuId = DomainGuard.notNull(featuresBusinessUuId, "Feature Business UUID");
@@ -36,30 +39,68 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
         this.compatibilityTag = DomainGuard.notNull(compatibilityTag, "Compatibility Tag");
     }
 
+    /**
+     * Static Factory for creating new Features.
+     */
+    public static FeaturesAggregate create(FeatureUuId uuId, FeatureBusinessUuId bUuId,
+                                           FeatureName name, FeatureLabel tag, Actor actor) {
+        FeaturesBehavior.validateCreation(uuId, bUuId, name, tag);
+
+        FeaturesAggregate aggregate = new FeaturesAggregate(null, uuId, bUuId, name, tag, AuditMetadata.create(actor));
+        aggregate.registerEvent(new FeatureCreatedEvent(uuId, bUuId, actor));
+        return aggregate;
+    }
+
+    // --- DOMAIN ACTIONS (Two-Liner Pattern) ---
+
+    public void changeCompatibilityTag(FeatureLabel newTag, Actor actor) {
+        // Line 1: Pure Logic (Behavior)
+        var validatedTag = FeaturesBehavior.evaluateCompatibilityChange(newTag, this.compatibilityTag);
+
+        // Line 2: Side-Effect Execution (BaseAggregateRoot helper)
+        this.applyChange(actor,
+                new FeatureCompatibilityChangedEvent(featuresUuId, this.compatibilityTag, validatedTag, actor),
+                () -> this.compatibilityTag = validatedTag
+        );
+    }
+
     public void updateDetails(FeatureName newName, FeatureLabel newTag, Actor actor) {
-        DomainGuard.notNull(newName, "New Feature Name");
-        DomainGuard.notNull(newTag, "New Compatibility Tag");
-        DomainGuard.notNull(actor, "Actor performing the update");
+        var patch = FeaturesBehavior.evaluateUpdate(newName, newTag);
 
-        this.featuresName = newName;
-        this.compatibilityTag = newTag;
+        this.applyChange(actor, new FeatureDetailsUpdatedEvent(featuresUuId, newName, newTag, actor), () -> {
+            this.featuresName = patch.name();
+            this.compatibilityTag = patch.tag();
+        });
+    }
 
-        this.recordUpdate(actor);
-        this.registerEvent(new FeatureDetailsUpdatedEvent(this.featuresUuId, newName, newTag, actor));
+    public void changeBusinessId(FeatureBusinessUuId newId, Actor actor) {
+        var validatedId = FeaturesBehavior.evaluateBusinessIdChange(this.featuresBusinessUuId, newId);
+
+        this.applyChange(actor, new FeatureBusinessUuIdChangedEvent(featuresUuId, featuresBusinessUuId, validatedId, actor), () -> this.featuresBusinessUuId = validatedId);
     }
 
     public void softDelete(Actor actor) {
-        DomainGuard.notNull(actor, "Actor");
-        this.recordUpdate(actor);
-        this.registerEvent(new FeatureSoftDeletedEvent(this.featuresUuId, actor));
+        FeaturesBehavior.verifyDeletable();
+
+        this.applyChange(actor, new FeatureSoftDeletedEvent(featuresUuId, actor), () -> {
+            // State mutation for soft delete (e.g., this.active = false) would go here
+        });
     }
 
     public void hardDelete(Actor actor) {
-        DomainGuard.notNull(actor, "Actor");
-        this.registerEvent(new FeatureHardDeletedEvent(this.featuresUuId, actor));
+        // Hard delete usually destroys the record, but we fire the event for cleanup listeners
+        this.applyChange(actor, new FeatureHardDeletedEvent(featuresUuId, actor), null);
     }
 
-    // Getters
+    public void restore(Actor actor) {
+        FeaturesBehavior.verifyRestorable();
+
+        this.applyChange(actor, new FeatureRestoredEvent(featuresUuId, actor), () -> {
+            // State mutation for restore (e.g., this.active = true) would go here
+        });
+    }
+
+    // --- GETTERS ---
     public FeatureId getFeaturesId() { return featuresId; }
     public FeatureUuId getFeaturesUuId() { return featuresUuId; }
     public FeatureBusinessUuId getFeaturesBusinessUuId() { return featuresBusinessUuId; }

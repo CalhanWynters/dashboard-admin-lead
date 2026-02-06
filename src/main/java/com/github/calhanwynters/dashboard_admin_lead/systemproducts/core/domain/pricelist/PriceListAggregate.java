@@ -10,10 +10,6 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 
 import java.util.*;
 
-/**
- * Aggregate Root for Price Management.
- * Manages multi-currency pricing strategies with atomic versioning and audit trails.
- */
 public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
 
     private final PriceListId priceListId;
@@ -21,126 +17,99 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
     private final Class<? extends PurchasePricing> strategyBoundary;
 
     private PriceListVersion priceListVersion;
+    private boolean isActive;
     private final Map<UuId, Map<Currency, PurchasePricing>> multiCurrencyPrices;
 
     public PriceListAggregate(PriceListId priceListId,
                               PriceListUuId priceListUuId,
-                              PriceListBusinessUuId businessId,
                               Class<? extends PurchasePricing> strategyBoundary,
                               PriceListVersion priceListVersion,
+                              boolean isActive,
                               AuditMetadata auditMetadata,
                               Map<UuId, Map<Currency, PurchasePricing>> multiCurrencyPrices) {
 
         super(auditMetadata);
-
-        DomainGuard.notNull(priceListUuId, "PriceList Identity");
-        DomainGuard.notNull(businessId, "Business Identity");
-        DomainGuard.notNull(strategyBoundary, "Strategy Boundary");
-        DomainGuard.notNull(multiCurrencyPrices, "Price Mapping");
-
         this.priceListId = priceListId;
-        this.priceListUuId = priceListUuId;
-        this.strategyBoundary = strategyBoundary;
-        this.priceListVersion = priceListVersion;
+        this.priceListUuId = DomainGuard.notNull(priceListUuId, "PriceList Identity");
+        this.strategyBoundary = DomainGuard.notNull(strategyBoundary, "Strategy Boundary");
+        this.priceListVersion = DomainGuard.notNull(priceListVersion, "Version");
+        this.isActive = isActive;
         this.multiCurrencyPrices = new HashMap<>(multiCurrencyPrices);
+    }
 
-        this.multiCurrencyPrices.values().forEach(currencyMap ->
-                currencyMap.values().forEach(this::validateStrategyMatch)
+
+    public void activate(Actor actor) {
+        var nextStatus = PriceListBehavior.evaluateActivation(this.isActive, true);
+        this.applyChange(actor, new PriceListActivatedEvent(this.priceListUuId, actor), () -> this.isActive = nextStatus);
+    }
+
+    public void deactivate(Actor actor) {
+        var nextStatus = PriceListBehavior.evaluateActivation(this.isActive, false);
+        this.applyChange(actor, new PriceListDeactivatedEvent(this.priceListUuId, actor), () -> this.isActive = nextStatus);
+    }
+
+    public void addOrUpdatePrice(UuId targetId, Currency currency, PurchasePricing pricing, Actor actor) {
+        PriceListBehavior.ensureActive(this.isActive);
+        PriceListBehavior.validateStrategyMatch(this.strategyBoundary, pricing);
+        var nextVersion = PriceListBehavior.evaluateVersionIncrement(this.priceListVersion);
+
+        this.applyChange(actor,
+                new PriceUpdatedEvent(this.priceListUuId, targetId, currency, pricing, nextVersion, actor),
+                () -> {
+                    this.priceListVersion = nextVersion;
+                    this.multiCurrencyPrices.computeIfAbsent(targetId, k -> new HashMap<>()).put(currency, pricing);
+                }
         );
     }
 
-    // --- DOMAIN ACTIONS ---
+    public static PriceListAggregate create(PriceListUuId uuId,
+                                            PriceListBusinessUuId businessId,
+                                            Class<? extends PurchasePricing> boundary,
+                                            Actor creator) {
 
-    public void addOrUpdatePrice(UuId targetId, Currency currency, PurchasePricing pricing, Actor actor) {
-        DomainGuard.notNull(targetId, "Target Identity");
-        DomainGuard.notNull(currency, "Currency");
-        DomainGuard.notNull(pricing, "Pricing strategy");
-        DomainGuard.notNull(actor, "Actor");
+        PriceListAggregate aggregate = new PriceListAggregate(
+                null,
+                uuId,
+                boundary,
+                PriceListVersion.INITIAL,
+                false,
+                AuditMetadata.create(creator),
+                new HashMap<>()
+        );
 
-        validateStrategyMatch(pricing);
+        // This works here because it's inside the class that extends AbstractAggregateRoot
+        aggregate.registerEvent(new PriceListCreatedEvent(uuId, businessId, creator));
 
-        this.multiCurrencyPrices
-                .computeIfAbsent(targetId, k -> new HashMap<>())
-                .put(currency, pricing);
-
-        applyChangeMetadata(actor);
-        this.registerEvent(new PriceUpdatedEvent(this.priceListUuId, targetId, currency, pricing, this.priceListVersion, actor));
+        return aggregate;
     }
 
     public void removePrice(UuId targetId, Currency currency, Actor actor) {
-        DomainGuard.notNull(targetId, "Target Identity");
-        DomainGuard.notNull(currency, "Currency");
-        DomainGuard.notNull(actor, "Actor");
+        PriceListBehavior.ensureActive(this.isActive);
+        PriceListBehavior.ensureTargetExists(this.multiCurrencyPrices, targetId, currency);
+        var nextVersion = PriceListBehavior.evaluateVersionIncrement(this.priceListVersion);
 
-        Map<Currency, PurchasePricing> currencyMap = multiCurrencyPrices.get(targetId);
-        if (currencyMap != null && currencyMap.containsKey(currency)) {
-            currencyMap.remove(currency);
-            if (currencyMap.isEmpty()) {
-                multiCurrencyPrices.remove(targetId);
-            }
-            applyChangeMetadata(actor);
-            this.registerEvent(new PriceRemovedEvent(this.priceListUuId, targetId, currency, this.priceListVersion, actor));
-        }
+        this.applyChange(actor,
+                new PriceRemovedEvent(this.priceListUuId, targetId, currency, nextVersion, actor),
+                () -> {
+                    this.priceListVersion = nextVersion;
+                    Map<Currency, PurchasePricing> currencyMap = multiCurrencyPrices.get(targetId);
+                    currencyMap.remove(currency);
+                    if (currencyMap.isEmpty()) multiCurrencyPrices.remove(targetId);
+                }
+        );
     }
 
     public void softDelete(Actor actor) {
-        DomainGuard.notNull(actor, "Actor");
-        this.recordUpdate(actor);
-        this.registerEvent(new PriceListSoftDeletedEvent(this.priceListUuId, actor));
+        this.applyChange(actor, new PriceListSoftDeletedEvent(this.priceListUuId, actor), null);
     }
 
     public void hardDelete(Actor actor) {
-        DomainGuard.notNull(actor, "Actor");
-        this.registerEvent(new PriceListHardDeletedEvent(this.priceListUuId, actor));
+        this.applyChange(actor, new PriceListHardDeletedEvent(this.priceListUuId, actor), null);
     }
 
-    /**
-     * Purges all currency pricing for a specific target in a single atomic action.
-     */
-    public void purgeTargetPricing(UuId targetId, Actor actor) {
-        DomainGuard.notNull(targetId, "Target Identity");
-        DomainGuard.notNull(actor, "Actor");
-
-        if (this.multiCurrencyPrices.containsKey(targetId)) {
-            this.multiCurrencyPrices.remove(targetId);
-            applyChangeMetadata(actor);
-            this.registerEvent(new TargetPricingPurgedEvent(this.priceListUuId, targetId, this.priceListVersion, actor));
-        }
-    }
-
-    /*
-       Note: strategyBoundary is currently 'final' in your root.
-       If the business requires shifting strategies, you would remove 'final'
-       and implement this method:
-    */
-    public void shiftStrategy(Class<? extends PurchasePricing> newStrategy, Actor actor) {
-        DomainGuard.notNull(newStrategy, "New Strategy");
-        DomainGuard.notNull(actor, "Actor");
-
-        String oldName = this.strategyBoundary.getSimpleName();
-        // this.strategyBoundary = newStrategy; // Requires removing 'final'
-
-        this.recordUpdate(actor);
-        this.registerEvent(new PriceListStrategyChangedEvent(this.priceListUuId, oldName, newStrategy.getSimpleName(), actor));
-    }
-
-    // --- PRIVATE INVARIANTS & HELPERS ---
-
-    private void validateStrategyMatch(PurchasePricing pricing) {
-        if (!strategyBoundary.isInstance(pricing)) {
-            throw new IllegalStateException("Domain Violation: Price strategy mismatch for " + strategyBoundary.getSimpleName());
-        }
-    }
-
-    private void applyChangeMetadata(Actor actor) {
-        this.priceListVersion = new PriceListVersion(this.priceListVersion.value().next());
-        this.recordUpdate(actor);
-    }
-
-    // --- ACCESSORS ---
+    // Accessors
     public PriceListId getPriceListId() { return priceListId; }
-    public PriceListUuId getPriceListUuId() { return priceListUuId; }
-    public PriceListVersion getVersion() { return priceListVersion; }
+    public boolean isActive() { return isActive; }
     public Map<UuId, Map<Currency, PurchasePricing>> getMultiCurrencyPrices() {
         return Collections.unmodifiableMap(multiCurrencyPrices);
     }

@@ -7,7 +7,6 @@ import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.pricelist.PriceListDomainWrapper.*;
 
 import java.util.Currency;
-import java.util.HashMap;
 import java.util.Map;
 
 public class PriceListFactory {
@@ -15,22 +14,19 @@ public class PriceListFactory {
     public static PriceListAggregate createNew(PriceListBusinessUuId businessId,
                                                Class<? extends PurchasePricing> boundary,
                                                Actor creator) {
-        return new PriceListAggregate(
-                PriceListId.of(0L),
-                PriceListUuId.generate(),
-                businessId,
-                boundary,
-                PriceListVersion.INITIAL,
-                AuditMetadata.create(creator), // Use the Actor
-                new HashMap<>()
-        );
+        // Delegate to the aggregate's internal static factory
+        return PriceListAggregate.create(PriceListUuId.generate(), businessId, boundary, creator);
     }
 
     public static PriceListAggregate reconstitute(
-            PriceListId id, PriceListUuId uuId, PriceListBusinessUuId businessId,
-            Class<? extends PurchasePricing> boundary, PriceListVersion version,
-            AuditMetadata audit, Map<UuId, Map<Currency, PurchasePricing>> prices) {
+            PriceListId id,
+            PriceListUuId uuId,
+            Class<? extends PurchasePricing> boundary,
+            PriceListVersion version,
+            boolean isActive,
+            AuditMetadata audit,
+            Map<UuId, Map<Currency, PurchasePricing>> prices) {
 
-        return new PriceListAggregate(id, uuId, businessId, boundary, version, audit, prices);
+        return new PriceListAggregate(id, uuId, boundary, version, isActive, audit, prices);
     }
 }

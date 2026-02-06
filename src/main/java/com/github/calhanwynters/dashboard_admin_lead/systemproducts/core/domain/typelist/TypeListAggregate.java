@@ -11,78 +11,85 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Aggregate Root for TypeList.
- * Manages the collection of associated Types with mandatory audit attribution.
- */
 public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
 
     private final TypeListId typeListId;
     private final TypeListUuId typeListUuId;
     private final TypeListBusinessUuId typeListBusinessUuId;
     private final Set<TypesUuId> typeUuIds;
+    private boolean deleted = false; // Track lifecycle state
 
     public TypeListAggregate(TypeListId typeListId,
                              TypeListUuId typeListUuId,
                              TypeListBusinessUuId typeListBusinessUuId,
                              Set<TypesUuId> typeUuIds,
+                             boolean deleted, // Add this
                              AuditMetadata auditMetadata) {
         super(auditMetadata);
-
-        DomainGuard.notNull(typeListId, "TypeList ID");
-        DomainGuard.notNull(typeListUuId, "TypeList UUID");
-        DomainGuard.notNull(typeListBusinessUuId, "Business UUID");
-        DomainGuard.notNull(typeUuIds, "Type UUID Set");
-
         this.typeListId = typeListId;
-        this.typeListUuId = typeListUuId;
-        this.typeListBusinessUuId = typeListBusinessUuId;
-        this.typeUuIds = new HashSet<>(typeUuIds);
+        this.typeListUuId = DomainGuard.notNull(typeListUuId, "TypeList UUID");
+        this.typeListBusinessUuId = DomainGuard.notNull(typeListBusinessUuId, "Business UUID");
+        this.typeUuIds = new HashSet<>(typeUuIds != null ? typeUuIds : Collections.emptySet());
+        this.deleted = deleted;
     }
 
-    // --- DOMAIN ACTIONS ---
+    public static TypeListAggregate create(TypeListUuId uuId, TypeListBusinessUuId bUuId, Actor actor) {
+        TypeListAggregate aggregate = new TypeListAggregate(null, uuId, bUuId, new HashSet<>(), AuditMetadata.create(actor));
+        aggregate.registerEvent(new TypeListCreatedEvent(uuId, bUuId, actor));
+        return aggregate;
+    }
 
     public void attachType(TypesUuId typeUuId, Actor actor) {
-        DomainGuard.notNull(typeUuId, "Type UUID to attach");
-        DomainGuard.notNull(actor, "Actor performing the update");
+        TypeListBehavior.ensureActive(this.deleted);
+        TypeListBehavior.ensureCanAttach(this.typeUuIds, typeUuId);
 
-        if (this.typeUuIds.add(typeUuId)) {
-            this.recordUpdate(actor);
-            this.registerEvent(new TypeAttachedEvent(this.typeListUuId, typeUuId, actor));
-        }
+        this.applyChange(actor,
+                new TypeAttachedEvent(this.typeListUuId, typeUuId, actor),
+                () -> this.typeUuIds.add(typeUuId)
+        );
     }
 
     public void detachType(TypesUuId typeUuId, Actor actor) {
-        DomainGuard.notNull(typeUuId, "Type UUID to detach");
-        DomainGuard.notNull(actor, "Actor performing the update");
+        TypeListBehavior.ensureActive(this.deleted);
+        TypeListBehavior.ensureCanDetach(this.typeUuIds, typeUuId);
 
-        if (this.typeUuIds.remove(typeUuId)) {
-            this.recordUpdate(actor);
-            this.registerEvent(new TypeDetachedEvent(this.typeListUuId, typeUuId, actor));
-        }
+        this.applyChange(actor,
+                new TypeDetachedEvent(this.typeListUuId, typeUuId, actor),
+                () -> this.typeUuIds.remove(typeUuId)
+        );
     }
 
     public void softDelete(Actor actor) {
-        DomainGuard.notNull(actor, "Actor");
-        this.recordUpdate(actor);
-        this.registerEvent(new TypeListSoftDeletedEvent(this.typeListUuId, actor));
+        TypeListBehavior.ensureActive(this.deleted);
+
+        this.applyChange(actor,
+                new TypeListSoftDeletedEvent(this.typeListUuId, actor),
+                () -> this.deleted = true
+        );
     }
 
-    public void hardDelete(Actor actor) {
-        DomainGuard.notNull(actor, "Actor");
-        this.registerEvent(new TypeListHardDeletedEvent(this.typeListUuId, actor));
+    public void clearAllTypes(Actor actor) {
+        TypeListBehavior.ensureActive(this.deleted);
+        if (this.typeUuIds.isEmpty()) return;
+
+        this.applyChange(actor,
+                new TypeListClearedEvent(this.typeListUuId, actor),
+                this.typeUuIds::clear
+        );
+    }
+
+    public void restore(Actor actor) {
+        if (!this.deleted) return;
+        this.applyChange(actor,
+                new TypeListRestoredEvent(this.typeListUuId, actor),
+                () -> this.deleted = false
+        );
     }
 
     // --- ACCESSORS ---
+    public boolean isDeleted() { return deleted; }
     public TypeListId getTypeListId() { return typeListId; }
     public TypeListUuId getTypeListUuId() { return typeListUuId; }
     public TypeListBusinessUuId getTypeListBusinessUuId() { return typeListBusinessUuId; }
-
-    /**
-     * Returns an immutable view of the internal set to prevent external mutation
-     * bypassing the audit trail.
-     */
-    public Set<TypesUuId> getTypeUuIds() {
-        return Collections.unmodifiableSet(typeUuIds);
-    }
+    public Set<TypesUuId> getTypeUuIds() { return Collections.unmodifiableSet(typeUuIds); }
 }

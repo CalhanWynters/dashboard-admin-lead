@@ -1,11 +1,11 @@
 # TO DO LIST
 - Check UuIds in classes for confusion with java.util.UUID
-- Handle Feature/Type compatibility on domain service. Only looking to snapshot to main business core microservice.
-    That is where the handling of compatibility will be coded.
+- Handle Feature/Type compatibility on domain/application service. 
+- FeatureCompatibilityChangedEvent Using Fail Fast principles, domain/application service will look for variants that will cause issues. Developers see variants.
 - Re-examine the validation for O [Currency] on args with "~~perunit" in the domain PurchasePricing concrete classes.
 - Carefully look over the refractored codes for Variant and VariantCollection
 - Build the JPA AttributeConverters to map these microscopic NONE values (like 0.0000000001) to database NULL columns
-
+- Add GalleryAggregate Thumbnail
 
 
 

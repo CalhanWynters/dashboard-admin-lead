@@ -11,75 +11,91 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Aggregate Root for VariantList.
- * Manages the collection of associated Variants with mandatory actor attribution for all updates.
- */
 public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate> {
 
     private final VariantListId variantListId;
     private final VariantListUuId variantListUuId;
-    private final VariantListBusinessUuId variantListBusinessUuId;
     private final Set<VariantsUuId> variantUuIds;
+    private boolean deleted;
 
     public VariantListAggregate(VariantListId variantListId,
                                 VariantListUuId variantListUuId,
                                 VariantListBusinessUuId variantListBusinessUuId,
                                 Set<VariantsUuId> variantUuIds,
+                                boolean deleted,
                                 AuditMetadata auditMetadata) {
         super(auditMetadata);
-
-        DomainGuard.notNull(variantListId, "VariantList ID");
-        DomainGuard.notNull(variantListUuId, "VariantList UUID");
-        DomainGuard.notNull(variantListBusinessUuId, "Business UUID");
-        DomainGuard.notNull(variantUuIds, "Variant UUID Set");
-
         this.variantListId = variantListId;
-        this.variantListUuId = variantListUuId;
-        this.variantListBusinessUuId = variantListBusinessUuId;
-        this.variantUuIds = new HashSet<>(variantUuIds);
+        this.variantListUuId = DomainGuard.notNull(variantListUuId, "VariantList UUID");
+        // Ensure Business UUID is validated even if not stored as a field
+        DomainGuard.notNull(variantListBusinessUuId, "Business UUID");
+        this.variantUuIds = new HashSet<>(variantUuIds != null ? variantUuIds : Collections.emptySet());
+        this.deleted = deleted;
+    }
+
+    public static VariantListAggregate create(VariantListUuId uuId, VariantListBusinessUuId bUuId, Actor actor) {
+        VariantListAggregate aggregate = new VariantListAggregate(null, uuId, bUuId, new HashSet<>(), false, AuditMetadata.create(actor));
+        aggregate.registerEvent(new VariantListCreatedEvent(uuId, bUuId, actor));
+        return aggregate;
     }
 
     // --- DOMAIN ACTIONS ---
 
     public void attachVariant(VariantsUuId variantUuId, Actor actor) {
-        DomainGuard.notNull(variantUuId, "Variant UUID to attach");
-        DomainGuard.notNull(actor, "Actor performing the update");
+        VariantListBehavior.ensureActive(this.deleted);
+        VariantListBehavior.ensureCanAttach(this.variantUuIds, variantUuId);
 
-        if (this.variantUuIds.add(variantUuId)) {
-            this.recordUpdate(actor);
-            this.registerEvent(new VariantAttachedEvent(this.variantListUuId, variantUuId, actor));
-        }
+        this.applyChange(actor,
+                new VariantAttachedEvent(this.variantListUuId, variantUuId, actor),
+                () -> this.variantUuIds.add(variantUuId)
+        );
     }
 
     public void detachVariant(VariantsUuId variantUuId, Actor actor) {
-        DomainGuard.notNull(variantUuId, "Variant UUID to detach");
-        DomainGuard.notNull(actor, "Actor performing the update");
+        VariantListBehavior.ensureActive(this.deleted);
+        VariantListBehavior.ensureCanDetach(this.variantUuIds, variantUuId);
 
-        if (this.variantUuIds.remove(variantUuId)) {
-            this.recordUpdate(actor);
-            this.registerEvent(new VariantDetachedEvent(this.variantListUuId, variantUuId, actor));
-        }
+        this.applyChange(actor,
+                new VariantDetachedEvent(this.variantListUuId, variantUuId, actor),
+                () -> this.variantUuIds.remove(variantUuId)
+        );
+    }
+
+    public void reorder(Actor actor) {
+        VariantListBehavior.ensureActive(this.deleted);
+        VariantListBehavior.ensureCanReorder(this.variantUuIds);
+
+        this.applyChange(actor, new VariantListReorderedEvent(this.variantListUuId, actor), null);
+    }
+
+    public void clearAllVariants(Actor actor) {
+        VariantListBehavior.ensureActive(this.deleted);
+
+        if (this.variantUuIds.isEmpty()) return;
+
+        this.applyChange(actor,
+                new VariantListClearedEvent(this.variantListUuId, actor),
+                this.variantUuIds::clear
+        );
     }
 
     public void softDelete(Actor actor) {
-        DomainGuard.notNull(actor, "Actor");
-        this.recordUpdate(actor);
-        this.registerEvent(new VariantListSoftDeletedEvent(this.variantListUuId, actor));
+        VariantListBehavior.ensureActive(this.deleted);
+        this.applyChange(actor, new VariantListSoftDeletedEvent(this.variantListUuId, actor), () -> this.deleted = true);
+    }
+
+    public void restore(Actor actor) {
+        if (!this.deleted) return;
+        this.applyChange(actor, new VariantListRestoredEvent(this.variantListUuId, actor), () -> this.deleted = false);
     }
 
     public void hardDelete(Actor actor) {
-        DomainGuard.notNull(actor, "Actor");
-        // Hard delete usually implies immediate removal, but event triggers cleanup in other contexts
-        this.registerEvent(new VariantListHardDeletedEvent(this.variantListUuId, actor));
+        this.applyChange(actor, new VariantListHardDeletedEvent(this.variantListUuId, actor), null);
     }
 
     // --- ACCESSORS ---
+    public boolean isDeleted() { return deleted; }
     public VariantListId getVariantListId() { return variantListId; }
     public VariantListUuId getVariantListUuId() { return variantListUuId; }
-    public VariantListBusinessUuId getVariantListBusinessUuId() { return variantListBusinessUuId; }
-
-    public Set<VariantsUuId> getVariantUuIds() {
-        return Collections.unmodifiableSet(variantUuIds);
-    }
+    public Set<VariantsUuId> getVariantUuIds() { return Collections.unmodifiableSet(variantUuIds); }
 }

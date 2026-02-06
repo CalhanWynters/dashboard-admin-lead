@@ -9,19 +9,38 @@ import java.util.Set;
 
 public class TypeListFactory {
 
-    public static TypeListAggregate create(TypeListBusinessUuId bizId, Set<TypesUuId> ids, Actor creator) {
-        return new TypeListAggregate(
-                TypeListId.NONE, // Much cleaner than magic strings
+    /**
+     * Delegates to the Aggregate's static factory to ensure the
+     * TypeListCreatedEvent is properly registered.
+     */
+    public static TypeListAggregate create(TypeListBusinessUuId bizId, Actor creator) {
+        // We delegate creation to the aggregate to capture the Domain Event
+        return TypeListAggregate.create(
                 TypeListUuId.generate(),
                 bizId,
-                ids,
-                AuditMetadata.create(creator)
+                creator
         );
     }
 
+    /**
+     * Used by the Infrastructure layer to rebuild an existing entity from the DB.
+     * Note: Reconstitution bypasses domain events.
+     */
     public static TypeListAggregate reconstitute(
-            TypeListId id, TypeListUuId uuId, TypeListBusinessUuId bizId,
-            Set<TypesUuId> ids, AuditMetadata audit) {
-        return new TypeListAggregate(id, uuId, bizId, ids, audit);
+            TypeListId id,
+            TypeListUuId uuId,
+            TypeListBusinessUuId bizId,
+            Set<TypesUuId> ids,
+            boolean deleted, // Added state for reconstitution
+            AuditMetadata audit) {
+
+        return new TypeListAggregate(
+                id,
+                uuId,
+                bizId,
+                ids,
+                deleted, // 5th argument
+                audit    // 6th argument
+        );
     }
 }
