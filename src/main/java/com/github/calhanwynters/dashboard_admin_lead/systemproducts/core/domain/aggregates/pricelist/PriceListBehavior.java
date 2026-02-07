@@ -1,6 +1,8 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist;
 
+import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
+import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.PurchasePricing;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListDomainWrapper.*;
@@ -9,6 +11,38 @@ import java.util.Currency;
 import java.util.Map;
 
 public final class PriceListBehavior {
+
+    public static void verifyCreationAuthority(Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException("Price List creation requires Manager or Admin roles.", "SEC-403", actor);
+        }
+    }
+
+    public static void verifyPriceModificationAuthority(Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER)) {
+            throw new DomainAuthorizationException("Only Managers can modify individual prices.", "SEC-403", actor);
+        }
+    }
+
+    public static void verifyBulkAdjustmentAuthority(Actor actor) {
+        // SOC 2: Bulk changes often require higher clearance (Admin)
+        if (!actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException("Bulk price adjustments are restricted to Administrators.", "SEC-001", actor);
+        }
+    }
+
+    public static void verifyHardDeleteAuthority(Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException("Hard deletes are restricted to Administrators.", "SEC-001", actor);
+        }
+    }
+
+    public static void verifyActivationAuthority(Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException("Activation status changes require Manager or Admin roles.", "SEC-403", actor);
+        }
+    }
+
 
     public static void validateStrategyMatch(Class<? extends PurchasePricing> boundary, PurchasePricing pricing) {
         DomainGuard.notNull(pricing, "Pricing strategy");

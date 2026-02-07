@@ -3,17 +3,28 @@ package com.github.calhanwynters.dashboard_admin_lead.common;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import jakarta.persistence.Embeddable;
 
-@Embeddable
-public record Actor(String value) {
+import java.util.Collections;
+import java.util.Set;
 
-    public static final Actor SYSTEM = new Actor("SYSTEM");
+@Embeddable
+public record Actor(String identity, Set<String> roles) {
+
+    // SOC 2 Win: Define the "Internal System" actor with no roles (or specific system roles)
+    public static final Actor SYSTEM = new Actor("INTERNAL_SYSTEM", Collections.emptySet());
+
+    public static final String ROLE_ADMIN = "ROLE_PRODUCT_ADMIN";
+    public static final String ROLE_MANAGER = "ROLE_CATALOG_MANAGER";
 
     public Actor {
-        // This handles null check, blank check, and returns a stripped string
-        value = DomainGuard.notBlank(value, "Actor Identity");
+        identity = DomainGuard.notBlank(identity, "Actor Identity");
+        roles = DomainGuard.notNull(roles, "Actor Roles");
     }
 
-    public static Actor of(String identity) {
-        return new Actor(identity);
+    public boolean hasRole(String role) {
+        return roles.contains(role);
+    }
+
+    public static Actor of(String identity, Set<String> roles) {
+        return new Actor(identity, roles);
     }
 }

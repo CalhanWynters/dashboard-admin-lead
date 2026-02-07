@@ -5,7 +5,6 @@ import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.typelist.events.*;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.typelist.events.*;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.typelist.TypeListDomainWrapper.*;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesDomainWrapper.TypesUuId;
@@ -37,7 +36,9 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
     }
 
     public static TypeListAggregate create(TypeListUuId uuId, TypeListBusinessUuId bUuId, Actor actor) {
-        // Added 'false' to match your updated 6-argument constructor
+        // Line 1: Auth
+        TypeListBehavior.verifyCreationAuthority(actor);
+
         TypeListAggregate aggregate = new TypeListAggregate(
                 null, uuId, bUuId, new HashSet<>(), false, AuditMetadata.create(actor)
         );
@@ -46,9 +47,11 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
     }
 
     public void attachType(TypesUuId typeUuId, Actor actor) {
+        // Line 1: Logic & Auth
         TypeListBehavior.ensureActive(this.deleted);
-        TypeListBehavior.ensureCanAttach(this.typeUuIds, typeUuId);
+        TypeListBehavior.ensureCanAttach(this.typeUuIds, typeUuId, actor);
 
+        // Line 2: Execution
         this.applyChange(actor,
                 new TypeAttachedEvent(this.typeListUuId, typeUuId, actor),
                 () -> this.typeUuIds.add(typeUuId)
@@ -56,8 +59,9 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
     }
 
     public void detachType(TypesUuId typeUuId, Actor actor) {
+        // Line 1: Logic & Auth
         TypeListBehavior.ensureActive(this.deleted);
-        TypeListBehavior.ensureCanDetach(this.typeUuIds, typeUuId);
+        TypeListBehavior.ensureCanDetach(this.typeUuIds, typeUuId, actor);
 
         this.applyChange(actor,
                 new TypeDetachedEvent(this.typeListUuId, typeUuId, actor),
@@ -66,7 +70,9 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
     }
 
     public void softDelete(Actor actor) {
+        // Line 1: Auth
         TypeListBehavior.ensureActive(this.deleted);
+        TypeListBehavior.verifyLifecycleAuthority(actor);
 
         this.applyChange(actor,
                 new TypeListSoftDeletedEvent(this.typeListUuId, actor),
@@ -75,9 +81,9 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
     }
 
     public void hardDelete(Actor actor) {
-        // Line 1: Logic (Optional: check if already soft-deleted or special permissions)
+        // Line 1: Admin-only Auth
+        TypeListBehavior.verifyLifecycleAuthority(actor);
 
-        // Line 2: Side-effect (Mutation is null as the entity is being destroyed)
         this.applyChange(actor,
                 new TypeListHardDeletedEvent(this.typeListUuId, actor),
                 null
@@ -85,7 +91,10 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
     }
 
     public void clearAllTypes(Actor actor) {
+        // Line 1: Auth
         TypeListBehavior.ensureActive(this.deleted);
+        TypeListBehavior.verifyMembershipAuthority(actor);
+
         if (this.typeUuIds.isEmpty()) return;
 
         this.applyChange(actor,
@@ -95,7 +104,10 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
     }
 
     public void restore(Actor actor) {
+        // Line 1: Admin Auth
         if (!this.deleted) return;
+        TypeListBehavior.verifyLifecycleAuthority(actor);
+
         this.applyChange(actor,
                 new TypeListRestoredEvent(this.typeListUuId, actor),
                 () -> this.deleted = false

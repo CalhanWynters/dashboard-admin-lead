@@ -12,7 +12,6 @@ import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.events.*;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.product.events.*;
 
 public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot> {
 
@@ -63,6 +62,8 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     public static ProductAggregateRoot create(ProductUuId uuId, ProductBusinessUuId bUuId, ProductManifest manifest,
                                               ProductStatus status, GalleryUuId gallery, VariantListUuId variants,
                                               TypeListUuId types, PriceListUuId prices, ProductPhysicalSpecs specs, Actor actor) {
+        // Line 1: Auth check
+        ProductBehavior.verifyCreationAuthority(actor);
 
         ProductAggregateRoot product = new ProductAggregateRoot(
                 null, uuId, bUuId, manifest, ProductVersion.INITIAL, status,
@@ -76,6 +77,8 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     // --- DOMAIN ACTIONS ---
 
     public void changeTypeConfiguration(TypeListUuId newTypeListId, Actor actor) {
+        // Line 1: Auth & Logic
+        ProductBehavior.verifyStructuralChangeAuthority(actor);
         DomainGuard.notNull(newTypeListId, "Type List ID");
 
         this.applyChange(actor,
@@ -88,7 +91,10 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     }
 
     public void updateManifest(ProductManifest newManifest, Actor actor) {
+        // Line 1: Auth & Logic
+        ProductBehavior.verifyManifestUpdateAuthority(actor);
         ProductBehavior.validateManifest(newManifest);
+
         this.applyChange(actor,
                 new ProductManifestUpdatedEvent(this.productUuId, newManifest, actor),
                 () -> {
@@ -99,7 +105,11 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     }
 
     public void reassignGallery(GalleryUuId newGalleryId, Actor actor) {
+        // Line 1: Auth & Invariants
+        ProductBehavior.verifyManifestUpdateAuthority(actor); // Requires Manager
         DomainGuard.notNull(newGalleryId, "Gallery ID");
+
+        // Line 2: Side-Effect
         this.applyChange(actor,
                 new ProductGalleryReassignedEvent(this.productUuId, newGalleryId, actor),
                 () -> this.galleryUuId = newGalleryId
@@ -107,7 +117,10 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     }
 
     public void reassignPriceList(PriceListUuId newPriceListId, Actor actor) {
+        // Line 1: Structural Auth
+        ProductBehavior.verifyStructuralChangeAuthority(actor);
         DomainGuard.notNull(newPriceListId, "Price List ID");
+
         this.applyChange(actor,
                 new ProductPriceListReassignedEvent(this.productUuId, newPriceListId, actor),
                 () -> {
@@ -118,7 +131,11 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     }
 
     public void updatePhysicalSpecs(ProductPhysicalSpecs newSpecs, Actor actor) {
+        // Line 1: Auth & Invariants
+        ProductBehavior.verifyManifestUpdateAuthority(actor); // Requires Manager
         ProductBehavior.validatePhysicalSpecs(newSpecs);
+
+        // Line 2: Side-Effect
         this.applyChange(actor,
                 new ProductPhysicalSpecsUpdatedEvent(this.productUuId, newSpecs, actor),
                 () -> {
@@ -129,10 +146,14 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     }
 
     private void applyTransition(ProductStatus nextStatus, Actor actor) {
+        // Line 1: Auth & Logic
+        ProductBehavior.verifyStatusTransitionAuthority(actor, nextStatus);
         ProductBehavior.validateStatusTransition(this.productStatus, nextStatus);
+
         var nextVersion = ProductBehavior.incrementVersion(this.productVersion);
         var oldStatus = this.productStatus;
 
+        // Line 2: Side-Effect
         this.applyChange(actor,
                 new ProductStatusChangedEvent(this.productUuId, oldStatus, nextStatus, nextVersion, actor),
                 () -> {
@@ -147,18 +168,19 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
      * is found to be missing in the system.
      */
     public void recordMissingDependency(String dependencyType, UuId missingId, Actor actor) {
-        ProductBehavior.ensureDependencyResolution(dependencyType, false);
+        // Line 1: Auth (Allows System Actor)
+        ProductBehavior.ensureDependencyResolution(dependencyType, false, actor);
 
         this.applyChange(actor,
-                // Now matches the record which expects com.github.calhanwynters.dashboard_admin_lead.common.UuId
                 new ProductDependencyMissingEvent(this.productUuId, dependencyType, missingId, actor),
                 () -> this.productStatus = ProductStatus.DRAFT
         );
     }
 
 
-    // Remove the old one-line discontinue and use this one:
     public void discontinue(Actor actor) {
+        // Line 1: Auth & Logic (Inherits transition authority check)
+        ProductBehavior.verifyStatusTransitionAuthority(actor, ProductStatus.DISCONTINUED);
         ProductBehavior.validateStatusTransition(this.productStatus, ProductStatus.DISCONTINUED);
 
         this.applyChange(actor,

@@ -5,7 +5,6 @@ import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.events.*;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.gallery.events.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,69 +45,63 @@ public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
      * Static Factory for new Gallery creation.
      */
     public static GalleryAggregate create(GalleryUuId uuId, GalleryBusinessUuId bUuId, Actor actor) {
-        // New galleries start private with 0 images
+        GalleryBehavior.verifyCreationAuthority(actor);
+
         GalleryAggregate aggregate = new GalleryAggregate(null, uuId, bUuId, false, List.of(), AuditMetadata.create(actor));
         aggregate.registerEvent(new GalleryCreatedEvent(uuId, bUuId, actor));
         return aggregate;
     }
 
-    // --- DOMAIN ACTIONS (Two-Liner Pattern) ---
-
     public void addImage(ImageUuId imageUuId, Actor actor) {
-        // Line 1: Pure Calculation (Now passing current size)
-        var validatedImage = GalleryBehavior.evaluateImageAddition(imageUuId, this.imageUuIds.size());
+        var validatedImage = GalleryBehavior.evaluateImageAddition(imageUuId, this.imageUuIds.size(), actor);
 
-        // Line 2: Execution
-        this.applyChange(actor, new ImageAddedToGalleryEvent(galleryUuId, validatedImage, actor), () -> this.imageUuIds.add(validatedImage));
+        this.applyChange(actor,
+                new ImageAddedToGalleryEvent(galleryUuId, validatedImage, actor),
+                () -> this.imageUuIds.add(validatedImage));
     }
 
     public void removeImage(ImageUuId imageUuId, Actor actor) {
-        // Line 1: Pure Calculation
-        var validatedImage = GalleryBehavior.evaluateImageRemoval(imageUuId, this.imageUuIds.contains(imageUuId));
+        var validatedImage = GalleryBehavior.evaluateImageRemoval(imageUuId, this.imageUuIds.contains(imageUuId), actor);
 
-        // Line 2: Execution
-        this.applyChange(actor, new ImageRemovedFromGalleryEvent(galleryUuId, validatedImage, actor), () -> this.imageUuIds.remove(validatedImage));
+        this.applyChange(actor,
+                new ImageRemovedFromGalleryEvent(galleryUuId, validatedImage, actor),
+                () -> this.imageUuIds.remove(validatedImage));
     }
 
     public void reorderImages(Actor actor) {
-        // Line 1: Pure Calculation (Now passing current size)
-        GalleryBehavior.verifyReorderable(this.imageUuIds.size());
+        GalleryBehavior.verifyReorderable(this.imageUuIds.size(), actor);
 
-        // Line 2: Execution
         this.applyChange(actor, new GalleryReorderedEvent(galleryUuId, actor), null);
     }
 
     public void changePublicity(boolean isPublic, Actor actor) {
-        // Line 1: Pure Logic (Now resolves 'this.isPublic')
-        var nextStatus = GalleryBehavior.evaluatePublicityChange(this.isPublic, isPublic);
+        var nextStatus = GalleryBehavior.evaluatePublicityChange(this.isPublic, isPublic, actor);
 
-        // Line 2: Execution
-        this.applyChange(actor, new GalleryPublicityChangedEvent(galleryUuId, nextStatus, actor), () -> this.isPublic = nextStatus);
+        this.applyChange(actor,
+                new GalleryPublicityChangedEvent(galleryUuId, nextStatus, actor),
+                () -> this.isPublic = nextStatus);
     }
 
     public void softDelete(Actor actor) {
-        GalleryBehavior.verifyDeletable();
-
-        this.applyChange(actor, new GallerySoftDeletedEvent(galleryUuId, actor), () -> {
-            // logic for soft delete state if needed
-        });
+        GalleryBehavior.verifyDeletable(actor);
+        this.applyChange(actor, new GallerySoftDeletedEvent(galleryUuId, actor), null);
     }
 
     public void restore(Actor actor) {
-        GalleryBehavior.verifyRestorable();
-
-        this.applyChange(actor, new GalleryRestoredEvent(galleryUuId, actor), () -> {
-            // logic for restoration state if needed
-        });
+        GalleryBehavior.verifyRestorable(actor);
+        this.applyChange(actor, new GalleryRestoredEvent(galleryUuId, actor), null);
     }
 
     public void hardDelete(Actor actor) {
+        GalleryBehavior.verifyHardDeleteAuthority(actor);
         this.applyChange(actor, new GalleryHardDeletedEvent(galleryUuId, actor), null);
     }
 
     public void markAsUpdated(Actor actor) {
+        // No specific role required for a "touch" but we audit the actor anyway
         this.applyChange(actor, new GalleryTouchedEvent(galleryUuId, actor), null);
     }
+
 
     // --- GETTERS ---
     public GalleryId getGalleryId() { return galleryId; }

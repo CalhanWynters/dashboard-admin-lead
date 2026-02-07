@@ -1,36 +1,43 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery;
 
+import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
+import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.ImageUuId;
 
 /**
  * Pure Behavioral Logic for Gallery management.
- * Optimized for the "Two-Liner" pattern in the Aggregate.
+ * Enforces SOC 2 Processing Integrity and Role-Based Access Control.
  */
 public final class GalleryBehavior {
 
-    // Business rule: Hard limit for gallery capacity
     private static final int MAX_GALLERY_SIZE = 50;
 
-    /**
-     * Validates image addition and enforces capacity limits.
-     * @throws IllegalStateException if the gallery is full.
-     */
-    public static ImageUuId evaluateImageAddition(ImageUuId imageUuId, int currentSize) {
-        DomainGuard.notNull(imageUuId, "Image UUID");
+    private GalleryBehavior() {}
 
-        if (currentSize >= MAX_GALLERY_SIZE) {
-            throw new IllegalStateException("Gallery limit reached. Cannot add more than %d images."
-                    .formatted(MAX_GALLERY_SIZE));
+    public static void verifyCreationAuthority(Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException("Gallery creation requires Manager or Admin roles.", "SEC-403", actor);
+        }
+    }
+
+    public static ImageUuId evaluateImageAddition(ImageUuId imageUuId, int currentSize, Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER)) {
+            throw new DomainAuthorizationException("Only Managers can modify gallery content.", "SEC-403", actor);
         }
 
+        DomainGuard.notNull(imageUuId, "Image UUID");
+        if (currentSize >= MAX_GALLERY_SIZE) {
+            throw new IllegalStateException("Gallery limit reached (%d)".formatted(MAX_GALLERY_SIZE));
+        }
         return imageUuId;
     }
 
-    /**
-     * Validates image removal.
-     */
-    public static ImageUuId evaluateImageRemoval(ImageUuId imageUuId, boolean containsImage) {
+    public static ImageUuId evaluateImageRemoval(ImageUuId imageUuId, boolean containsImage, Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER)) {
+            throw new DomainAuthorizationException("Only Managers can remove gallery content.", "SEC-403", actor);
+        }
+
         DomainGuard.notNull(imageUuId, "Image UUID");
         if (!containsImage) {
             throw new IllegalArgumentException("Image not found in this gallery.");
@@ -38,33 +45,41 @@ public final class GalleryBehavior {
         return imageUuId;
     }
 
-    /**
-     * Validates a change in public visibility.
-     */
-    public static boolean evaluatePublicityChange(boolean currentStatus, boolean newStatus) {
+    public static boolean evaluatePublicityChange(boolean currentStatus, boolean newStatus, Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER)) {
+            throw new DomainAuthorizationException("Only Managers can toggle gallery visibility.", "SEC-403", actor);
+        }
+
         if (currentStatus == newStatus) {
             throw new IllegalArgumentException("Gallery is already " + (currentStatus ? "public" : "private"));
         }
         return newStatus;
     }
 
-    /**
-     * Logic for reordering.
-     */
-    public static void verifyReorderable(int currentSize) {
+    public static void verifyReorderable(int currentSize, Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER)) {
+            throw new DomainAuthorizationException("Unauthorized reorder attempt.", "SEC-403", actor);
+        }
         if (currentSize <= 1) {
             throw new IllegalStateException("Cannot reorder a gallery with fewer than 2 images.");
         }
     }
 
-    /**
-     * Safety check for deletions.
-     */
-    public static void verifyDeletable() {
-        // Business logic: e.g., cross-check if this gallery is a 'primary' gallery
+    public static void verifyDeletable(Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException("Deletion requires Manager or Admin authority.", "SEC-403", actor);
+        }
     }
 
-    public static void verifyRestorable() {
-        // Business logic for restoration
+    public static void verifyHardDeleteAuthority(Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException("Hard deletes are restricted to Administrators.", "SEC-001", actor);
+        }
+    }
+
+    public static void verifyRestorable(Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException("Only Administrators can restore galleries.", "SEC-403", actor);
+        }
     }
 }

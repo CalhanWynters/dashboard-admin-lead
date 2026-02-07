@@ -45,7 +45,8 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
      */
     public static FeaturesAggregate create(FeatureUuId uuId, FeatureBusinessUuId bUuId,
                                            FeatureName name, FeatureLabel tag, Actor actor) {
-        FeaturesBehavior.validateCreation(uuId, bUuId, name, tag);
+        // Line 1: Logic & Authority Check
+        FeaturesBehavior.validateCreation(uuId, bUuId, name, tag, actor);
 
         FeaturesAggregate aggregate = new FeaturesAggregate(null, uuId, bUuId, name, tag, AuditMetadata.create(actor));
         aggregate.registerEvent(new FeatureCreatedEvent(uuId, bUuId, actor));
@@ -55,10 +56,10 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
     // --- DOMAIN ACTIONS (Two-Liner Pattern) ---
 
     public void changeCompatibilityTag(FeatureLabel newTag, Actor actor) {
-        // Line 1: Pure Logic (Behavior)
-        var validatedTag = FeaturesBehavior.evaluateCompatibilityChange(newTag, this.compatibilityTag);
+        // Line 1: Pure Logic
+        var validatedTag = FeaturesBehavior.evaluateCompatibilityChange(newTag, this.compatibilityTag, actor);
 
-        // Line 2: Side-Effect Execution (BaseAggregateRoot helper)
+        // Line 2: Side-Effect Execution
         this.applyChange(actor,
                 new FeatureCompatibilityChangedEvent(featuresUuId, this.compatibilityTag, validatedTag, actor),
                 () -> this.compatibilityTag = validatedTag
@@ -66,7 +67,8 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
     }
 
     public void updateDetails(FeatureName newName, FeatureLabel newTag, Actor actor) {
-        var patch = FeaturesBehavior.evaluateUpdate(newName, newTag);
+        // Line 1: Pure Logic
+        var patch = FeaturesBehavior.evaluateUpdate(newName, newTag, actor);
 
         this.applyChange(actor, new FeatureDetailsUpdatedEvent(featuresUuId, newName, newTag, actor), () -> {
             this.featuresName = patch.name();
@@ -75,30 +77,34 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
     }
 
     public void changeBusinessId(FeatureBusinessUuId newId, Actor actor) {
-        var validatedId = FeaturesBehavior.evaluateBusinessIdChange(this.featuresBusinessUuId, newId);
+        // Line 1: Pure Logic
+        var validatedId = FeaturesBehavior.evaluateBusinessIdChange(this.featuresBusinessUuId, newId, actor);
 
-        this.applyChange(actor, new FeatureBusinessUuIdChangedEvent(featuresUuId, featuresBusinessUuId, validatedId, actor), () -> this.featuresBusinessUuId = validatedId);
+        this.applyChange(actor, new FeatureBusinessUuIdChangedEvent(featuresUuId, featuresBusinessUuId, validatedId, actor),
+                () -> this.featuresBusinessUuId = validatedId);
     }
 
     public void softDelete(Actor actor) {
-        FeaturesBehavior.verifyDeletable();
+        // Line 1: Pure Logic
+        FeaturesBehavior.verifyDeletable(actor);
 
         this.applyChange(actor, new FeatureSoftDeletedEvent(featuresUuId, actor), () -> {
-            // State mutation for soft delete (e.g., this.active = false) would go here
+            // state mutation logic
         });
     }
 
     public void hardDelete(Actor actor) {
-        // Hard delete usually destroys the record, but we fire the event for cleanup listeners
+        // Line 1: Pure Logic
+        FeaturesBehavior.verifyHardDeleteAuthority(actor);
+
         this.applyChange(actor, new FeatureHardDeletedEvent(featuresUuId, actor), null);
     }
 
     public void restore(Actor actor) {
-        FeaturesBehavior.verifyRestorable();
+        // Line 1: Pure Logic
+        FeaturesBehavior.verifyRestorable(actor);
 
-        this.applyChange(actor, new FeatureRestoredEvent(featuresUuId, actor), () -> {
-            // State mutation for restore (e.g., this.active = true) would go here
-        });
+        this.applyChange(actor, new FeatureRestoredEvent(featuresUuId, actor), null);
     }
 
     // --- GETTERS ---

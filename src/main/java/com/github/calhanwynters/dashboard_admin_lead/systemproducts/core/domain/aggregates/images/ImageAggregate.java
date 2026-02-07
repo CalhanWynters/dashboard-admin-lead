@@ -7,7 +7,6 @@ import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.events.*;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.images.events.*;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.*;
 
@@ -42,7 +41,8 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
 
     public static ImageAggregate create(ImageUuId uuId, ImageBusinessUuId bUuId, ImageName name,
                                         ImageDescription desc, ImageUrl url, Actor actor) {
-        // Added 'false' as the 7th argument, before AuditMetadata
+        ImagesBehavior.verifyCreationAuthority(actor);
+
         ImageAggregate aggregate = new ImageAggregate(
                 null, uuId, bUuId, name, desc, url, false, AuditMetadata.create(actor)
         );
@@ -50,14 +50,11 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
         return aggregate;
     }
 
-
-    // --- DOMAIN ACTIONS (Two-Liner Pattern) ---
-
     public void updateMetadata(ImageName name, ImageDescription description, Actor actor) {
-        // Line 1: Pure Logic
-        var patch = ImagesBehavior.evaluateMetadataUpdate(name, description);
+        // Line 1: Pure Logic (Security + Invariants)
+        var patch = ImagesBehavior.evaluateMetadataUpdate(name, description, actor);
 
-        // Line 2: Side-Effect Execution
+        // Line 2: Execution
         this.applyChange(actor,
                 new ImageMetadataUpdatedEvent(this.imageUuId, patch.name(), actor),
                 () -> {
@@ -68,7 +65,8 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
     }
 
     public void changeAltText(ImageDescription newDescription, Actor actor) {
-        var validatedDescription = ImagesBehavior.evaluateAltTextChange(this.imageDescription, newDescription);
+        // Line 1: Pure Logic
+        var validatedDescription = ImagesBehavior.evaluateAltTextChange(this.imageDescription, newDescription, actor);
 
         this.applyChange(actor,
                 new ImageAltTextChangedEvent(imageUuId, this.imageDescription, validatedDescription, actor),
@@ -77,29 +75,32 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
     }
 
     public void archive(Actor actor) {
-        // Assuming an 'isArchived' boolean field exists in your state
-        ImagesBehavior.verifyArchivable(this.isArchived);
+        // Line 1: Pure Logic
+        ImagesBehavior.verifyArchivable(this.isArchived, actor);
 
         this.applyChange(actor, new ImageArchivedEvent(imageUuId, actor), () -> this.isArchived = true);
     }
 
     public void recordReference(String entityType, UuId entityId, Actor actor) {
-        this.applyChange(
-                actor, // 1
-                new ImageReferencedEvent(this.imageUuId, entityType, entityId, actor), // 2
-                null // 3: The missing Runnable mutation
-        );
+        // Line 1: Authority check
+        ImagesBehavior.verifyReferenceAuthority(actor);
+
+        this.applyChange(actor, new ImageReferencedEvent(this.imageUuId, entityType, entityId, actor), null);
     }
 
-
     public void softDelete(Actor actor) {
-        ImagesBehavior.verifyDeletable();
+        // Line 1: Logic
+        ImagesBehavior.verifyDeletable(actor);
+
         this.applyChange(actor, new ImageSoftDeletedEvent(this.imageUuId, actor), () -> {
-            // Optional: this.active = false;
+            // logic for soft delete state
         });
     }
 
     public void hardDelete(Actor actor) {
+        // Line 1: Auth check
+        ImagesBehavior.verifyHardDeleteAuthority(actor);
+
         this.applyChange(actor, new ImageHardDeletedEvent(this.imageUuId, actor), null);
     }
 

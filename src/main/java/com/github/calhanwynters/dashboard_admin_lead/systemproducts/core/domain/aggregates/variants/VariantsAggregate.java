@@ -6,7 +6,6 @@ import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.Base
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper.FeatureUuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants.events.*;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.variants.events.*;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants.VariantsDomainWrapper.*;
 
@@ -42,6 +41,8 @@ public class VariantsAggregate extends BaseAggregateRoot<VariantsAggregate> {
 
     public static VariantsAggregate create(VariantsUuId uuId, VariantsBusinessUuId bUuId,
                                            VariantsName name, Actor actor) {
+        VariantsBehavior.verifyCreationAuthority(actor);
+
         VariantsAggregate aggregate = new VariantsAggregate(
                 null, uuId, bUuId, name, new HashSet<>(), false, AuditMetadata.create(actor)
         );
@@ -53,7 +54,7 @@ public class VariantsAggregate extends BaseAggregateRoot<VariantsAggregate> {
 
     public void rename(VariantsName newName, Actor actor) {
         VariantsBehavior.ensureActive(this.deleted);
-        var validatedName = VariantsBehavior.evaluateRename(this.variantsName, newName);
+        var validatedName = VariantsBehavior.evaluateRename(this.variantsName, newName, actor);
 
         this.applyChange(actor,
                 new VariantRenamedEvent(this.variantsUuId, validatedName, actor),
@@ -64,7 +65,7 @@ public class VariantsAggregate extends BaseAggregateRoot<VariantsAggregate> {
     public void changeBusinessId(VariantsBusinessUuId newId, Actor actor) {
         VariantsBehavior.ensureActive(this.deleted);
         var oldId = this.variantsBusinessUuId;
-        var validatedId = VariantsBehavior.evaluateBusinessIdChange(oldId, newId);
+        var validatedId = VariantsBehavior.evaluateBusinessIdChange(oldId, newId, actor);
 
         this.applyChange(actor,
                 new VariantBusinessUuIdChangedEvent(this.variantsUuId, oldId, validatedId, actor),
@@ -74,7 +75,7 @@ public class VariantsAggregate extends BaseAggregateRoot<VariantsAggregate> {
 
     public void assignFeature(FeatureUuId featureUuId, Actor actor) {
         VariantsBehavior.ensureActive(this.deleted);
-        VariantsBehavior.ensureCanAssign(this.assignedFeatureUuIds, featureUuId);
+        VariantsBehavior.ensureCanAssign(this.assignedFeatureUuIds, featureUuId, actor);
 
         this.applyChange(actor,
                 new FeatureAssignedEvent(this.variantsUuId, featureUuId, actor),
@@ -84,7 +85,7 @@ public class VariantsAggregate extends BaseAggregateRoot<VariantsAggregate> {
 
     public void unassignFeature(FeatureUuId featureUuId, Actor actor) {
         VariantsBehavior.ensureActive(this.deleted);
-        VariantsBehavior.ensureCanUnassign(this.assignedFeatureUuIds, featureUuId);
+        VariantsBehavior.ensureCanUnassign(this.assignedFeatureUuIds, featureUuId, actor);
 
         this.applyChange(actor,
                 new FeatureUnassignedEvent(this.variantsUuId, featureUuId, actor),
@@ -94,6 +95,8 @@ public class VariantsAggregate extends BaseAggregateRoot<VariantsAggregate> {
 
     public void unassignAllFeatures(Actor actor) {
         VariantsBehavior.ensureActive(this.deleted);
+        VariantsBehavior.verifyManagementAuthority(actor);
+
         if (this.assignedFeatureUuIds.isEmpty()) return;
 
         this.applyChange(actor,
@@ -103,20 +106,25 @@ public class VariantsAggregate extends BaseAggregateRoot<VariantsAggregate> {
     }
 
     public void requestUsageAudit(Actor actor) {
+        // No modification to state, but we authorize the request
+        VariantsBehavior.verifyManagementAuthority(actor);
         this.applyChange(actor, new VariantUsageAuditRequestedEvent(this.variantsUuId, actor), null);
     }
 
     public void softDelete(Actor actor) {
         VariantsBehavior.ensureActive(this.deleted);
+        VariantsBehavior.verifyLifecycleAuthority(actor);
         this.applyChange(actor, new VariantSoftDeletedEvent(this.variantsUuId, actor), () -> this.deleted = true);
     }
 
     public void restore(Actor actor) {
         if (!this.deleted) return;
+        VariantsBehavior.verifyLifecycleAuthority(actor);
         this.applyChange(actor, new VariantRestoredEvent(this.variantsUuId, actor), () -> this.deleted = false);
     }
 
     public void hardDelete(Actor actor) {
+        VariantsBehavior.verifyLifecycleAuthority(actor);
         this.applyChange(actor, new VariantHardDeletedEvent(this.variantsUuId, actor), null);
     }
 
