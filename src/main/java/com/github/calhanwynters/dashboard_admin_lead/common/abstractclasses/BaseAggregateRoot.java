@@ -1,7 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
-import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.MappedSuperclass;

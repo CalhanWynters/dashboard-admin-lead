@@ -1,8 +1,9 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
-import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist.events.*;
 
@@ -22,27 +23,29 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
     private final VariantListId variantListId;
     private final VariantListUuId variantListUuId;
     private final Set<VariantsUuId> variantUuIds;
-    private boolean deleted;
+    private ProductBooleans productBooleans; // Replaced boolean deleted
 
     public VariantListAggregate(VariantListId variantListId,
                                 VariantListUuId variantListUuId,
                                 VariantListBusinessUuId variantListBusinessUuId,
                                 Set<VariantsUuId> variantUuIds,
-                                boolean deleted,
+                                ProductBooleans productBooleans, // Updated parameter
                                 AuditMetadata auditMetadata) {
         super(auditMetadata);
         this.variantListId = variantListId;
         this.variantListUuId = DomainGuard.notNull(variantListUuId, "VariantList UUID");
         DomainGuard.notNull(variantListBusinessUuId, "Business UUID");
         this.variantUuIds = new HashSet<>(variantUuIds != null ? variantUuIds : Collections.emptySet());
-        this.deleted = deleted;
+        // Defaulting to false/false if null is passed
+        this.productBooleans = productBooleans != null ? productBooleans : new ProductBooleans(false, false);
     }
 
     public static VariantListAggregate create(VariantListUuId uuId, VariantListBusinessUuId bUuId, Actor actor) {
-        // Line 1: Auth
         VariantListBehavior.verifyCreationAuthority(actor);
 
-        VariantListAggregate aggregate = new VariantListAggregate(null, uuId, bUuId, new HashSet<>(), false, AuditMetadata.create(actor));
+        VariantListAggregate aggregate = new VariantListAggregate(
+                null, uuId, bUuId, new HashSet<>(), new ProductBooleans(false, false), AuditMetadata.create(actor)
+        );
         aggregate.registerEvent(new VariantListCreatedEvent(uuId, bUuId, actor));
         return aggregate;
     }
@@ -50,11 +53,9 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
     // --- DOMAIN ACTIONS ---
 
     public void attachVariant(VariantsUuId variantUuId, Actor actor) {
-        // Line 1: Logic & Auth
-        VariantListBehavior.ensureActive(this.deleted);
+        VariantListBehavior.ensureActive(this.productBooleans.softDeleted());
         VariantListBehavior.ensureCanAttach(this.variantUuIds, variantUuId, actor);
 
-        // Line 2: Side-Effect
         this.applyChange(actor,
                 new VariantAttachedEvent(this.variantListUuId, variantUuId, actor),
                 () -> this.variantUuIds.add(variantUuId)
@@ -62,8 +63,7 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
     }
 
     public void detachVariant(VariantsUuId variantUuId, Actor actor) {
-        // Line 1: Logic & Auth
-        VariantListBehavior.ensureActive(this.deleted);
+        VariantListBehavior.ensureActive(this.productBooleans.softDeleted());
         VariantListBehavior.ensureCanDetach(this.variantUuIds, variantUuId, actor);
 
         this.applyChange(actor,
@@ -73,16 +73,14 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
     }
 
     public void reorder(Actor actor) {
-        // Line 1: Logic & Auth
-        VariantListBehavior.ensureActive(this.deleted);
+        VariantListBehavior.ensureActive(this.productBooleans.softDeleted());
         VariantListBehavior.ensureCanReorder(this.variantUuIds, actor);
 
         this.applyChange(actor, new VariantListReorderedEvent(this.variantListUuId, actor), null);
     }
 
     public void clearAllVariants(Actor actor) {
-        // Line 1: Logic & Auth
-        VariantListBehavior.ensureActive(this.deleted);
+        VariantListBehavior.ensureActive(this.productBooleans.softDeleted());
         VariantListBehavior.verifyMembershipAuthority(actor);
 
         if (this.variantUuIds.isEmpty()) return;
@@ -94,30 +92,57 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
     }
 
     public void softDelete(Actor actor) {
-        // Line 1: Auth
-        VariantListBehavior.ensureActive(this.deleted);
+        VariantListBehavior.ensureActive(this.productBooleans.softDeleted());
         VariantListBehavior.verifyLifecycleAuthority(actor);
 
-        this.applyChange(actor, new VariantListSoftDeletedEvent(this.variantListUuId, actor), () -> this.deleted = true);
+        // Replace the record to change softDeleted to true
+        this.applyChange(actor,
+                new VariantListSoftDeletedEvent(this.variantListUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), true)
+        );
     }
 
     public void restore(Actor actor) {
-        // Line 1: Auth
-        if (!this.deleted) return;
+        if (!this.productBooleans.softDeleted()) return;
         VariantListBehavior.verifyLifecycleAuthority(actor);
 
-        this.applyChange(actor, new VariantListRestoredEvent(this.variantListUuId, actor), () -> this.deleted = false);
+        // Replace the record to change softDeleted to false
+        this.applyChange(actor,
+                new VariantListRestoredEvent(this.variantListUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), false)
+        );
     }
 
     public void hardDelete(Actor actor) {
-        // Line 1: Admin Auth
         VariantListBehavior.verifyLifecycleAuthority(actor);
-
         this.applyChange(actor, new VariantListHardDeletedEvent(this.variantListUuId, actor), null);
     }
 
+    public void archive(Actor actor) {
+        // Line 1: Auth
+        VariantListBehavior.verifyLifecycleAuthority(actor);
+
+        // Line 2: Side-Effect (Replace record to set archived = true)
+        this.applyChange(actor,
+                new VariantListArchivedEvent(this.variantListUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(true, this.productBooleans.softDeleted())
+        );
+    }
+
+    public void unarchive(Actor actor) {
+        // Line 1: Auth
+        VariantListBehavior.verifyLifecycleAuthority(actor);
+
+        // Line 2: Side-Effect (Replace record to set archived = false)
+        this.applyChange(actor,
+                new VariantListUnarchivedEvent(this.variantListUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(false, this.productBooleans.softDeleted())
+        );
+    }
+
     // --- ACCESSORS ---
-    public boolean isDeleted() { return deleted; }
+    public ProductBooleans getProductBooleans() { return productBooleans; }
+    public boolean isDeleted() { return productBooleans.softDeleted(); }
     public VariantListId getVariantListId() { return variantListId; }
     public VariantListUuId getVariantListUuId() { return variantListUuId; }
     public Set<VariantsUuId> getVariantUuIds() { return Collections.unmodifiableSet(variantUuIds); }

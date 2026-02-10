@@ -1,8 +1,9 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
-import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.events.*;
 
@@ -12,24 +13,22 @@ import java.util.List;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryDomainWrapper.*;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.ImageUuId;
 
-/**
- * Aggregate Root for Gallery management.
- */
 public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
 
     private final GalleryId galleryId;
     private final GalleryUuId galleryUuId;
     private final GalleryBusinessUuId galleryBusinessUuId;
 
-    // New state fields to support Behavior checks
     private final List<ImageUuId> imageUuIds = new ArrayList<>();
     private boolean isPublic;
+    private ProductBooleans productBooleans; // Record integration
 
     public GalleryAggregate(GalleryId galleryId,
                             GalleryUuId galleryUuId,
                             GalleryBusinessUuId galleryBusinessUuId,
                             boolean isPublic,
                             List<ImageUuId> imageUuIds,
+                            ProductBooleans productBooleans, // Added param
                             AuditMetadata auditMetadata) {
         super(auditMetadata);
         this.galleryId = DomainGuard.notNull(galleryId, "Gallery PK ID");
@@ -39,20 +38,23 @@ public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
         if (imageUuIds != null) {
             this.imageUuIds.addAll(imageUuIds);
         }
+        this.productBooleans = (productBooleans != null) ? productBooleans : new ProductBooleans(false, false);
     }
 
-    /**
-     * Static Factory for new Gallery creation.
-     */
     public static GalleryAggregate create(GalleryUuId uuId, GalleryBusinessUuId bUuId, Actor actor) {
         GalleryBehavior.verifyCreationAuthority(actor);
 
-        GalleryAggregate aggregate = new GalleryAggregate(null, uuId, bUuId, false, List.of(), AuditMetadata.create(actor));
+        GalleryAggregate aggregate = new GalleryAggregate(
+                null, uuId, bUuId, false, List.of(), new ProductBooleans(false, false), AuditMetadata.create(actor)
+        );
         aggregate.registerEvent(new GalleryCreatedEvent(uuId, bUuId, actor));
         return aggregate;
     }
 
+    // --- DOMAIN ACTIONS ---
+
     public void addImage(ImageUuId imageUuId, Actor actor) {
+        GalleryBehavior.ensureActive(this.productBooleans.softDeleted());
         var validatedImage = GalleryBehavior.evaluateImageAddition(imageUuId, this.imageUuIds.size(), actor);
 
         this.applyChange(actor,
@@ -61,6 +63,7 @@ public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
     }
 
     public void removeImage(ImageUuId imageUuId, Actor actor) {
+        GalleryBehavior.ensureActive(this.productBooleans.softDeleted());
         var validatedImage = GalleryBehavior.evaluateImageRemoval(imageUuId, this.imageUuIds.contains(imageUuId), actor);
 
         this.applyChange(actor,
@@ -68,28 +71,42 @@ public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
                 () -> this.imageUuIds.remove(validatedImage));
     }
 
-    public void reorderImages(Actor actor) {
-        GalleryBehavior.verifyReorderable(this.imageUuIds.size(), actor);
-
-        this.applyChange(actor, new GalleryReorderedEvent(galleryUuId, actor), null);
-    }
-
-    public void changePublicity(boolean isPublic, Actor actor) {
-        var nextStatus = GalleryBehavior.evaluatePublicityChange(this.isPublic, isPublic, actor);
+    public void archive(Actor actor) {
+        GalleryBehavior.verifyLifecycleAuthority(actor);
 
         this.applyChange(actor,
-                new GalleryPublicityChangedEvent(galleryUuId, nextStatus, actor),
-                () -> this.isPublic = nextStatus);
+                new GalleryArchivedEvent(galleryUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(true, this.productBooleans.softDeleted())
+        );
+    }
+
+    public void unarchive(Actor actor) {
+        GalleryBehavior.verifyLifecycleAuthority(actor);
+
+        this.applyChange(actor,
+                new GalleryUnarchivedEvent(galleryUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(false, this.productBooleans.softDeleted())
+        );
     }
 
     public void softDelete(Actor actor) {
-        GalleryBehavior.verifyDeletable(actor);
-        this.applyChange(actor, new GallerySoftDeletedEvent(galleryUuId, actor), null);
+        GalleryBehavior.ensureActive(this.productBooleans.softDeleted());
+        GalleryBehavior.verifyLifecycleAuthority(actor);
+
+        this.applyChange(actor,
+                new GallerySoftDeletedEvent(galleryUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), true)
+        );
     }
 
     public void restore(Actor actor) {
-        GalleryBehavior.verifyRestorable(actor);
-        this.applyChange(actor, new GalleryRestoredEvent(galleryUuId, actor), null);
+        if (!this.productBooleans.softDeleted()) return;
+        GalleryBehavior.verifyLifecycleAuthority(actor);
+
+        this.applyChange(actor,
+                new GalleryRestoredEvent(galleryUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), false)
+        );
     }
 
     public void hardDelete(Actor actor) {
@@ -97,13 +114,10 @@ public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
         this.applyChange(actor, new GalleryHardDeletedEvent(galleryUuId, actor), null);
     }
 
-    public void markAsUpdated(Actor actor) {
-        // No specific role required for a "touch" but we audit the actor anyway
-        this.applyChange(actor, new GalleryTouchedEvent(galleryUuId, actor), null);
-    }
-
-
     // --- GETTERS ---
+    public ProductBooleans getProductBooleans() { return productBooleans; }
+    public boolean isDeleted() { return productBooleans.softDeleted(); }
+    public boolean isArchived() { return productBooleans.archived(); }
     public GalleryId getGalleryId() { return galleryId; }
     public GalleryUuId getGalleryUuId() { return galleryUuId; }
     public GalleryBusinessUuId getGalleryBusinessUuId() { return galleryBusinessUuId; }

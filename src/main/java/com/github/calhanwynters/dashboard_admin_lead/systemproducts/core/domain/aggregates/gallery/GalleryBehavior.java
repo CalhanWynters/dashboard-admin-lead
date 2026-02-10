@@ -15,6 +15,32 @@ public final class GalleryBehavior {
 
     private GalleryBehavior() {}
 
+    // --- NEW: LIFECYCLE & ACTIVITY GUARDS ---
+
+    /**
+     * SOC 2: Ensures no state modifications occur on a soft-deleted gallery.
+     */
+    public static void ensureActive(boolean isSoftDeleted) {
+        DomainGuard.ensure(
+                !isSoftDeleted,
+                "Domain Violation: The gallery is soft-deleted and cannot be modified.",
+                "VAL-018", "STATE_LOCKED"
+        );
+    }
+
+    /**
+     * SOC 2: Standardizes lifecycle authority (Archive/Delete/Restore).
+     */
+    public static void verifyLifecycleAuthority(Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException(
+                    "Lifecycle management (Archive/Delete/Restore) requires Manager or Admin roles.",
+                    "SEC-403", actor);
+        }
+    }
+
+    // --- AUTHORITY CHECKS ---
+
     public static void verifyCreationAuthority(Actor actor) {
         if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
             throw new DomainAuthorizationException("Gallery creation requires Manager or Admin roles.", "SEC-403", actor);
@@ -65,21 +91,23 @@ public final class GalleryBehavior {
         }
     }
 
+    // --- UPDATED LIFECYCLE DELEGATES ---
+
     public static void verifyDeletable(Actor actor) {
-        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException("Deletion requires Manager or Admin authority.", "SEC-403", actor);
+        verifyLifecycleAuthority(actor);
+    }
+
+    public static void verifyRestorable(Actor actor) {
+        // Keeping your previous restriction of Admin-only for restoration if desired,
+        // otherwise delegate to verifyLifecycleAuthority for Manager access.
+        if (!actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException("Only Administrators can restore galleries.", "SEC-403", actor);
         }
     }
 
     public static void verifyHardDeleteAuthority(Actor actor) {
         if (!actor.hasRole(Actor.ROLE_ADMIN)) {
             throw new DomainAuthorizationException("Hard deletes are restricted to Administrators.", "SEC-001", actor);
-        }
-    }
-
-    public static void verifyRestorable(Actor actor) {
-        if (!actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException("Only Administrators can restore galleries.", "SEC-403", actor);
         }
     }
 }

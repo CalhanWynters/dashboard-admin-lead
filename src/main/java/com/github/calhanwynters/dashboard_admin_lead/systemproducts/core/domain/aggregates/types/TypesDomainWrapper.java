@@ -1,6 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.*;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.PhysicalSpecs;
 
 public interface TypesDomainWrapper {
     record TypesId(PkId value) {

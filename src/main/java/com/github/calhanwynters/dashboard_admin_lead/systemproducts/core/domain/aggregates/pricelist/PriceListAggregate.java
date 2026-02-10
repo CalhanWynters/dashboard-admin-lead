@@ -1,9 +1,10 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
-import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.events.*;
@@ -25,6 +26,7 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
     private final Class<? extends PurchasePricing> strategyBoundary;
 
     private PriceListVersion priceListVersion;
+    private ProductBooleans productBooleans; // Record integration
     private boolean isActive;
     private final Map<UuId, Map<Currency, PurchasePricing>> multiCurrencyPrices;
 
@@ -33,6 +35,7 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
                               Class<? extends PurchasePricing> strategyBoundary,
                               PriceListVersion priceListVersion,
                               boolean isActive,
+                              ProductBooleans productBooleans, // Added param
                               AuditMetadata auditMetadata,
                               Map<UuId, Map<Currency, PurchasePricing>> multiCurrencyPrices) {
 
@@ -42,30 +45,8 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
         this.strategyBoundary = DomainGuard.notNull(strategyBoundary, "Strategy Boundary");
         this.priceListVersion = DomainGuard.notNull(priceListVersion, "Version");
         this.isActive = isActive;
+        this.productBooleans = productBooleans != null ? productBooleans : new ProductBooleans(false, false);
         this.multiCurrencyPrices = new HashMap<>(multiCurrencyPrices);
-    }
-
-    // --- STATIC FACTORY ---
-
-    public static PriceListAggregate create(PriceListUuId uuId,
-                                            PriceListBusinessUuId businessId,
-                                            Class<? extends PurchasePricing> boundary,
-                                            Actor actor) {
-        // Line 1: Auth check
-        PriceListBehavior.verifyCreationAuthority(actor);
-
-        PriceListAggregate aggregate = new PriceListAggregate(
-                null,
-                uuId,
-                boundary,
-                PriceListVersion.INITIAL,
-                false,
-                AuditMetadata.create(actor),
-                new HashMap<>()
-        );
-
-        aggregate.registerEvent(new PriceListCreatedEvent(uuId, businessId, actor));
-        return aggregate;
     }
 
     // --- DOMAIN ACTIONS ---
@@ -93,14 +74,17 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
     }
 
     public void addOrUpdatePrice(UuId targetId, Currency currency, PurchasePricing pricing, Actor actor) {
+        // Lifecycle Guard (Hard Lock)
+        PriceListBehavior.ensureLifecycleActive(this.productBooleans.softDeleted());
+        // Operational Guard (Soft Lock)
+        PriceListBehavior.ensureOperationalActive(this.isActive);
+
         PriceListBehavior.verifyPriceModificationAuthority(actor);
-        PriceListBehavior.ensureActive(this.isActive);
         PriceListBehavior.validateStrategyMatch(this.strategyBoundary, pricing);
 
-        var currentPrice = Optional.ofNullable(multiCurrencyPrices.get(targetId))
-                .map(m -> m.get(currency));
-
+        var currentPrice = Optional.ofNullable(multiCurrencyPrices.get(targetId)).map(m -> m.get(currency));
         var nextVersion = PriceListBehavior.evaluateVersionIncrement(this.priceListVersion);
+
 
         this.applyChange(actor,
                 new PriceUpdatedEvent(this.priceListUuId, targetId, currency, pricing, nextVersion, actor),
@@ -179,8 +163,13 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
     }
 
     public void softDelete(Actor actor) {
-        PriceListBehavior.verifyPriceModificationAuthority(actor);
-        this.applyChange(actor, new PriceListSoftDeletedEvent(this.priceListUuId, actor), null);
+        PriceListBehavior.ensureLifecycleActive(this.productBooleans.softDeleted());
+        PriceListBehavior.verifyLifecycleAuthority(actor);
+
+        this.applyChange(actor,
+                new PriceListSoftDeletedEvent(this.priceListUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), true)
+        );
     }
 
     public void hardDelete(Actor actor) {
@@ -189,9 +178,34 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
     }
 
     public void restore(Actor actor) {
-        PriceListBehavior.verifyPriceModificationAuthority(actor);
-        this.applyChange(actor, new PriceListRestoredEvent(this.priceListUuId, actor), null);
+        if (!this.productBooleans.softDeleted()) return;
+        PriceListBehavior.verifyLifecycleAuthority(actor);
+
+        this.applyChange(actor,
+                new PriceListRestoredEvent(this.priceListUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), false)
+        );
     }
+
+    public void archive(Actor actor) {
+        PriceListBehavior.verifyLifecycleAuthority(actor);
+        this.applyChange(actor,
+                new PriceListArchivedEvent(this.priceListUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(true, this.productBooleans.softDeleted())
+        );
+    }
+
+    public void unarchive(Actor actor) {
+        // Line 1: Auth check (matches archive authority)
+        PriceListBehavior.verifyLifecycleAuthority(actor);
+
+        // Line 2: Side-Effect (Replace record with archived = false)
+        this.applyChange(actor,
+                new PriceListUnarchivedEvent(this.priceListUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(false, this.productBooleans.softDeleted())
+        );
+    }
+
 
     // --- ACCESSORS ---
 

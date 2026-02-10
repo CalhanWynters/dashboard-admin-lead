@@ -1,10 +1,11 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
-import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.ImageUrl;
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.events.*;
 
@@ -16,7 +17,7 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
     private final ImageUuId imageUuId;
     private final ImageBusinessUuId imageBusinessUuId;
     private final ImageUrl imageUrl;
-    private boolean isArchived;
+    private ProductBooleans productBooleans; // Replaced boolean isArchived
 
     private ImageName imageName;
     private ImageDescription imageDescription;
@@ -27,7 +28,7 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
                           ImageName imageName,
                           ImageDescription imageDescription,
                           ImageUrl imageUrl,
-                          boolean isArchived,
+                          ProductBooleans productBooleans, // Updated param
                           AuditMetadata auditMetadata) {
         super(auditMetadata);
         this.imageId = DomainGuard.notNull(imageId, "Image PK ID");
@@ -36,7 +37,7 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
         this.imageName = DomainGuard.notNull(imageName, "Image Name");
         this.imageDescription = DomainGuard.notNull(imageDescription, "Image Description");
         this.imageUrl = DomainGuard.notNull(imageUrl, "Image URL");
-        this.isArchived = isArchived;
+        this.productBooleans = productBooleans != null ? productBooleans : new ProductBooleans(false, false);
     }
 
     public static ImageAggregate create(ImageUuId uuId, ImageBusinessUuId bUuId, ImageName name,
@@ -44,17 +45,18 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
         ImagesBehavior.verifyCreationAuthority(actor);
 
         ImageAggregate aggregate = new ImageAggregate(
-                null, uuId, bUuId, name, desc, url, false, AuditMetadata.create(actor)
+                null, uuId, bUuId, name, desc, url, new ProductBooleans(false, false), AuditMetadata.create(actor)
         );
         aggregate.registerEvent(new ImageUploadedEvent(uuId, url, actor));
         return aggregate;
     }
 
+    // --- DOMAIN ACTIONS ---
+
     public void updateMetadata(ImageName name, ImageDescription description, Actor actor) {
-        // Line 1: Pure Logic (Security + Invariants)
+        ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
         var patch = ImagesBehavior.evaluateMetadataUpdate(name, description, actor);
 
-        // Line 2: Execution
         this.applyChange(actor,
                 new ImageMetadataUpdatedEvent(this.imageUuId, patch.name(), actor),
                 () -> {
@@ -64,47 +66,51 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
         );
     }
 
-    public void changeAltText(ImageDescription newDescription, Actor actor) {
-        // Line 1: Pure Logic
-        var validatedDescription = ImagesBehavior.evaluateAltTextChange(this.imageDescription, newDescription, actor);
+    public void archive(Actor actor) {
+        // Line 1: Auth & Logic
+        ImagesBehavior.verifyLifecycleAuthority(actor);
 
+        // Line 2: Side-Effect (Replace record instance)
         this.applyChange(actor,
-                new ImageAltTextChangedEvent(imageUuId, this.imageDescription, validatedDescription, actor),
-                () -> this.imageDescription = validatedDescription
+                new ImageArchivedEvent(imageUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(true, this.productBooleans.softDeleted())
         );
     }
 
-    public void archive(Actor actor) {
-        // Line 1: Pure Logic
-        ImagesBehavior.verifyArchivable(this.isArchived, actor);
+    public void unarchive(Actor actor) {
+        ImagesBehavior.verifyLifecycleAuthority(actor);
 
-        this.applyChange(actor, new ImageArchivedEvent(imageUuId, actor), () -> this.isArchived = true);
-    }
-
-    public void recordReference(String entityType, UuId entityId, Actor actor) {
-        // Line 1: Authority check
-        ImagesBehavior.verifyReferenceAuthority(actor);
-
-        this.applyChange(actor, new ImageReferencedEvent(this.imageUuId, entityType, entityId, actor), null);
+        this.applyChange(actor,
+                new ImageUnarchivedEvent(imageUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(false, this.productBooleans.softDeleted())
+        );
     }
 
     public void softDelete(Actor actor) {
-        // Line 1: Logic
-        ImagesBehavior.verifyDeletable(actor);
+        ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
+        ImagesBehavior.verifyLifecycleAuthority(actor);
 
-        this.applyChange(actor, new ImageSoftDeletedEvent(this.imageUuId, actor), () -> {
-            // logic for soft delete state
-        });
+        this.applyChange(actor,
+                new ImageSoftDeletedEvent(this.imageUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), true)
+        );
     }
 
-    public void hardDelete(Actor actor) {
-        // Line 1: Auth check
-        ImagesBehavior.verifyHardDeleteAuthority(actor);
+    public void restore(Actor actor) {
+        if (!this.productBooleans.softDeleted()) return;
+        ImagesBehavior.verifyLifecycleAuthority(actor);
 
-        this.applyChange(actor, new ImageHardDeletedEvent(this.imageUuId, actor), null);
+        this.applyChange(actor,
+                new ImageRestoredEvent(this.imageUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), false)
+        );
     }
+
 
     // Getters
+    public boolean isDeleted() { return productBooleans.softDeleted(); }
+    public boolean isArchived() { return productBooleans.archived(); }
+    public ProductBooleans getProductBooleans() { return productBooleans; }
     public ImageId getImageId() { return imageId; }
     public ImageUuId getImageUuId() { return imageUuId; }
     public ImageBusinessUuId getImageBusinessUuId() { return imageBusinessUuId; }

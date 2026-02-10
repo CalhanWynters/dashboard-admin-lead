@@ -1,7 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
-import static com.github.calhanwynters.dashboard_admin_lead.common.Actor.SYSTEM;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.*;
@@ -15,6 +14,32 @@ public final class ImagesBehavior {
     private ImagesBehavior() {}
 
     public record MetadataPatch(ImageName name, ImageDescription description) {}
+
+    // --- NEW: LIFECYCLE & ACTIVITY GUARDS ---
+
+    /**
+     * SOC 2: Ensures no state modifications occur on a soft-deleted image.
+     */
+    public static void ensureActive(boolean isSoftDeleted) {
+        DomainGuard.ensure(
+                !isSoftDeleted,
+                "Domain Violation: The image is soft-deleted and cannot be modified.",
+                "VAL-018", "STATE_LOCKED"
+        );
+    }
+
+    /**
+     * SOC 2: Standardizes lifecycle authority (Archive/Delete/Restore).
+     */
+    public static void verifyLifecycleAuthority(Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException(
+                    "Lifecycle management (Archive/Delete/Restore) requires Manager or Admin roles.",
+                    "SEC-403", actor);
+        }
+    }
+
+    // --- AUTHORITY CHECKS ---
 
     public static void verifyCreationAuthority(Actor actor) {
         if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
@@ -44,19 +69,19 @@ public final class ImagesBehavior {
         return next;
     }
 
+    /**
+     * @deprecated Use verifyLifecycleAuthority for consistency across aggregates.
+     * Kept for logic specific to "already archived" state.
+     */
     public static void verifyArchivable(boolean alreadyArchived, Actor actor) {
-        if (!actor.hasRole(Actor.ROLE_MANAGER)) {
-            throw new DomainAuthorizationException("Only Managers can archive images.", "SEC-403", actor);
-        }
+        verifyLifecycleAuthority(actor);
         if (alreadyArchived) {
             throw new IllegalStateException("Image is already archived.");
         }
     }
 
     public static void verifyDeletable(Actor actor) {
-        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException("Deletion requires Manager or Admin authority.", "SEC-403", actor);
-        }
+        verifyLifecycleAuthority(actor);
     }
 
     public static void verifyHardDeleteAuthority(Actor actor) {
@@ -66,8 +91,7 @@ public final class ImagesBehavior {
     }
 
     public static void verifyReferenceAuthority(Actor actor) {
-        // System actor often records references; ensure it has the role or identity
-        if (Actor.SYSTEM.equals(actor)) return; // Use Actor.SYSTEM
+        if (Actor.SYSTEM.equals(actor)) return;
 
         if (!actor.hasRole(Actor.ROLE_MANAGER)) {
             throw new DomainAuthorizationException("Insufficient privileges to record image references.", "SEC-403", actor);

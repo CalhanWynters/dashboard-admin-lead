@@ -13,6 +13,32 @@ public final class ProductBehavior {
 
     private ProductBehavior() {}
 
+    // --- NEW: LIFECYCLE & ACTIVITY GUARDS ---
+
+    /**
+     * SOC 2: Ensures no state modifications occur on a soft-deleted record.
+     */
+    public static void ensureActive(boolean isSoftDeleted) {
+        DomainGuard.ensure(
+                !isSoftDeleted,
+                "Domain Violation: The product is soft-deleted and cannot be modified.",
+                "VAL-018", "STATE_LOCKED"
+        );
+    }
+
+    /**
+     * SOC 2: Restricts high-impact lifecycle changes (Archive/Delete/Restore).
+     */
+    public static void verifyLifecycleAuthority(Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_ADMIN) && !actor.hasRole(Actor.ROLE_MANAGER)) {
+            throw new DomainAuthorizationException(
+                    "Lifecycle management (Archive/Delete/Restore) requires Manager or Admin roles.",
+                    "SEC-001", actor);
+        }
+    }
+
+    // --- EXISTING AUTHORITY CHECKS ---
+
     public static void verifyCreationAuthority(Actor actor) {
         if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
             throw new DomainAuthorizationException("Product creation requires Manager or Admin roles.", "SEC-403", actor);
@@ -20,7 +46,6 @@ public final class ProductBehavior {
     }
 
     public static void verifyStructuralChangeAuthority(Actor actor) {
-        // SOC 2: Changing PriceLists or TypeLists is a high-risk structural change
         if (!actor.hasRole(Actor.ROLE_ADMIN)) {
             throw new DomainAuthorizationException("Structural product changes (Price/Type lists) are restricted to Administrators.", "SEC-001", actor);
         }
@@ -33,7 +58,6 @@ public final class ProductBehavior {
     }
 
     public static void verifyStatusTransitionAuthority(Actor actor, ProductStatus target) {
-        // SOC 2: Activating a product for public view is higher risk than drafting
         if (target == ProductStatus.ACTIVE && !actor.hasRole(Actor.ROLE_ADMIN)) {
             throw new DomainAuthorizationException("Only Administrators can activate products for production.", "SEC-001", actor);
         }
@@ -42,6 +66,8 @@ public final class ProductBehavior {
             throw new DomainAuthorizationException("Insufficient privileges for status transition.", "SEC-403", actor);
         }
     }
+
+    // --- EXISTING VALIDATION & UTILS ---
 
     public static void validateStatusTransition(ProductStatus current, ProductStatus next) {
         DomainGuard.ensure(
@@ -61,7 +87,6 @@ public final class ProductBehavior {
     }
 
     public static void ensureDependencyResolution(String type, boolean exists, Actor actor) {
-        // SOC 2: Allow SYSTEM actor for self-healing, otherwise require Manager
         if (actor.equals(Actor.SYSTEM)) return;
 
         if (!actor.hasRole(Actor.ROLE_MANAGER)) {

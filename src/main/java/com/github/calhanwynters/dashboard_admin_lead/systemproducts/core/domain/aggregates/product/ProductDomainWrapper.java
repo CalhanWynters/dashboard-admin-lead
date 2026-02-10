@@ -1,6 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.*;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.PhysicalSpecs;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 
 public interface ProductDomainWrapper {

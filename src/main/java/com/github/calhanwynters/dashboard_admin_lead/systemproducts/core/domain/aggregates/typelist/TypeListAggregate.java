@@ -1,8 +1,9 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.typelist;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
-import com.github.calhanwynters.dashboard_admin_lead.common.AuditMetadata;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.typelist.events.*;
 
@@ -19,39 +20,38 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
     private final TypeListUuId typeListUuId;
     private final TypeListBusinessUuId typeListBusinessUuId;
     private final Set<TypesUuId> typeUuIds;
-    private boolean deleted = false; // Track lifecycle state
+    private ProductBooleans productBooleans; // Corrected: No more primitive boolean
 
     public TypeListAggregate(TypeListId typeListId,
                              TypeListUuId typeListUuId,
                              TypeListBusinessUuId typeListBusinessUuId,
                              Set<TypesUuId> typeUuIds,
-                             boolean deleted, // Add this
+                             ProductBooleans productBooleans, // Replaced boolean
                              AuditMetadata auditMetadata) {
         super(auditMetadata);
         this.typeListId = typeListId;
         this.typeListUuId = DomainGuard.notNull(typeListUuId, "TypeList UUID");
         this.typeListBusinessUuId = DomainGuard.notNull(typeListBusinessUuId, "Business UUID");
         this.typeUuIds = new HashSet<>(typeUuIds != null ? typeUuIds : Collections.emptySet());
-        this.deleted = deleted;
+        this.productBooleans = productBooleans != null ? productBooleans : new ProductBooleans(false, false);
     }
 
     public static TypeListAggregate create(TypeListUuId uuId, TypeListBusinessUuId bUuId, Actor actor) {
-        // Line 1: Auth
         TypeListBehavior.verifyCreationAuthority(actor);
 
         TypeListAggregate aggregate = new TypeListAggregate(
-                null, uuId, bUuId, new HashSet<>(), false, AuditMetadata.create(actor)
+                null, uuId, bUuId, new HashSet<>(), new ProductBooleans(false, false), AuditMetadata.create(actor)
         );
         aggregate.registerEvent(new TypeListCreatedEvent(uuId, bUuId, actor));
         return aggregate;
     }
 
+    // --- DOMAIN ACTIONS ---
+
     public void attachType(TypesUuId typeUuId, Actor actor) {
-        // Line 1: Logic & Auth
-        TypeListBehavior.ensureActive(this.deleted);
+        TypeListBehavior.ensureActive(this.productBooleans.softDeleted());
         TypeListBehavior.ensureCanAttach(this.typeUuIds, typeUuId, actor);
 
-        // Line 2: Execution
         this.applyChange(actor,
                 new TypeAttachedEvent(this.typeListUuId, typeUuId, actor),
                 () -> this.typeUuIds.add(typeUuId)
@@ -59,8 +59,7 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
     }
 
     public void detachType(TypesUuId typeUuId, Actor actor) {
-        // Line 1: Logic & Auth
-        TypeListBehavior.ensureActive(this.deleted);
+        TypeListBehavior.ensureActive(this.productBooleans.softDeleted());
         TypeListBehavior.ensureCanDetach(this.typeUuIds, typeUuId, actor);
 
         this.applyChange(actor,
@@ -69,30 +68,8 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
         );
     }
 
-    public void softDelete(Actor actor) {
-        // Line 1: Auth
-        TypeListBehavior.ensureActive(this.deleted);
-        TypeListBehavior.verifyLifecycleAuthority(actor);
-
-        this.applyChange(actor,
-                new TypeListSoftDeletedEvent(this.typeListUuId, actor),
-                () -> this.deleted = true
-        );
-    }
-
-    public void hardDelete(Actor actor) {
-        // Line 1: Admin-only Auth
-        TypeListBehavior.verifyLifecycleAuthority(actor);
-
-        this.applyChange(actor,
-                new TypeListHardDeletedEvent(this.typeListUuId, actor),
-                null
-        );
-    }
-
     public void clearAllTypes(Actor actor) {
-        // Line 1: Auth
-        TypeListBehavior.ensureActive(this.deleted);
+        TypeListBehavior.ensureActive(this.productBooleans.softDeleted());
         TypeListBehavior.verifyMembershipAuthority(actor);
 
         if (this.typeUuIds.isEmpty()) return;
@@ -103,19 +80,57 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
         );
     }
 
+    public void softDelete(Actor actor) {
+        TypeListBehavior.ensureActive(this.productBooleans.softDeleted());
+        TypeListBehavior.verifyLifecycleAuthority(actor);
+
+        this.applyChange(actor,
+                new TypeListSoftDeletedEvent(this.typeListUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), true)
+        );
+    }
+
+    public void hardDelete(Actor actor) {
+        TypeListBehavior.verifyLifecycleAuthority(actor);
+        this.applyChange(actor, new TypeListHardDeletedEvent(this.typeListUuId, actor), null);
+    }
+
     public void restore(Actor actor) {
-        // Line 1: Admin Auth
-        if (!this.deleted) return;
+        if (!this.productBooleans.softDeleted()) return;
         TypeListBehavior.verifyLifecycleAuthority(actor);
 
         this.applyChange(actor,
                 new TypeListRestoredEvent(this.typeListUuId, actor),
-                () -> this.deleted = false
+                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), false)
         );
     }
 
+    public void archive(Actor actor) {
+        // Line 1: Auth
+        TypeListBehavior.verifyLifecycleAuthority(actor);
+
+        // Line 2: Side-Effect (Replace record instance)
+        this.applyChange(actor,
+                new TypeListArchivedEvent(this.typeListUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(true, this.productBooleans.softDeleted())
+        );
+    }
+
+    public void unarchive(Actor actor) {
+        // Line 1: Auth
+        TypeListBehavior.verifyLifecycleAuthority(actor);
+
+        // Line 2: Side-Effect (Replace record instance)
+        this.applyChange(actor,
+                new TypeListUnarchivedEvent(this.typeListUuId, actor),
+                () -> this.productBooleans = new ProductBooleans(false, this.productBooleans.softDeleted())
+        );
+    }
+
+
     // --- ACCESSORS ---
-    public boolean isDeleted() { return deleted; }
+    public boolean isDeleted() { return productBooleans.softDeleted(); }
+    public ProductBooleans getProductBooleans() { return productBooleans; }
     public TypeListId getTypeListId() { return typeListId; }
     public TypeListUuId getTypeListUuId() { return typeListUuId; }
     public TypeListBusinessUuId getTypeListBusinessUuId() { return typeListBusinessUuId; }

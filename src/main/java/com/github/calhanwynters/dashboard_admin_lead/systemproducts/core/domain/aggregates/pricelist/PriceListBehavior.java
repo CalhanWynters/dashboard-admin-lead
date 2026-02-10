@@ -11,6 +11,21 @@ import java.util.Currency;
 import java.util.Map;
 
 public final class PriceListBehavior {
+    // Standardized Lifecycle Guard
+    public static void ensureLifecycleActive(boolean isSoftDeleted) {
+        DomainGuard.ensure(!isSoftDeleted, "Price List is soft-deleted.", "VAL-098", "LIFECYCLE_LOCKED");
+    }
+
+    // Standardized Operational Guard (Old ensureActive renamed for clarity)
+    public static void ensureOperationalActive(boolean isActive) {
+        DomainGuard.ensure(isActive, "Price List is currently inactive.", "VAL-099", "OPERATIONAL_LOCK");
+    }
+
+    public static void verifyLifecycleAuthority(Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException("Lifecycle changes require Manager or Admin.", "SEC-403", actor);
+        }
+    }
 
     public static void verifyCreationAuthority(Actor actor) {
         if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {

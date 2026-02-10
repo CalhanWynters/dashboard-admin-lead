@@ -15,49 +15,60 @@ public final class FeaturesBehavior {
 
     public record DetailsPatch(FeatureName name, FeatureLabel tag) {}
 
+    // --- NEW: LIFECYCLE & ACTIVITY GUARDS ---
+
     /**
-     * Logic for creating a new feature.
+     * SOC 2: Ensures no state modifications occur on a soft-deleted feature.
      */
+    public static void ensureActive(boolean isSoftDeleted) {
+        DomainGuard.ensure(
+                !isSoftDeleted,
+                "Domain Violation: The feature is soft-deleted and cannot be modified.",
+                "VAL-018", "STATE_LOCKED"
+        );
+    }
+
+    /**
+     * SOC 2: Standardizes lifecycle authority (Archive/Delete/Restore).
+     */
+    public static void verifyLifecycleAuthority(Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException(
+                    "Lifecycle management (Archive/Delete/Restore) requires Manager or Admin roles.",
+                    "SEC-403", actor);
+        }
+    }
+
+    // --- AUTHORITY CHECKS ---
+
     public static void validateCreation(FeatureUuId uuId, FeatureBusinessUuId bUuId,
                                         FeatureName name, FeatureLabel tag, Actor actor) {
-        // 1. Authority Check
         if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
             throw new DomainAuthorizationException("Feature creation requires Manager or Admin roles.", "SEC-403", actor);
         }
 
-        // 2. Invariant Checks
         DomainGuard.notNull(uuId, "Feature UUID");
         DomainGuard.notNull(bUuId, "Business UUID");
         DomainGuard.notNull(name, "Feature Name");
         DomainGuard.notNull(tag, "Compatibility Tag");
     }
 
-    /**
-     * Logic for updating details.
-     */
     public static DetailsPatch evaluateUpdate(FeatureName newName, FeatureLabel newTag, Actor actor) {
-        // 1. Authority Check
         if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
             throw new DomainAuthorizationException("Insufficient privileges to update feature details.", "SEC-403", actor);
         }
 
-        // 2. Invariant Checks
         DomainGuard.notNull(newName, "New Feature Name");
         DomainGuard.notNull(newTag, "New Compatibility Tag");
         return new DetailsPatch(newName, newTag);
     }
 
-    /**
-     * Logic for changing the Business ID.
-     */
     public static FeatureBusinessUuId evaluateBusinessIdChange(FeatureBusinessUuId currentId,
                                                                FeatureBusinessUuId newId, Actor actor) {
-        // 1. Authority Check (Restricted to Admins)
         if (!actor.hasRole(Actor.ROLE_ADMIN)) {
             throw new DomainAuthorizationException("Business ID modification is restricted to Administrators.", "SEC-401", actor);
         }
 
-        // 2. Invariant Checks
         DomainGuard.notNull(newId, "New Business UUID");
         if (currentId.equals(newId)) {
             throw new IllegalArgumentException("The new Business ID must be different from the current one.");
@@ -65,36 +76,23 @@ public final class FeaturesBehavior {
         return newId;
     }
 
-    /**
-     * Logic for Soft Deletion.
-     */
     public static void verifyDeletable(Actor actor) {
-        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException("Deletion requires Manager or Admin authority.", "SEC-403", actor);
-        }
-        // Additional business rules (e.g., check links) would go here
+        verifyLifecycleAuthority(actor);
     }
 
-    /**
-     * Logic for Restoration.
-     */
     public static void verifyRestorable(Actor actor) {
+        // Keeping your previous restriction of Admin-only for restoration
         if (!actor.hasRole(Actor.ROLE_ADMIN)) {
             throw new DomainAuthorizationException("Only Administrators can restore deleted features.", "SEC-403", actor);
         }
     }
 
-    /**
-     * Validates a tag change.
-     */
     public static FeatureLabel evaluateCompatibilityChange(FeatureLabel newTag,
                                                            FeatureLabel currentTag, Actor actor) {
-        // 1. Authority Check
         if (!actor.hasRole(Actor.ROLE_MANAGER)) {
             throw new DomainAuthorizationException("Only Managers can modify compatibility tags.", "SEC-403", actor);
         }
 
-        // 2. Invariant Checks
         DomainGuard.notNull(newTag, "New Compatibility Tag");
         if (newTag.equals(currentTag)) {
             throw new IllegalArgumentException("The new tag is identical to the current tag.");
@@ -102,9 +100,6 @@ public final class FeaturesBehavior {
         return newTag;
     }
 
-    /**
-     * SOC 2 Control: Hard deletes are restricted to ADMINS only.
-     */
     public static void verifyHardDeleteAuthority(Actor actor) {
         if (!actor.hasRole(Actor.ROLE_ADMIN)) {
             throw new DomainAuthorizationException("Only Administrators can perform hard deletes.", "SEC-001", actor);
