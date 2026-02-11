@@ -53,6 +53,12 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
 
     // --- DOMAIN ACTIONS ---
 
+    // Need a 2-liner pattern method for ImagesEditBusUuIdCommand
+    // Need a 2-liner pattern method for ImagesEditNameCommand; need to separate from updateMetadata
+    // Need a 2-liner pattern method for ImagesEditDescriptionCommand; need to separate from updateMetadata
+    // Need a 2-liner pattern method for ImagesEditURLCommand
+    // Need a 2-liner pattern method for ImagesHardDeleteCommand
+
     public void updateMetadata(ImageName name, ImageDescription description, Actor actor) {
         ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
         var patch = ImagesBehavior.evaluateMetadataUpdate(name, description, actor);

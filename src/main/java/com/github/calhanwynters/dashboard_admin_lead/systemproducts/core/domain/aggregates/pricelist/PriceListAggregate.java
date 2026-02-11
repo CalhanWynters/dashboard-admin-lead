@@ -26,7 +26,7 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
     private final Class<? extends PurchasePricing> strategyBoundary;
 
     private PriceListVersion priceListVersion;
-    private ProductBooleans productBooleans; // Record integration
+    private ProductBooleans productBooleans;
     private boolean isActive;
     private final Map<UuId, Map<Currency, PurchasePricing>> multiCurrencyPrices;
 
@@ -50,6 +50,11 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
     }
 
     // --- DOMAIN ACTIONS ---
+
+    // Is the "Create" function needed?
+    // Fix various methods here. This file wrongfully uses version as optimistic lock.
+    // Need a 2-liner pattern method for PriceListEditVersionCommand
+    // Need a 2-liner pattern method for PriceListEditBusUuIdCommand
 
     public void activate(Actor actor) {
         // Line 1: Logic & Auth

@@ -53,6 +53,9 @@ public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
 
     // --- DOMAIN ACTIONS ---
 
+    // Need a 2-liner pattern method for GalleryEditBusUuIdCommand
+    // Need a 2-liner pattern method for GalleryPublicizeCommand
+
     public void addImage(ImageUuId imageUuId, Actor actor) {
         GalleryBehavior.ensureActive(this.productBooleans.softDeleted());
         var validatedImage = GalleryBehavior.evaluateImageAddition(imageUuId, this.imageUuIds.size(), actor);
