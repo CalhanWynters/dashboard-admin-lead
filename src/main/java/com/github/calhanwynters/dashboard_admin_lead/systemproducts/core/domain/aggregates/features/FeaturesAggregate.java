@@ -49,6 +49,19 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
 
     // --- DOMAIN ACTIONS ---
 
+    public void updateBusinessUuId(FeatureBusinessUuId newId, Actor actor) {
+        FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
+
+        // Validate using your existing logic (Admin-only, non-null, difference check)
+        var validatedId = FeaturesBehavior.evaluateBusinessIdChange(this.featuresBusinessUuId, newId, actor);
+
+        this.applyChange(actor,
+                new FeatureBusinessUuIdChangedEvent(featuresUuId, this.featuresBusinessUuId, validatedId, actor),
+                () -> this.featuresBusinessUuId = validatedId);
+    }
+
+
+
     public void changeCompatibilityTag(FeatureLabel newTag, Actor actor) {
         FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
         var validatedTag = FeaturesBehavior.evaluateCompatibilityChange(newTag, this.compatibilityTag, actor);
@@ -59,15 +72,26 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
         );
     }
 
-    public void updateDetails(FeatureName newName, FeatureLabel newTag, Actor actor) {
+    public void updateFeatureName(FeatureName newName, Actor actor) {
         FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
-        var patch = FeaturesBehavior.evaluateUpdate(newName, newTag, actor);
 
-        this.applyChange(actor, new FeatureDetailsUpdatedEvent(featuresUuId, newName, newTag, actor), () -> {
-            this.featuresName = patch.name();
-            this.compatibilityTag = patch.tag();
-        });
+        var validatedName = FeaturesBehavior.evaluateFeatureNameUpdate(newName, actor);
+
+        this.applyChange(actor,
+                new FeatureNameUpdatedEvent(featuresUuId, validatedName, actor),
+                () -> this.featuresName = validatedName);
     }
+
+    public void updateCompatibilityTag(FeatureLabel newTag, Actor actor) {
+        FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
+
+        var validatedTag = FeaturesBehavior.evaluateCompatibilityTagUpdate(newTag, actor);
+
+        this.applyChange(actor,
+                new FeatureCompTagUpdatedEvent(featuresUuId, validatedTag, actor),
+                () -> this.compatibilityTag = validatedTag);
+    }
+
 
     public void archive(Actor actor) {
         FeaturesBehavior.verifyLifecycleAuthority(actor);

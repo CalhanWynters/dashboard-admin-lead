@@ -53,15 +53,24 @@ public final class FeaturesBehavior {
         DomainGuard.notNull(tag, "Compatibility Tag");
     }
 
-    public static DetailsPatch evaluateUpdate(FeatureName newName, FeatureLabel newTag, Actor actor) {
+    public static FeatureName evaluateFeatureNameUpdate(FeatureName newName, Actor actor) {
         if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException("Insufficient privileges to update feature details.", "SEC-403", actor);
+            throw new DomainAuthorizationException("Insufficient privileges to update the feature name.", "SEC-403", actor);
         }
 
         DomainGuard.notNull(newName, "New Feature Name");
-        DomainGuard.notNull(newTag, "New Compatibility Tag");
-        return new DetailsPatch(newName, newTag);
+        return newName;
     }
+
+    public static FeatureLabel evaluateCompatibilityTagUpdate(FeatureLabel newTag, Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER)) {
+            throw new DomainAuthorizationException("Only Managers can modify compatibility tags.", "SEC-403", actor);
+        }
+
+        DomainGuard.notNull(newTag, "New Compatibility Tag");
+        return newTag;
+    }
+
 
     public static FeatureBusinessUuId evaluateBusinessIdChange(FeatureBusinessUuId currentId,
                                                                FeatureBusinessUuId newId, Actor actor) {
