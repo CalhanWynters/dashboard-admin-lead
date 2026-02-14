@@ -54,6 +54,8 @@ public class TypesAggregate extends BaseAggregateRoot<TypesAggregate> {
 
     // --- DOMAIN ACTIONS ---
 
+    // Need a 2-liner pattern method for TypesEditBusUuIdCommand
+
     public void rename(TypesName newName, Actor actor) {
         TypesBehavior.ensureActive(this.productBooleans.softDeleted()); // Accessing via record
         var validatedName = TypesBehavior.evaluateRename(this.typesName, newName, actor);

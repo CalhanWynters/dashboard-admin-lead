@@ -83,7 +83,12 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
 
     // --- DOMAIN ACTIONS ---
 
-    public void changeTypeConfiguration(TypeListUuId newTypeListId, Actor actor) {
+    // Need a 2-liner pattern method for ProductReassignVariantListCommand
+    // Need a 2-liner pattern method for ProductEditBusUuIdCommand
+    // Need a 2-liner pattern method for ProductUpdateStatusCommand
+    // Fix various methods here. This file wrongfully uses version as optimistic lock.
+
+    public void reassignTypeList(TypeListUuId newTypeListId, Actor actor) {
         // Line 1: Auth & Logic
         ProductBehavior.ensureActive(this.productBooleans.softDeleted());
         ProductBehavior.verifyStructuralChangeAuthority(actor);

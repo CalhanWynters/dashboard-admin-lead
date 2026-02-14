@@ -64,7 +64,7 @@ public class VariantsAggregate extends BaseAggregateRoot<VariantsAggregate> {
         );
     }
 
-    public void changeBusinessId(VariantsBusinessUuId newId, Actor actor) {
+    public void editBusinessId(VariantsBusinessUuId newId, Actor actor) {
         VariantsBehavior.ensureActive(this.productBooleans.softDeleted());
         var oldId = this.variantsBusinessUuId;
         var validatedId = VariantsBehavior.evaluateBusinessIdChange(oldId, newId, actor);
