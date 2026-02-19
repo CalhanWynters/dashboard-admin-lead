@@ -49,6 +49,8 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
 
     // --- DOMAIN ACTIONS ---
 
+    // Need a 2-liner pattern method for FeaturesTrunkDataOut
+
     public void updateBusinessUuId(FeatureBusinessUuId newId, Actor actor) {
         FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
 

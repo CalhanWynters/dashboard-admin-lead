@@ -48,7 +48,8 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
 
     // --- DOMAIN ACTIONS ---
 
-    // Need a 2-liner pattern method for TypeListEditBusUuIdCommand
+    // Need a 2-liner pattern method for TypeListUpdateBusUuIdCommand
+    // Need a 2-liner pattern method for TypeListTrunkDataOut
 
     public void attachType(TypesUuId typeUuId, Actor actor) {
         TypeListBehavior.ensureActive(this.productBooleans.softDeleted());

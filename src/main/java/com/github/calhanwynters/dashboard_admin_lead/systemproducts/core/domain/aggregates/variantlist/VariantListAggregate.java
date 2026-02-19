@@ -52,7 +52,8 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
 
     // --- DOMAIN ACTIONS ---
 
-    // Need a 2-liner pattern method for VariantListEditBusUuIdCommand
+    // Need a 2-liner pattern method for VariantListUpdateBusUuIdCommand
+    // Need a 2-liner pattern method for VariantListTrunkDataOut
 
     public void attachVariant(VariantsUuId variantUuId, Actor actor) {
         VariantListBehavior.ensureActive(this.productBooleans.softDeleted());

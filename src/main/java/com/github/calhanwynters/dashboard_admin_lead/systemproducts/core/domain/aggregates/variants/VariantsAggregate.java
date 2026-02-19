@@ -54,6 +54,8 @@ public class VariantsAggregate extends BaseAggregateRoot<VariantsAggregate> {
 
     // --- DOMAIN ACTIONS ---
 
+    // // Need a 2-liner pattern method for VariantsTrunkDataOut
+
     public void rename(VariantsName newName, Actor actor) {
         VariantsBehavior.ensureActive(this.productBooleans.softDeleted()); // 5. Use record accessor
         var validatedName = VariantsBehavior.evaluateRename(this.variantsName, newName, actor);
@@ -64,7 +66,7 @@ public class VariantsAggregate extends BaseAggregateRoot<VariantsAggregate> {
         );
     }
 
-    public void editBusinessId(VariantsBusinessUuId newId, Actor actor) {
+    public void updateBusinessUuId(VariantsBusinessUuId newId, Actor actor) {
         VariantsBehavior.ensureActive(this.productBooleans.softDeleted());
         var oldId = this.variantsBusinessUuId;
         var validatedId = VariantsBehavior.evaluateBusinessIdChange(oldId, newId, actor);

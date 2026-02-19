@@ -84,9 +84,12 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     // --- DOMAIN ACTIONS ---
 
     // Need a 2-liner pattern method for ProductReassignVariantListCommand
-    // Need a 2-liner pattern method for ProductEditBusUuIdCommand
+    // Need a 2-liner pattern method for ProductUpdateBusUuIdCommand
     // Need a 2-liner pattern method for ProductUpdateStatusCommand
+        // consider the discontinue, activate, and deactivate methods.
+    // Need a 2-liner pattern method for ProductUpdateVersionCommand
     // Fix various methods here. This file wrongfully uses version as optimistic lock.
+    // Need a 2-liner pattern method for ProductTrunkDataOut
 
     public void reassignTypeList(TypeListUuId newTypeListId, Actor actor) {
         // Line 1: Auth & Logic

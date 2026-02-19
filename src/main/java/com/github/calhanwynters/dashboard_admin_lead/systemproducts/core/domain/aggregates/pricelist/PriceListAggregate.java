@@ -53,8 +53,9 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
 
     // Is the "Create" function needed?
     // Fix various methods here. This file wrongfully uses version as optimistic lock.
-    // Need a 2-liner pattern method for PriceListEditVersionCommand
-    // Need a 2-liner pattern method for PriceListEditBusUuIdCommand
+    // Need a 2-liner pattern method for PriceListUpdateVersionCommand
+    // Need a 2-liner pattern method for PriceListUpdateBusUuIdCommand
+    // Need a 2-liner pattern method for PriceListTrunkDataOut
 
     public void activate(Actor actor) {
         // Line 1: Logic & Auth
