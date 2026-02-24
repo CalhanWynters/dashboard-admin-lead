@@ -49,7 +49,14 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
 
     // --- DOMAIN ACTIONS ---
 
-    // Need a 2-liner pattern method for FeaturesTrunkDataOut
+    public void syncToKafka(Actor actor) {
+        FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
+        FeaturesBehavior.verifySyncAuthority(actor);
+
+        this.applyChange(actor,
+                new FeatureDataSyncedEvent(featuresUuId, featuresBusinessUuId, featuresName, compatibilityTag, productBooleans, actor),
+                null);
+    }
 
     public void updateBusinessUuId(FeatureBusinessUuId newId, Actor actor) {
         FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
@@ -61,8 +68,6 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
                 new FeatureBusinessUuIdChangedEvent(featuresUuId, this.featuresBusinessUuId, validatedId, actor),
                 () -> this.featuresBusinessUuId = validatedId);
     }
-
-
 
     public void changeCompatibilityTag(FeatureLabel newTag, Actor actor) {
         FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
