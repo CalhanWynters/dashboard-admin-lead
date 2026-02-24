@@ -5,6 +5,9 @@ import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.Aud
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesBehavior;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.FeatureBusinessUuIdChangedEvent;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.events.*;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.*;
@@ -52,12 +55,23 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
     // --- DOMAIN ACTIONS ---
 
     // Need a 2-liner pattern method for ImagesUpdateBusUuIdCommand
+    public void updateBusinessUuId(ImageBusinessUuId newId, Actor actor) {
+        ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
+
+        // Validate using your existing logic (Admin-only, non-null, difference check)
+        var validatedId = ImagesBehavior.evaluateBusinessIdChange(this.imagesBusinessUuId, newId, actor);
+
+        this.applyChange(actor,
+                new ImageBusinessUuIdChangedEvent(imagesUuId, this.imagesBusinessUuId, validatedId, actor),
+                () -> this.imagesBusinessUuId = validatedId);
+    }
+
     // Need a 2-liner pattern method for ImagesUpdateNameCommand; need to separate from updateMetadata
     // Need a 2-liner pattern method for ImagesEditDescriptionCommand; need to separate from updateMetadata
     // Delete updateMetadata
     // Need a 2-liner pattern method for ImagesEditURLCommand
     // Need a 2-liner pattern method for ImagesHardDeleteCommand
-    // Need a 2-liner pattern method for ImageTrunkDataOut
+
     public void syncToKafka(Actor actor) {
         ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
         ImagesBehavior.verifySyncAuthority(actor);

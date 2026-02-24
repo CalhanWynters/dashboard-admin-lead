@@ -5,6 +5,9 @@ import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.Aud
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesBehavior;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.FeatureBusinessUuIdChangedEvent;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.events.*;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesDomainWrapper.*;
@@ -55,8 +58,17 @@ public class TypesAggregate extends BaseAggregateRoot<TypesAggregate> {
     // --- DOMAIN ACTIONS ---
 
     // Need a 2-liner pattern method for TypesUpdateBusUuIdCommand
+    public void updateBusinessUuId(TypeBusinessUuId newId, Actor actor) {
+        TypesBehavior.ensureActive(this.productBooleans.softDeleted());
 
-    // Need a 2-liner pattern method for TypesTrunkDataOut
+        // Validate using your existing logic (Admin-only, non-null, difference check)
+        var validatedId = TypesBehavior.evaluateBusinessIdChange(this.typesBusinessUuId, newId, actor);
+
+        this.applyChange(actor,
+                new TypeBusinessUuIdChangedEvent(typesUuId, this.typesBusinessUuId, validatedId, actor),
+                () -> this.typesBusinessUuId = validatedId);
+    }
+
     public void syncToKafka(Actor actor) {
         TypesBehavior.ensureActive(this.productBooleans.softDeleted());
         TypesBehavior.verifySyncAuthority(actor);

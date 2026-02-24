@@ -7,6 +7,7 @@ import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.Pro
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesBehavior;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.FeatureDataSyncedEvent;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesBehavior;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist.events.*;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist.VariantListDomainWrapper.*;
@@ -56,7 +57,17 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
     // --- DOMAIN ACTIONS ---
 
     // Need a 2-liner pattern method for VariantListUpdateBusUuIdCommand  BusinessUuId Needed
-    // Need a 2-liner pattern method for VariantListTrunkDataOut
+    public void updateBusinessUuId(VariantListBusinessUuId newId, Actor actor) {
+        VariantListBehavior.ensureActive(this.productBooleans.softDeleted());
+
+        // Validate using your existing logic (Admin-only, non-null, difference check)
+        var validatedId = VariantListBehavior.evaluateBusinessIdChange(this.variantListBusinessUuId, newId, actor);
+
+        this.applyChange(actor,
+                new VariantListBusinessUuIdChangedEvent(variantListUuId, this.variantListBusinessUuId, validatedId, actor),
+                () -> this.variantListBusinessUuId = validatedId);
+    }
+
     public void syncToKafka(Actor actor) {
         VariantListBehavior.ensureActive(this.productBooleans.softDeleted());
         VariantListBehavior.verifySyncAuthority(actor);

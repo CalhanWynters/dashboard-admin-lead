@@ -13,6 +13,9 @@ import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.Base
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesBehavior;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.FeatureBusinessUuIdChangedEvent;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.events.*;
 
 public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot> {
@@ -86,12 +89,22 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
 
     // Need a 2-liner pattern method for ProductReassignVariantListCommand
     // Need a 2-liner pattern method for ProductUpdateBusUuIdCommand
+    public void updateBusinessUuId(ProductBusinessUuId newId, Actor actor) {
+        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
+
+        // Validate using your existing logic (Admin-only, non-null, difference check)
+        var validatedId = ProductBehavior.evaluateBusinessIdChange(this.productBusinessUuId, newId, actor);
+
+        this.applyChange(actor,
+                new ProductBusinessUuIdChangedEvent(productUuId, this.productBusinessUuId, validatedId, actor),
+                () -> this.productBusinessUuId = validatedId);
+    }
+
     // Need a 2-liner pattern method for ProductUpdateStatusCommand
         // consider the discontinue, activate, and deactivate methods.
     // Need a 2-liner pattern method for ProductUpdateVersionCommand
     // Fix various methods here. This file wrongfully uses version as optimistic lock.
 
-    // Need a 2-liner pattern method for ProductTrunkDataOut
     public void syncToKafka(Actor actor) {
         ProductBehavior.ensureActive(this.productBooleans.softDeleted());
         ProductBehavior.verifySyncAuthority(actor);

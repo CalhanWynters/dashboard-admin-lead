@@ -6,6 +6,8 @@ import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.Base
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesBehavior;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.FeatureBusinessUuIdChangedEvent;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.FeatureDataSyncedEvent;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.events.*;
 
@@ -56,8 +58,19 @@ public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
     // --- DOMAIN ACTIONS ---
 
     // Need a 2-liner pattern method for GalleryUpdateBusUuIdCommand
+    public void updateBusinessUuId(GalleryBusinessUuId newId, Actor actor) {
+        GalleryBehavior.ensureActive(this.productBooleans.softDeleted());
+
+        // Validate using your existing logic (Admin-only, non-null, difference check)
+        var validatedId = GalleryBehavior.evaluateBusinessIdChange(this.galleryBusinessUuId, newId, actor);
+
+        this.applyChange(actor,
+                new GalleryBusinessUuIdChangedEvent(galleryUuId, this.galleryBusinessUuId, validatedId, actor),
+                () -> this.galleryBusinessUuId = validatedId);
+    }
+
     // Need a 2-liner pattern method for GalleryPublicizeCommand
-    // Need a 2-liner pattern method for GalleryTrunkDataOut
+
     public void syncToKafka(Actor actor) {
         GalleryBehavior.ensureActive(this.productBooleans.softDeleted());
         GalleryBehavior.verifySyncAuthority(actor);
