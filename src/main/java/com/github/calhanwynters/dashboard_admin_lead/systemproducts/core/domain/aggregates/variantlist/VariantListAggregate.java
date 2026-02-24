@@ -5,6 +5,8 @@ import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.Aud
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesBehavior;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.FeatureDataSyncedEvent;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist.events.*;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist.VariantListDomainWrapper.*;
@@ -22,6 +24,7 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
 
     private final VariantListId variantListId;
     private final VariantListUuId variantListUuId;
+    private VariantListBusinessUuId variantListBusinessUuId;
     private final Set<VariantsUuId> variantUuIds;
     private ProductBooleans productBooleans; // Replaced boolean deleted
 
@@ -34,7 +37,7 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
         super(auditMetadata);
         this.variantListId = variantListId;
         this.variantListUuId = DomainGuard.notNull(variantListUuId, "VariantList UUID");
-        DomainGuard.notNull(variantListBusinessUuId, "Business UUID");
+        this.variantListBusinessUuId = DomainGuard.notNull(variantListBusinessUuId, "Business UUID");
         this.variantUuIds = new HashSet<>(variantUuIds != null ? variantUuIds : Collections.emptySet());
         // Defaulting to false/false if null is passed
         this.productBooleans = productBooleans != null ? productBooleans : new ProductBooleans(false, false);
@@ -52,8 +55,17 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
 
     // --- DOMAIN ACTIONS ---
 
-    // Need a 2-liner pattern method for VariantListUpdateBusUuIdCommand
+    // Need a 2-liner pattern method for VariantListUpdateBusUuIdCommand  BusinessUuId Needed
     // Need a 2-liner pattern method for VariantListTrunkDataOut
+    public void syncToKafka(Actor actor) {
+        VariantListBehavior.ensureActive(this.productBooleans.softDeleted());
+        VariantListBehavior.verifySyncAuthority(actor);
+
+        this.applyChange(actor,
+                new VariantListDataSyncedEvent(variantListUuId, variantListBusinessUuId, variantUuIds, productBooleans, actor),
+                null);
+    }
+
 
     public void attachVariant(VariantsUuId variantUuId, Actor actor) {
         VariantListBehavior.ensureActive(this.productBooleans.softDeleted());
@@ -148,5 +160,6 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
     public boolean isDeleted() { return productBooleans.softDeleted(); }
     public VariantListId getVariantListId() { return variantListId; }
     public VariantListUuId getVariantListUuId() { return variantListUuId; }
+    public VariantListBusinessUuId getVariantListBusinessUuId() {return  variantListBusinessUuId; }
     public Set<VariantsUuId> getVariantUuIds() { return Collections.unmodifiableSet(variantUuIds); }
 }

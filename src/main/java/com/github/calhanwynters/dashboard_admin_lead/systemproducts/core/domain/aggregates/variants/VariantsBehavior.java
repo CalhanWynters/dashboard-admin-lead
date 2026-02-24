@@ -39,6 +39,18 @@ public final class VariantsBehavior {
         }
     }
 
+    /**
+     * SOC 2: Ensures only authorized roles can trigger a manual data synchronization.
+     */
+    public static void verifySyncAuthority(Actor actor) {
+        // Typically restricted to Admin/Manager to prevent unauthorized data exfiltration
+        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException(
+                    "Data synchronization requires Manager or Admin roles.",
+                    "SEC-403", actor);
+        }
+    }
+
     public static VariantsName evaluateRename(VariantsName current, VariantsName next, Actor actor) {
         verifyManagementAuthority(actor);
         DomainGuard.notNull(next, "New Variant Name");

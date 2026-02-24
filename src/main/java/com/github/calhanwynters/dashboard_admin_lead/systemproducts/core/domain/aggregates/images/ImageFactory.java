@@ -2,14 +2,13 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.ImageUrl;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.*;
 
 public class ImageFactory {
     public static ImageAggregate create(ImageBusinessUuId bizId, ImageName name, ImageDescription desc, ImageUrl url, Actor creator) {
-        // delegates to the Aggregate's create which now handles ProductBooleans(false, false)
+        // 'url' is now recognized as ImagesDomainWrapper.ImageUrl due to the static import
         return ImageAggregate.create(ImageUuId.generate(), bizId, name, desc, url, creator);
     }
 

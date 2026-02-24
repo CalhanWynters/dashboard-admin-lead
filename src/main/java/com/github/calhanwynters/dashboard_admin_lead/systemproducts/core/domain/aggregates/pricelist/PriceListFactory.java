@@ -12,10 +12,10 @@ import java.util.Map;
 
 public class PriceListFactory {
     public static PriceListAggregate reconstitute(
-            PriceListId id, PriceListUuId uuId, Class<? extends PurchasePricing> boundary,
+            PriceListId id, PriceListUuId uuId, Class<? extends PurchasePricing> boundary, PriceListBusinessUuId businessUuId,
             PriceListVersion version, boolean isActive, ProductBooleans booleans,
             AuditMetadata audit, Map<UuId, Map<Currency, PurchasePricing>> prices) {
 
-        return new PriceListAggregate(id, uuId, boundary, version, isActive, booleans, audit, prices);
+        return new PriceListAggregate(id, uuId, boundary, businessUuId, version, isActive, booleans, audit, prices);
     }
 }

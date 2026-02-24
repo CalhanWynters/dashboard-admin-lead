@@ -70,6 +70,18 @@ public final class PriceListBehavior {
         DomainGuard.ensure(isActive, "Cannot modify pricing on an inactive Price List.", "VAL-099", "LIFECYCLE_VIOLATION");
     }
 
+    /**
+     * SOC 2: Ensures only authorized roles can trigger a manual data synchronization.
+     */
+    public static void verifySyncAuthority(Actor actor) {
+        // Typically restricted to Admin/Manager to prevent unauthorized data exfiltration
+        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException(
+                    "Data synchronization requires Manager or Admin roles.",
+                    "SEC-403", actor);
+        }
+    }
+
     public static boolean evaluateActivation(boolean current, boolean next) {
         if (current == next) {
             throw new IllegalArgumentException("Price List is already " + (current ? "active" : "inactive"));

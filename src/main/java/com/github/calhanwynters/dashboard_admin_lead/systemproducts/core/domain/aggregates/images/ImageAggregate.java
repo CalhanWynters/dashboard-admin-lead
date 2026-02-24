@@ -2,8 +2,6 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.ImageUrl;
-import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
@@ -15,8 +13,8 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
 
     private final ImageId imageId;
     private final ImageUuId imageUuId;
-    private final ImageBusinessUuId imageBusinessUuId;
-    private final ImageUrl imageUrl;
+    private ImageBusinessUuId imageBusinessUuId;
+    private ImageUrl imageUrl;
     private ProductBooleans productBooleans; // Replaced boolean isArchived
 
     private ImageName imageName;
@@ -60,6 +58,11 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
     // Need a 2-liner pattern method for ImagesEditURLCommand
     // Need a 2-liner pattern method for ImagesHardDeleteCommand
     // Need a 2-liner pattern method for ImageTrunkDataOut
+    public void syncToKafka(Actor actor) {
+        ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
+        ImagesBehavior.verifySyncAuthority(actor);
+        this.applyChange(actor, new ImageDataSyncedEvent(imageUuId, imageBusinessUuId, imageName, imageDescription, imageUrl, productBooleans, actor), null);
+    }
 
     public void updateMetadata(ImageName name, ImageDescription description, Actor actor) {
         ImagesBehavior.ensureActive(this.productBooleans.softDeleted());

@@ -55,6 +55,14 @@ public class VariantsAggregate extends BaseAggregateRoot<VariantsAggregate> {
     // --- DOMAIN ACTIONS ---
 
     // // Need a 2-liner pattern method for VariantsTrunkDataOut
+    public void syncToKafka(Actor actor) {
+        VariantsBehavior.ensureActive(this.productBooleans.softDeleted());
+        VariantsBehavior.verifySyncAuthority(actor);
+
+        this.applyChange(actor,
+                new VariantDataSyncedEvent(variantsUuId, variantsBusinessUuId, variantsName, assignedFeatureUuIds, productBooleans, actor),
+                null);
+    }
 
     public void rename(VariantsName newName, Actor actor) {
         VariantsBehavior.ensureActive(this.productBooleans.softDeleted()); // 5. Use record accessor

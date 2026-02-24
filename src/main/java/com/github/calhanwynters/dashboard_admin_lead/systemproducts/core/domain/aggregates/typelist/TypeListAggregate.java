@@ -5,6 +5,8 @@ import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.Aud
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesBehavior;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.FeatureDataSyncedEvent;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.typelist.events.*;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.typelist.TypeListDomainWrapper.*;
@@ -49,7 +51,14 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
     // --- DOMAIN ACTIONS ---
 
     // Need a 2-liner pattern method for TypeListUpdateBusUuIdCommand
+
     // Need a 2-liner pattern method for TypeListTrunkDataOut
+    public void syncToKafka(Actor actor) {
+        TypeListBehavior.ensureActive(this.productBooleans.softDeleted());
+        TypeListBehavior.verifySyncAuthority(actor);
+
+        this.applyChange(actor, new TypeListDataSyncedEvent(typeListUuId, typeListBusinessUuId, typeUuIds, productBooleans, actor), null);
+    }
 
     public void attachType(TypesUuId typeUuId, Actor actor) {
         TypeListBehavior.ensureActive(this.productBooleans.softDeleted());

@@ -19,6 +19,7 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
 
     private final ProductId productId;
     private final ProductUuId productUuId;
+    private final ProductBusinessUuId productBusinessUuId;
 
     private ProductVersion productVersion;
     private ProductStatus productStatus;
@@ -50,7 +51,7 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
         this.productId = productId;
         this.productUuId = DomainGuard.notNull(productUuId, "Product UUID");
         // Added missing field
-        ProductBusinessUuId productBusinessUuId1 = DomainGuard.notNull(productBusinessUuId, "Business UUID");
+        this.productBusinessUuId = DomainGuard.notNull(productBusinessUuId, "Business UUID");
         this.productVersion = DomainGuard.notNull(productVersion, "Version");
         this.productStatus = DomainGuard.notNull(productStatus, "Status");
         this.manifest = DomainGuard.notNull(manifest, "Product Manifest");
@@ -89,7 +90,14 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
         // consider the discontinue, activate, and deactivate methods.
     // Need a 2-liner pattern method for ProductUpdateVersionCommand
     // Fix various methods here. This file wrongfully uses version as optimistic lock.
+
     // Need a 2-liner pattern method for ProductTrunkDataOut
+    public void syncToKafka(Actor actor) {
+        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
+        ProductBehavior.verifySyncAuthority(actor);
+
+        this.applyChange(actor, new ProductDataSyncedEvent(productUuId, productBusinessUuId, productStatus, productBooleans, actor), null);
+    }
 
     public void reassignTypeList(TypeListUuId newTypeListId, Actor actor) {
         // Line 1: Auth & Logic
@@ -300,6 +308,7 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     // --- ACCESSORS ---
     public ProductId getProductId() { return productId; }
     public ProductUuId getProductUuId() { return productUuId; }
+    public ProductBusinessUuId getProductBusinessUuId() { return productBusinessUuId; }
     public ProductStatus getProductStatus() { return productStatus; }
     public ProductVersion getProductVersion() { return productVersion; }
     public ProductPhysicalSpecs getProductPhysicalSpecs() { return physicalSpecs; }

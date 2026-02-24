@@ -25,6 +25,7 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
     private final PriceListUuId priceListUuId;
     private final Class<? extends PurchasePricing> strategyBoundary;
 
+    private PriceListBusinessUuId priceListBusinessUuId;
     private PriceListVersion priceListVersion;
     private ProductBooleans productBooleans;
     private boolean isActive;
@@ -33,6 +34,7 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
     public PriceListAggregate(PriceListId priceListId,
                               PriceListUuId priceListUuId,
                               Class<? extends PurchasePricing> strategyBoundary,
+                              PriceListBusinessUuId priceListBusinessUuId,
                               PriceListVersion priceListVersion,
                               boolean isActive,
                               ProductBooleans productBooleans, // Added param
@@ -43,6 +45,7 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
         this.priceListId = priceListId;
         this.priceListUuId = DomainGuard.notNull(priceListUuId, "PriceList Identity");
         this.strategyBoundary = DomainGuard.notNull(strategyBoundary, "Strategy Boundary");
+        this.priceListBusinessUuId = DomainGuard.notNull(priceListBusinessUuId, "PriceList Business UUID");
         this.priceListVersion = DomainGuard.notNull(priceListVersion, "Version");
         this.isActive = isActive;
         this.productBooleans = productBooleans != null ? productBooleans : new ProductBooleans(false, false);
@@ -52,10 +55,19 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
     // --- DOMAIN ACTIONS ---
 
     // Is the "Create" function needed?
+    // Is businessuuid needed?
     // Fix various methods here. This file wrongfully uses version as optimistic lock.
     // Need a 2-liner pattern method for PriceListUpdateVersionCommand
     // Need a 2-liner pattern method for PriceListUpdateBusUuIdCommand
     // Need a 2-liner pattern method for PriceListTrunkDataOut
+    public void syncToKafka(Actor actor) {
+        PriceListBehavior.ensureActive(this.productBooleans.softDeleted());
+        PriceListBehavior.verifySyncAuthority(actor);
+
+        this.applyChange(actor,
+                new PriceListDataSyncedEvent(priceListUuId, priceListBusinessUuId, strategyBoundary, priceListVersion, isActive, productBooleans, multiCurrencyPrices, actor),
+                null);
+    }
 
     public void activate(Actor actor) {
         // Line 1: Logic & Auth
@@ -217,6 +229,7 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
 
     public PriceListId getPriceListId() { return priceListId; }
     public PriceListUuId getPriceListUuId() { return priceListUuId; }
+    public PriceListBusinessUuId getPriceListBusinessUuId() { return priceListBusinessUuId; }
     public boolean isActive() { return isActive; }
     public PriceListVersion getPriceListVersion() { return priceListVersion; }
 

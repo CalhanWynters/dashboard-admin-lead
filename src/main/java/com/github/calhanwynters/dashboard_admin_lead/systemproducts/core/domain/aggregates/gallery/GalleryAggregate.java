@@ -5,6 +5,8 @@ import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.Aud
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesBehavior;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.FeatureDataSyncedEvent;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.events.*;
 
 import java.util.ArrayList;
@@ -56,6 +58,14 @@ public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
     // Need a 2-liner pattern method for GalleryUpdateBusUuIdCommand
     // Need a 2-liner pattern method for GalleryPublicizeCommand
     // Need a 2-liner pattern method for GalleryTrunkDataOut
+    public void syncToKafka(Actor actor) {
+        GalleryBehavior.ensureActive(this.productBooleans.softDeleted());
+        GalleryBehavior.verifySyncAuthority(actor);
+
+        this.applyChange(actor,
+                new GalleryDataSyncedEvent(galleryUuId, galleryBusinessUuId, isPublic, productBooleans, actor),
+                null);
+    }
 
     public void addImage(ImageUuId imageUuId, Actor actor) {
         GalleryBehavior.ensureActive(this.productBooleans.softDeleted());

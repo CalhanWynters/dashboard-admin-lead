@@ -55,7 +55,16 @@ public class TypesAggregate extends BaseAggregateRoot<TypesAggregate> {
     // --- DOMAIN ACTIONS ---
 
     // Need a 2-liner pattern method for TypesUpdateBusUuIdCommand
+
     // Need a 2-liner pattern method for TypesTrunkDataOut
+    public void syncToKafka(Actor actor) {
+        TypesBehavior.ensureActive(this.productBooleans.softDeleted());
+        TypesBehavior.verifySyncAuthority(actor);
+
+        this.applyChange(actor,
+                new TypeDataSyncedEvent(typesUuId, typesBusinessUuId, typesName, typesPhysicalSpecs, productBooleans, actor),
+                null);
+    }
 
     public void rename(TypesName newName, Actor actor) {
         TypesBehavior.ensureActive(this.productBooleans.softDeleted()); // Accessing via record
