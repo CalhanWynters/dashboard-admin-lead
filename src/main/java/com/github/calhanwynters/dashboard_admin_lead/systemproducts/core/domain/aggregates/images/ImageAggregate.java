@@ -5,9 +5,6 @@ import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.Aud
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesBehavior;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.FeatureBusinessUuIdChangedEvent;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.events.*;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.*;
@@ -15,8 +12,8 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
 
     private final ImageId imageId;
-    private final ImageUuId imageUuId;
-    private ImageBusinessUuId imageBusinessUuId;
+    private final ImageUuId imagesUuId;
+    private ImagesBusinessUuId imagesBusinessUuId;
     private ImageUrl imageUrl;
     private ProductBooleans productBooleans; // Replaced boolean isArchived
 
@@ -24,8 +21,8 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
     private ImageDescription imageDescription;
 
     public ImageAggregate(ImageId imageId,
-                          ImageUuId imageUuId,
-                          ImageBusinessUuId imageBusinessUuId,
+                          ImageUuId imagesUuId,
+                          ImagesBusinessUuId imagesBusinessUuId,
                           ImageName imageName,
                           ImageDescription imageDescription,
                           ImageUrl imageUrl,
@@ -33,15 +30,15 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
                           AuditMetadata auditMetadata) {
         super(auditMetadata);
         this.imageId = DomainGuard.notNull(imageId, "Image PK ID");
-        this.imageUuId = DomainGuard.notNull(imageUuId, "Image UUID");
-        this.imageBusinessUuId = DomainGuard.notNull(imageBusinessUuId, "Image Business UUID");
+        this.imagesUuId = DomainGuard.notNull(imagesUuId, "Image UUID");
+        this.imagesBusinessUuId = DomainGuard.notNull(imagesBusinessUuId, "Image Business UUID");
         this.imageName = DomainGuard.notNull(imageName, "Image Name");
         this.imageDescription = DomainGuard.notNull(imageDescription, "Image Description");
         this.imageUrl = DomainGuard.notNull(imageUrl, "Image URL");
         this.productBooleans = productBooleans != null ? productBooleans : new ProductBooleans(false, false);
     }
 
-    public static ImageAggregate create(ImageUuId uuId, ImageBusinessUuId bUuId, ImageName name,
+    public static ImageAggregate create(ImageUuId uuId, ImagesBusinessUuId bUuId, ImageName name,
                                         ImageDescription desc, ImageUrl url, Actor actor) {
         ImagesBehavior.verifyCreationAuthority(actor);
 
@@ -54,8 +51,7 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
 
     // --- DOMAIN ACTIONS ---
 
-    // Need a 2-liner pattern method for ImagesUpdateBusUuIdCommand
-    public void updateBusinessUuId(ImageBusinessUuId newId, Actor actor) {
+    public void updateBusinessUuId(ImagesBusinessUuId newId, Actor actor) {
         ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
 
         // Validate using your existing logic (Admin-only, non-null, difference check)
@@ -75,7 +71,7 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
     public void syncToKafka(Actor actor) {
         ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
         ImagesBehavior.verifySyncAuthority(actor);
-        this.applyChange(actor, new ImageDataSyncedEvent(imageUuId, imageBusinessUuId, imageName, imageDescription, imageUrl, productBooleans, actor), null);
+        this.applyChange(actor, new ImageDataSyncedEvent(imagesUuId, imagesBusinessUuId, imageName, imageDescription, imageUrl, productBooleans, actor), null);
     }
 
     public void updateMetadata(ImageName name, ImageDescription description, Actor actor) {
@@ -83,7 +79,7 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
         var patch = ImagesBehavior.evaluateMetadataUpdate(name, description, actor);
 
         this.applyChange(actor,
-                new ImageMetadataUpdatedEvent(this.imageUuId, patch.name(), actor),
+                new ImageMetadataUpdatedEvent(this.imagesUuId, patch.name(), actor),
                 () -> {
                     this.imageName = patch.name();
                     this.imageDescription = patch.description();
@@ -97,7 +93,7 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
 
         // Line 2: Side-Effect (Replace record instance)
         this.applyChange(actor,
-                new ImageArchivedEvent(imageUuId, actor),
+                new ImageArchivedEvent(imagesUuId, actor),
                 () -> this.productBooleans = new ProductBooleans(true, this.productBooleans.softDeleted())
         );
     }
@@ -106,7 +102,7 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
         ImagesBehavior.verifyLifecycleAuthority(actor);
 
         this.applyChange(actor,
-                new ImageUnarchivedEvent(imageUuId, actor),
+                new ImageUnarchivedEvent(imagesUuId, actor),
                 () -> this.productBooleans = new ProductBooleans(false, this.productBooleans.softDeleted())
         );
     }
@@ -116,7 +112,7 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
         ImagesBehavior.verifyLifecycleAuthority(actor);
 
         this.applyChange(actor,
-                new ImageSoftDeletedEvent(this.imageUuId, actor),
+                new ImageSoftDeletedEvent(this.imagesUuId, actor),
                 () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), true)
         );
     }
@@ -126,7 +122,7 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
         ImagesBehavior.verifyLifecycleAuthority(actor);
 
         this.applyChange(actor,
-                new ImageRestoredEvent(this.imageUuId, actor),
+                new ImageRestoredEvent(this.imagesUuId, actor),
                 () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), false)
         );
     }
@@ -137,8 +133,8 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
     public boolean isArchived() { return productBooleans.archived(); }
     public ProductBooleans getProductBooleans() { return productBooleans; }
     public ImageId getImageId() { return imageId; }
-    public ImageUuId getImageUuId() { return imageUuId; }
-    public ImageBusinessUuId getImageBusinessUuId() { return imageBusinessUuId; }
+    public ImageUuId getImagesUuId() { return imagesUuId; }
+    public ImagesBusinessUuId getImageBusinessUuId() { return imagesBusinessUuId; }
     public ImageName getImageName() { return imageName; }
     public ImageDescription getImageDescription() { return imageDescription; }
     public ImageUrl getImageUrl() { return imageUrl; }

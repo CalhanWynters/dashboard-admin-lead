@@ -60,6 +60,19 @@ public final class VariantsBehavior {
         return next;
     }
 
+    public static VariantsBusinessUuId evaluateBusinessIdChange(VariantsBusinessUuId currentId,
+                                                                VariantsBusinessUuId newId, Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException("Business ID modification is restricted to Administrators.", "SEC-401", actor);
+        }
+
+        DomainGuard.notNull(newId, "New Business UUID");
+        if (currentId.equals(newId)) {
+            throw new IllegalArgumentException("The new Business ID must be different from the current one.");
+        }
+        return newId;
+    }
+
     public static void ensureCanAssign(Set<FeatureUuId> current, FeatureUuId next, Actor actor) {
         verifyManagementAuthority(actor);
         DomainGuard.notNull(next, "Feature UUID");
@@ -74,15 +87,5 @@ public final class VariantsBehavior {
         if (!current.contains(target)) {
             throw new IllegalArgumentException("Feature is not found on this variant.");
         }
-    }
-
-    public static VariantsBusinessUuId evaluateBusinessIdChange(VariantsBusinessUuId current, VariantsBusinessUuId next, Actor actor) {
-        // SOC 2: Changing business identities is a high-risk traceability change
-        verifyLifecycleAuthority(actor);
-        DomainGuard.notNull(next, "New Business UUID");
-        if (next.equals(current)) {
-            throw new IllegalArgumentException("New Business ID must be different.");
-        }
-        return next;
     }
 }

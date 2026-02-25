@@ -3,6 +3,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryDomainWrapper.*;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.ImageUuId;
 
 /**
@@ -81,6 +82,19 @@ public final class GalleryBehavior {
             throw new IllegalArgumentException("Image not found in this gallery.");
         }
         return imageUuId;
+    }
+
+    public static GalleryBusinessUuId evaluateBusinessIdChange(GalleryBusinessUuId currentId,
+                                                               GalleryBusinessUuId newId, Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException("Business ID modification is restricted to Administrators.", "SEC-401", actor);
+        }
+
+        DomainGuard.notNull(newId, "New Business UUID");
+        if (currentId.equals(newId)) {
+            throw new IllegalArgumentException("The new Business ID must be different from the current one.");
+        }
+        return newId;
     }
 
     public static boolean evaluatePublicityChange(boolean currentStatus, boolean newStatus, Actor actor) {

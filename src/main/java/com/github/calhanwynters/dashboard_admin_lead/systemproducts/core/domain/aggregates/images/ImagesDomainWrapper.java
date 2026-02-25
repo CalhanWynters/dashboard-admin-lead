@@ -28,7 +28,7 @@ public interface ImagesDomainWrapper {
         }
     }
 
-    record ImageBusinessUuId(UuId value) {}
+    record ImagesBusinessUuId(UuId value) {}
     record ImageName(Name value) {}
     record ImageDescription(Description value) {}
 

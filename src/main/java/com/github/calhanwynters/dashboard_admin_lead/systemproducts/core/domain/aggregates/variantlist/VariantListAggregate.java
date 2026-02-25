@@ -5,9 +5,6 @@ import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.Aud
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesBehavior;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.FeatureDataSyncedEvent;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesBehavior;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist.events.*;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist.VariantListDomainWrapper.*;
@@ -56,7 +53,6 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
 
     // --- DOMAIN ACTIONS ---
 
-    // Need a 2-liner pattern method for VariantListUpdateBusUuIdCommand  BusinessUuId Needed
     public void updateBusinessUuId(VariantListBusinessUuId newId, Actor actor) {
         VariantListBehavior.ensureActive(this.productBooleans.softDeleted());
 

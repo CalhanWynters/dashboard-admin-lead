@@ -123,4 +123,17 @@ public final class ProductBehavior {
     public static void validatePhysicalSpecs(ProductPhysicalSpecs specs) {
         DomainGuard.notNull(specs, "Physical Specs");
     }
+
+    public static ProductBusinessUuId evaluateBusinessIdChange(ProductBusinessUuId currentId,
+                                                               ProductBusinessUuId newId, Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException("Business ID modification is restricted to Administrators.", "SEC-401", actor);
+        }
+
+        DomainGuard.notNull(newId, "New Business UUID");
+        if (currentId.equals(newId)) {
+            throw new IllegalArgumentException("The new Business ID must be different from the current one.");
+        }
+        return newId;
+    }
 }

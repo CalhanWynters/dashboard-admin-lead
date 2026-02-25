@@ -5,10 +5,6 @@ import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.Aud
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesBehavior;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.FeatureBusinessUuIdChangedEvent;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.FeatureDataSyncedEvent;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.events.*;
 
 import java.util.ArrayList;
@@ -21,7 +17,7 @@ public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
 
     private final GalleryId galleryId;
     private final GalleryUuId galleryUuId;
-    private final GalleryBusinessUuId galleryBusinessUuId;
+    private GalleryBusinessUuId galleryBusinessUuId;
 
     private final List<ImageUuId> imageUuIds = new ArrayList<>();
     private boolean isPublic;
@@ -57,7 +53,6 @@ public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
 
     // --- DOMAIN ACTIONS ---
 
-    // Need a 2-liner pattern method for GalleryUpdateBusUuIdCommand
     public void updateBusinessUuId(GalleryBusinessUuId newId, Actor actor) {
         GalleryBehavior.ensureActive(this.productBooleans.softDeleted());
 

@@ -13,16 +13,13 @@ import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.Base
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesBehavior;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.FeatureBusinessUuIdChangedEvent;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.events.*;
 
 public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot> {
 
     private final ProductId productId;
     private final ProductUuId productUuId;
-    private final ProductBusinessUuId productBusinessUuId;
+    private ProductBusinessUuId productBusinessUuId;
 
     private ProductVersion productVersion;
     private ProductStatus productStatus;
@@ -87,8 +84,9 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
 
     // --- DOMAIN ACTIONS ---
 
+    // Some methods should be in the ProductBehavior file
     // Need a 2-liner pattern method for ProductReassignVariantListCommand
-    // Need a 2-liner pattern method for ProductUpdateBusUuIdCommand
+
     public void updateBusinessUuId(ProductBusinessUuId newId, Actor actor) {
         ProductBehavior.ensureActive(this.productBooleans.softDeleted());
 

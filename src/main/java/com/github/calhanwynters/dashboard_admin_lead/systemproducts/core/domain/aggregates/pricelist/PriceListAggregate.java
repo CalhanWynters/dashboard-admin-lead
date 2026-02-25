@@ -60,12 +60,12 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
     // Is the "Create" function needed?
     // Fix various methods here. This file wrongfully uses version as optimistic lock.
     // Need a 2-liner pattern method for PriceListUpdateVersionCommand
-    // Need a 2-liner pattern method for PriceListUpdateBusUuIdCommand
+
     public void updateBusinessUuId(PriceListBusinessUuId newId, Actor actor) {
         PriceListBehavior.ensureActive(this.productBooleans.softDeleted());
 
         // Validate using your existing logic (Admin-only, non-null, difference check)
-        var validatedId = PriceListBehavior.evaluateBusinessIdChange(this.pricelistBusinessUuId, newId, actor);
+        var validatedId = PriceListBehavior.evaluateBusinessIdChange(this.priceListBusinessUuId, newId, actor);
 
         this.applyChange(actor,
                 new PriceListBusinessUuIdChangedEvent(priceListUuId, this.priceListBusinessUuId, validatedId, actor),

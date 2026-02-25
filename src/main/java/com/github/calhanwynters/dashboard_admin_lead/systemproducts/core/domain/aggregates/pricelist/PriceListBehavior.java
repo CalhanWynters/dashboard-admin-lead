@@ -89,6 +89,19 @@ public final class PriceListBehavior {
         return next;
     }
 
+    public static PriceListBusinessUuId evaluateBusinessIdChange(PriceListBusinessUuId currentId,
+                                                                 PriceListBusinessUuId newId, Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException("Business ID modification is restricted to Administrators.", "SEC-401", actor);
+        }
+
+        DomainGuard.notNull(newId, "New Business UUID");
+        if (currentId.equals(newId)) {
+            throw new IllegalArgumentException("The new Business ID must be different from the current one.");
+        }
+        return newId;
+    }
+
     public static PriceListVersion evaluateVersionIncrement(PriceListVersion current) {
         return new PriceListVersion(current.value().next());
     }

@@ -3,6 +3,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.typelist.TypeListDomainWrapper.*;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesDomainWrapper.TypesUuId;
 import java.util.Set;
 
@@ -70,5 +71,18 @@ public final class TypeListBehavior {
         if (!currentTypes.contains(typeUuId)) {
             throw new IllegalArgumentException("Type is not found in this list.");
         }
+    }
+
+    public static TypeListBusinessUuId evaluateBusinessIdChange(TypeListBusinessUuId currentId,
+                                                                TypeListBusinessUuId newId, Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException("Business ID modification is restricted to Administrators.", "SEC-401", actor);
+        }
+
+        DomainGuard.notNull(newId, "New Business UUID");
+        if (currentId.equals(newId)) {
+            throw new IllegalArgumentException("The new Business ID must be different from the current one.");
+        }
+        return newId;
     }
 }

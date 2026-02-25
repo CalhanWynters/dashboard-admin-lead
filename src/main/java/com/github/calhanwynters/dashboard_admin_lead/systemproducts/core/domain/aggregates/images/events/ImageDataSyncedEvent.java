@@ -9,7 +9,7 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 @DomainEvent(name = "Image Data Synced", namespace = "images")
 public record ImageDataSyncedEvent(
         ImageUuId imageUuId,
-        ImageBusinessUuId imageBusinessUuId,
+        ImagesBusinessUuId imagesBusinessUuId,
         ImageName imageName,
         ImageDescription imageDescription,
         ImageUrl imageUrl,

@@ -20,7 +20,7 @@ public interface ImagesRepository {
     /**
      * Reconstitutes an Image using the Business/External UUID.
      */
-    Optional<ImageAggregate> findByBusinessUuId(ImageBusinessUuId businessUuId);
+    Optional<ImageAggregate> findByBusinessUuId(ImagesBusinessUuId businessUuId);
 
     /**
      * Retrieves all images.
@@ -43,5 +43,5 @@ public interface ImagesRepository {
     /**
      * Existence check to prevent Business ID collisions.
      */
-    boolean existsByBusinessUuId(ImageBusinessUuId businessUuId);
+    boolean existsByBusinessUuId(ImagesBusinessUuId businessUuId);
 }

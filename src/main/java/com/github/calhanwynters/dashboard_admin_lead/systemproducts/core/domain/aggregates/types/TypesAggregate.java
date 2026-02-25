@@ -5,9 +5,6 @@ import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.Aud
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesBehavior;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.FeatureBusinessUuIdChangedEvent;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.events.*;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesDomainWrapper.*;
@@ -20,7 +17,7 @@ public class TypesAggregate extends BaseAggregateRoot<TypesAggregate> {
 
     private final TypesId typesId;
     private final TypesUuId typesUuId;
-    private final TypesBusinessUuId typesBusinessUuId;
+    private TypesBusinessUuId typesBusinessUuId;
 
     private TypesName typesName;
     private TypesPhysicalSpecs typesPhysicalSpecs;
@@ -57,8 +54,7 @@ public class TypesAggregate extends BaseAggregateRoot<TypesAggregate> {
 
     // --- DOMAIN ACTIONS ---
 
-    // Need a 2-liner pattern method for TypesUpdateBusUuIdCommand
-    public void updateBusinessUuId(TypeBusinessUuId newId, Actor actor) {
+    public void updateBusinessUuId(TypesBusinessUuId newId, Actor actor) {
         TypesBehavior.ensureActive(this.productBooleans.softDeleted());
 
         // Validate using your existing logic (Admin-only, non-null, difference check)
