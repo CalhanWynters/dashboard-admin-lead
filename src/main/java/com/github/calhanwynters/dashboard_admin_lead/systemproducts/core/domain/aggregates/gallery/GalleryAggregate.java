@@ -64,7 +64,17 @@ public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
                 () -> this.galleryBusinessUuId = validatedId);
     }
 
-    // Need a 2-liner pattern method for GalleryPublicizeCommand
+    public void togglePublicStatus(boolean newStatus, Actor actor) {
+        GalleryBehavior.ensureActive(this.productBooleans.softDeleted());
+
+        // Call the behavior to validate roles and state redundancy
+        var validatedStatus = GalleryBehavior.evaluatePublicityChange(this.isPublic, newStatus, actor);
+
+        this.applyChange(actor,
+                new GalleryPublicStatusToggledEvent(galleryUuId, validatedStatus, actor),
+                () -> this.isPublic = validatedStatus
+        );
+    }
 
     public void syncToKafka(Actor actor) {
         GalleryBehavior.ensureActive(this.productBooleans.softDeleted());
