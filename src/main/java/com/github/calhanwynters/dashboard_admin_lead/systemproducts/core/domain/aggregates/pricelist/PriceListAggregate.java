@@ -7,11 +7,15 @@ import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.Base
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesBehavior;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.FeatureBusinessUuIdChangedEvent;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryDomainWrapper;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.events.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.PurchasePricing;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.ProductAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.ProductBehavior;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.ProductDomainWrapper;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.events.ProductCreatedEvent;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.typelist.TypeListDomainWrapper;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist.VariantListDomainWrapper;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -55,11 +59,37 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
         this.multiCurrencyPrices = new HashMap<>(multiCurrencyPrices);
     }
 
+    public static PriceListAggregate create(PriceListUuId uuId, PriceListBusinessUuId bUuId,
+            Class<? extends PurchasePricing> strategyBoundary, ProductBooleans booleans, Actor actor) {
+
+        // 1. Verify authority using PriceList-specific behavior
+        PriceListBehavior.verifyCreationAuthority(actor);
+
+        // 2. Initialize with default/initial state
+        PriceListAggregate priceList = new PriceListAggregate(null, uuId, strategyBoundary, bUuId, PriceListVersion.INITIAL,
+                true, booleans, AuditMetadata.create(actor),
+                new HashMap<>() // Initial empty pricing map
+        );
+
+        // 3. Register PriceList-specific event
+        priceList.registerEvent(new PriceListCreatedEvent(uuId, bUuId, actor));
+
+        return priceList;
+    }
+
     // --- DOMAIN ACTIONS ---
 
-    // Is the "Create" function needed?
-    // Fix various methods here. This file wrongfully uses version as optimistic lock.
-    // Need a 2-liner pattern method for PriceListUpdateVersionCommand
+    public void incrementVersion(Actor actor) {
+        // Line 1: Auth & Logic
+        PriceListBehavior.verifyVersionUpdateAuthority(actor);
+        var nextVersion = PriceListBehavior.incrementVersion(this.priceListVersion);
+
+        // Line 2: Side-Effect (Passes productId, nextVersion, and actor)
+        this.applyChange(actor,
+                new PriceListVersionIncrementedEvent(this.priceListUuId, nextVersion, actor),
+                () -> this.priceListVersion  = nextVersion
+        );
+    }
 
     public void updateBusinessUuId(PriceListBusinessUuId newId, Actor actor) {
         PriceListBehavior.ensureActive(this.productBooleans.softDeleted());
@@ -113,13 +143,11 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
         PriceListBehavior.validateStrategyMatch(this.strategyBoundary, pricing);
 
         var currentPrice = Optional.ofNullable(multiCurrencyPrices.get(targetId)).map(m -> m.get(currency));
-        var nextVersion = PriceListBehavior.evaluateVersionIncrement(this.priceListVersion);
 
 
         this.applyChange(actor,
-                new PriceUpdatedEvent(this.priceListUuId, targetId, currency, pricing, nextVersion, actor),
+                new PriceUpdatedEvent(this.priceListUuId, targetId, currency, pricing, actor),
                 () -> {
-                    this.priceListVersion = nextVersion;
                     this.multiCurrencyPrices.computeIfAbsent(targetId, k -> new HashMap<>()).put(currency, pricing);
 
                     currentPrice.ifPresent(old -> {
@@ -139,13 +167,11 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
         PriceListBehavior.ensureActive(this.isActive);
         PriceListBehavior.validateBulkAdjustment(percentage);
 
-        var nextVersion = PriceListBehavior.evaluateVersionIncrement(this.priceListVersion);
         double factor = 1 + (percentage / 100.0);
 
         this.applyChange(actor,
                 new BulkPriceAdjustmentEvent(this.priceListUuId, reason, percentage, actor),
                 () -> {
-                    this.priceListVersion = nextVersion;
                     this.multiCurrencyPrices.values().forEach(currencyMap ->
                             currencyMap.replaceAll((currency, pricing) -> pricing.adjustedBy(factor))
                     );
@@ -168,12 +194,10 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
         PriceListBehavior.verifyPriceModificationAuthority(actor);
         PriceListBehavior.ensureActive(this.isActive);
         PriceListBehavior.ensureTargetExists(this.multiCurrencyPrices, targetId, currency);
-        var nextVersion = PriceListBehavior.evaluateVersionIncrement(this.priceListVersion);
 
         this.applyChange(actor,
-                new PriceRemovedEvent(this.priceListUuId, targetId, currency, nextVersion, actor),
+                new PriceRemovedEvent(this.priceListUuId, targetId, currency, actor),
                 () -> {
-                    this.priceListVersion = nextVersion;
                     Map<Currency, PurchasePricing> currencyMap = multiCurrencyPrices.get(targetId);
                     currencyMap.remove(currency);
                     if (currencyMap.isEmpty()) multiCurrencyPrices.remove(targetId);

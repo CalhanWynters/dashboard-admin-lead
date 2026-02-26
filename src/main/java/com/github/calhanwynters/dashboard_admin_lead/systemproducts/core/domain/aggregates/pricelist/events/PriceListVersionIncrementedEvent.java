@@ -2,16 +2,15 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import org.jmolecules.event.annotation.DomainEvent;
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
-import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
-
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListDomainWrapper.*;
 
-import java.util.Currency;
-
-@DomainEvent(name = "Price Removed", namespace = "pricelist")
-public record PriceRemovedEvent(
-        PriceListUuId id,
-        UuId targetId,
-        Currency currency,
+/**
+ * Event fired when a Price List business version is explicitly incremented.
+ * Tracking iterations is critical for billing audit trails.
+ */
+@DomainEvent(name = "Price List Version Incremented", namespace = "pricelist")
+public record PriceListVersionIncrementedEvent(
+        PriceListUuId priceListId,
+        PriceListVersion newVersion,
         Actor actor
 ) {}

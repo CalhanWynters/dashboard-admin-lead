@@ -136,9 +136,6 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
         );
     }
 
-
-    // Fix various methods here. This file wrongfully uses version as optimistic lock.
-
     public void syncToKafka(Actor actor) {
         ProductBehavior.ensureActive(this.productBooleans.softDeleted());
         ProductBehavior.verifySyncAuthority(actor);

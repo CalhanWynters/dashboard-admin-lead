@@ -8,6 +8,7 @@
 - Add GalleryAggregate Thumbnail
 - Check Aggregate behaviors and any other files for proper error codes.
 - Evaluate code during review for time based optimistic locking? or consider another method of optimistic locking.
+- Evaluate mutability of fields in aggregate roots and possible mechanisms of read and write.
 
 
 - Plan out SKU Domain. Here are some references:

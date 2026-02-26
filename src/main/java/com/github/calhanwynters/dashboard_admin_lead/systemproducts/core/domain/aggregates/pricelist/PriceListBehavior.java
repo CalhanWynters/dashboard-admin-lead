@@ -5,6 +5,8 @@ import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.PurchasePricing;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.ProductDomainWrapper;
+
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListDomainWrapper.*;
 
 import java.util.Currency;
@@ -82,6 +84,17 @@ public final class PriceListBehavior {
         }
     }
 
+    /**
+     * SOC 2: Ensures version increments are restricted to Managers or Admins.
+     */
+    public static void verifyVersionUpdateAuthority(Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException(
+                    "Manual version increments require Manager or Admin roles.",
+                    "SEC-403", actor);
+        }
+    }
+
     public static boolean evaluateActivation(boolean current, boolean next) {
         if (current == next) {
             throw new IllegalArgumentException("Price List is already " + (current ? "active" : "inactive"));
@@ -102,10 +115,6 @@ public final class PriceListBehavior {
         return newId;
     }
 
-    public static PriceListVersion evaluateVersionIncrement(PriceListVersion current) {
-        return new PriceListVersion(current.value().next());
-    }
-
     public static void ensureTargetExists(Map<UuId, Map<Currency, PurchasePricing>> prices, UuId targetId, Currency currency) {
         DomainGuard.notNull(targetId, "Target Identity");
         DomainGuard.notNull(currency, "Currency");
@@ -124,5 +133,9 @@ public final class PriceListBehavior {
         if (percentage < -100.0) {
             throw new IllegalArgumentException("Price decrease cannot exceed 100%");
         }
+    }
+
+    public static PriceListVersion incrementVersion(PriceListVersion current) {
+        return new PriceListVersion(current.value().next());
     }
 }

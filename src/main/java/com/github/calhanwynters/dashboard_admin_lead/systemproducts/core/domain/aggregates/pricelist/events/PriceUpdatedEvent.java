@@ -14,6 +14,5 @@ public record PriceUpdatedEvent(
         UuId targetId,
         Currency currency,
         PurchasePricing pricing,
-        PriceListVersion newVersion,
         Actor actor
 ) {}
