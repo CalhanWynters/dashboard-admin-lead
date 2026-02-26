@@ -1,6 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
+import com.github.calhanwynters.dashboard_admin_lead.common.StatusEnums;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.ProductDomainWrapper.*;
@@ -49,7 +50,32 @@ public final class ProductBehavior {
         }
     }
 
+    /**
+     * SOC 2: Ensures version increments are restricted to Managers or Admins.
+     */
+    public static void verifyVersionUpdateAuthority(Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
+            throw new DomainAuthorizationException(
+                    "Manual version increments require Manager or Admin roles.",
+                    "SEC-403", actor);
+        }
+    }
+
     // --- EXISTING AUTHORITY CHECKS ---
+
+    /**
+     * Validates authority and state machine rules for status changes.
+     */
+    public static ProductStatus evaluateStatusTransition(ProductStatus current, ProductStatus target, Actor actor) {
+        DomainGuard.notNull(target, "Target Product Status");
+        verifyStatusTransitionAuthority(actor, target);
+        validateStatusTransition(current, target);
+
+        if (current.equals(target)) {
+            throw new IllegalArgumentException("Product is already in status: " + target.value());
+        }
+        return target;
+    }
 
     public static void verifyCreationAuthority(Actor actor) {
         if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
@@ -84,7 +110,7 @@ public final class ProductBehavior {
     public static void validateStatusTransition(ProductStatus current, ProductStatus next) {
         DomainGuard.ensure(
                 current.canTransitionTo(next),
-                "Illegal transition from %s to %s.".formatted(current, next),
+                "Illegal transition from %s to %s.".formatted(current.value(), next.value()),
                 "VAL-016", "STATE_VIOLATION"
         );
     }

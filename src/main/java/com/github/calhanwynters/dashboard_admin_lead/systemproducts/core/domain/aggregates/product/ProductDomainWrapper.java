@@ -46,6 +46,11 @@ public interface ProductDomainWrapper {
         public static final ProductStatus INACTIVE = new ProductStatus(StatusEnums.INACTIVE);
         public static final ProductStatus DISCONTINUED = new ProductStatus(StatusEnums.DISCONTINUED);
 
+        // Add this to bridge the gap from external Command inputs
+        public static ProductStatus of(StatusEnums value) {
+            return new ProductStatus(DomainGuard.notNull(value, "Status Enum"));
+        }
+
         public boolean canTransitionTo(ProductStatus nextStatus) {
             DomainGuard.notNull(nextStatus, "Target Status");
             return this.value.canTransitionTo(nextStatus.value());

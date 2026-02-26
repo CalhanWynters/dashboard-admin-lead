@@ -1,4 +1,4 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.usecases.product.mapper;
 
-public class ProductEditVersionMapper {
+public class ProductReassignPriceListMapper {
 }

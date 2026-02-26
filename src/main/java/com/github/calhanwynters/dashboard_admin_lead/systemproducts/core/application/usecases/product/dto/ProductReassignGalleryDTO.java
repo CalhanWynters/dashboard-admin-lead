@@ -1,4 +1,4 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.application.usecases.product.dto;
 
-public class ProductChangeTypeListDTO {
+public class ProductReassignGalleryDTO {
 }

@@ -7,11 +7,11 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListDomainWrapper.PriceListUuId;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
+import com.github.calhanwynters.dashboard_admin_lead.common.StatusEnums;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
-import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.events.*;
 
@@ -29,7 +29,7 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     private ProductBooleans productBooleans; // Record integration
 
     private GalleryUuId galleryUuId;
-    private final VariantListUuId variantListUuId;
+    private VariantListUuId variantListUuId;
     private TypeListUuId typeListUuId;
     private PriceListUuId priceListUuId;
 
@@ -84,8 +84,21 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
 
     // --- DOMAIN ACTIONS ---
 
-    // Some methods should be in the ProductBehavior file
-    // Need a 2-liner pattern method for ProductReassignVariantListCommand
+    public void reassignVariantList(VariantListUuId newVariantListId, Actor actor) {
+        // Line 1: Auth & Logic
+        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
+        ProductBehavior.verifyStructuralChangeAuthority(actor);
+        var validatedId = DomainGuard.notNull(newVariantListId, "Variant List ID");
+
+        // Line 2: Side-Effect
+        this.applyChange(actor,
+                new ProductVariantListReassignedEvent(this.productUuId, validatedId, actor),
+                () -> {
+                    this.variantListUuId = validatedId;
+                    ProductBehavior.validateComposition(this);
+                }
+        );
+    }
 
     public void updateBusinessUuId(ProductBusinessUuId newId, Actor actor) {
         ProductBehavior.ensureActive(this.productBooleans.softDeleted());
@@ -98,9 +111,32 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
                 () -> this.productBusinessUuId = validatedId);
     }
 
-    // Need a 2-liner pattern method for ProductUpdateStatusCommand
-        // consider the discontinue, activate, and deactivate methods.
-    // Need a 2-liner pattern method for ProductUpdateVersionCommand
+    public void updateStatus(StatusEnums newStatus, Actor actor) {
+        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
+
+        // Map raw enum to Domain Wrapper and validate logic/auth
+        var targetStatus = ProductStatus.of(newStatus);
+        var validatedStatus = ProductBehavior.evaluateStatusTransition(this.productStatus, targetStatus, actor);
+
+        this.applyChange(actor,
+                new ProductStatusUpdatedEvent(this.productUuId, this.productStatus, validatedStatus, actor),
+                () -> this.productStatus = validatedStatus
+        );
+    }
+
+    public void incrementVersion(Actor actor) {
+        // Line 1: Auth & Logic
+        ProductBehavior.verifyVersionUpdateAuthority(actor);
+        var nextVersion = ProductBehavior.incrementVersion(this.productVersion);
+
+        // Line 2: Side-Effect (Passes productId, nextVersion, and actor)
+        this.applyChange(actor,
+                new ProductVersionIncrementedEvent(this.productUuId, nextVersion, actor),
+                () -> this.productVersion = nextVersion
+        );
+    }
+
+
     // Fix various methods here. This file wrongfully uses version as optimistic lock.
 
     public void syncToKafka(Actor actor) {
@@ -135,10 +171,7 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
         // Line 2: Side-Effect
         this.applyChange(actor,
                 new ProductManifestUpdatedEvent(this.productUuId, newManifest, actor),
-                () -> {
-                    this.manifest = newManifest;
-                    this.productVersion = ProductBehavior.incrementVersion(this.productVersion);
-                }
+                () -> this.manifest = newManifest
         );
     }
 
@@ -187,24 +220,6 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
         );
     }
 
-    private void applyTransition(ProductStatus nextStatus, Actor actor) {
-        // Line 1: Auth & Logic
-        ProductBehavior.verifyStatusTransitionAuthority(actor, nextStatus);
-        ProductBehavior.validateStatusTransition(this.productStatus, nextStatus);
-
-        var nextVersion = ProductBehavior.incrementVersion(this.productVersion);
-        var oldStatus = this.productStatus;
-
-        // Line 2: Side-Effect
-        this.applyChange(actor,
-                new ProductStatusChangedEvent(this.productUuId, oldStatus, nextStatus, nextVersion, actor),
-                () -> {
-                    this.productStatus = nextStatus;
-                    this.productVersion = nextVersion;
-                }
-        );
-    }
-
     public void recordMissingDependency(String dependencyType, UuId missingId, Actor actor) {
         // Line 1: Auth (Allows System Actor)
         ProductBehavior.ensureDependencyResolution(dependencyType, false, actor);
@@ -214,28 +229,6 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
                 new ProductDependencyMissingEvent(this.productUuId, dependencyType, missingId, actor),
                 () -> this.productStatus = ProductStatus.DRAFT
         );
-    }
-
-    public void discontinue(Actor actor) {
-        // Line 1: Auth & Logic
-        ProductBehavior.verifyStatusTransitionAuthority(actor, ProductStatus.DISCONTINUED);
-        ProductBehavior.validateStatusTransition(this.productStatus, ProductStatus.DISCONTINUED);
-
-        // Line 2: Side-Effect
-        this.applyChange(actor,
-                new ProductDiscontinuedEvent(this.productUuId, actor),
-                () -> applyTransition(ProductStatus.DISCONTINUED, actor)
-        );
-    }
-
-    public void activate(Actor actor) {
-        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
-        applyTransition(ProductStatus.ACTIVE, actor);
-    }
-
-    public void deactivate(Actor actor) {
-        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
-        applyTransition(ProductStatus.INACTIVE, actor);
     }
 
     public void archive(Actor actor) {
@@ -292,29 +285,6 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
         this.applyChange(actor, new ProductHardDeletedEvent(this.productUuId, actor), null);
     }
 
-    /**
-     * Invariant check to ensure no actions are performed on a soft-deleted product.
-     */
-    public static void ensureActive(boolean isSoftDeleted) {
-        if (isSoftDeleted) {
-            throw new IllegalStateException("Operation failed: The product is soft-deleted.");
-        }
-    }
-
-    /**
-     * SOC 2 compliant authority check for high-stakes lifecycle changes
-     * (delete, restore, archive).
-     */
-    public static void verifyLifecycleAuthority(Actor actor) {
-        // Example: Only Admins or Managers can handle lifecycle events
-        if (!actor.hasRole(Actor.ROLE_ADMIN) && !actor.hasRole(Actor.ROLE_MANAGER)) {
-            throw new DomainAuthorizationException(
-                    "Unauthorized: Actor lacks lifecycle management permissions.",
-                    "AUTH-004",
-                    actor
-            );
-        }
-    }
 
     // --- ACCESSORS ---
     public ProductId getProductId() { return productId; }

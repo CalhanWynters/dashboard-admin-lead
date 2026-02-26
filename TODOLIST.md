@@ -6,7 +6,8 @@
 - Carefully look over the refractored codes for Variant and VariantCollection
 - Build the JPA AttributeConverters to map these microscopic NONE values (like 0.0000000001) to database NULL columns
 - Add GalleryAggregate Thumbnail
-
+- Check Aggregate behaviors and any other files for proper error codes.
+- Evaluate code during review for time based optimistic locking? or consider another method of optimistic locking.
 
 
 - Plan out SKU Domain. Here are some references:
