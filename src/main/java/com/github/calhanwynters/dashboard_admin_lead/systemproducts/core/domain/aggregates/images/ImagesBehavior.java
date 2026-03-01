@@ -3,6 +3,8 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper;
+
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.*;
 
 /**
@@ -48,6 +50,12 @@ public final class ImagesBehavior {
             throw new DomainAuthorizationException(
                     "Lifecycle management (Archive/Delete/Restore) requires Manager or Admin roles.",
                     "SEC-403", actor);
+        }
+    }
+
+    public static void verifyManagementAuthority(Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER)) {
+            throw new DomainAuthorizationException("Only Managers can modify Variant attributes.", "SEC-403", actor);
         }
     }
 
@@ -121,5 +129,32 @@ public final class ImagesBehavior {
         if (!actor.hasRole(Actor.ROLE_MANAGER)) {
             throw new DomainAuthorizationException("Insufficient privileges to record image references.", "SEC-403", actor);
         }
+    }
+
+    public static ImageName evaluateRename(ImageName current, ImageName next, Actor actor) {
+        verifyManagementAuthority(actor);
+        DomainGuard.notNull(next, "New Image Name");
+        if (next.equals(current)) {
+            throw new IllegalArgumentException("New name must be different from current name.");
+        }
+        return next;
+    }
+
+    public static ImageDescription evaluateDescriptionUpdate(ImageDescription current, ImageDescription next, Actor actor) {
+        verifyManagementAuthority(actor);
+        DomainGuard.notNull(next, "New Image Description");
+        if (next.equals(current)) {
+            throw new IllegalArgumentException("New description must be different from current description.");
+        }
+        return next;
+    }
+
+    public static ImageUrl evaluateUrlUpdate(ImageUrl current, ImageUrl next, Actor actor) {
+        verifyManagementAuthority(actor);
+        DomainGuard.notNull(next, "New Image URL");
+        if (next.equals(current)) {
+            throw new IllegalArgumentException("New URL must be different from current URL.");
+        }
+        return next;
     }
 }

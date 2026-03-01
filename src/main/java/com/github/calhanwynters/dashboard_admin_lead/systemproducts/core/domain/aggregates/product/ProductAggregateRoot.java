@@ -27,6 +27,7 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     private ProductManifest manifest;
     private ProductPhysicalSpecs physicalSpecs;
     private ProductBooleans productBooleans; // Record integration
+    // Product Description needs to be added
 
     private GalleryUuId galleryUuId;
     private VariantListUuId variantListUuId;

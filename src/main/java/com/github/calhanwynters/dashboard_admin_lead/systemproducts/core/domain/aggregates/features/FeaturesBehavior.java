@@ -3,6 +3,8 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants.VariantsDomainWrapper;
+
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper.*;
 
 /**
@@ -48,6 +50,12 @@ public final class FeaturesBehavior {
             throw new DomainAuthorizationException(
                     "Lifecycle management (Archive/Delete/Restore) requires Manager or Admin roles.",
                     "SEC-403", actor);
+        }
+    }
+
+    public static void verifyManagementAuthority(Actor actor) {
+        if (!actor.hasRole(Actor.ROLE_MANAGER)) {
+            throw new DomainAuthorizationException("Only Managers can modify Variant attributes.", "SEC-403", actor);
         }
     }
 
@@ -125,5 +133,14 @@ public final class FeaturesBehavior {
         if (!actor.hasRole(Actor.ROLE_ADMIN)) {
             throw new DomainAuthorizationException("Only Administrators can perform hard deletes.", "SEC-001", actor);
         }
+    }
+
+    public static FeatureName evaluateRename(FeatureName current, FeatureName next, Actor actor) {
+        verifyManagementAuthority(actor);
+        DomainGuard.notNull(next, "New Feature Name");
+        if (next.equals(current)) {
+            throw new IllegalArgumentException("New name must be different from current name.");
+        }
+        return next;
     }
 }

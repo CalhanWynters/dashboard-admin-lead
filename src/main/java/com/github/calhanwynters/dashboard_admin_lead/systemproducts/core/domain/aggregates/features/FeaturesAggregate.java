@@ -79,10 +79,10 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
         );
     }
 
-    public void updateFeatureName(FeatureName newName, Actor actor) {
+    public void rename(FeatureName newName, Actor actor) {
         FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
 
-        var validatedName = FeaturesBehavior.evaluateFeatureNameUpdate(newName, actor);
+        var validatedName = FeaturesBehavior.evaluateRename(this.featuresName, newName, actor);
 
         this.applyChange(actor,
                 new FeatureNameUpdatedEvent(featuresUuId, validatedName, actor),

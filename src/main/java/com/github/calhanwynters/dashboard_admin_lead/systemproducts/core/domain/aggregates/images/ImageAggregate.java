@@ -15,7 +15,7 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
     private final ImageUuId imagesUuId;
     private ImagesBusinessUuId imagesBusinessUuId;
     private ImageUrl imageUrl;
-    private ProductBooleans productBooleans; // Replaced boolean isArchived
+    private ProductBooleans productBooleans;
 
     private ImageName imageName;
     private ImageDescription imageDescription;
@@ -62,29 +62,38 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
                 () -> this.imagesBusinessUuId = validatedId);
     }
 
-    // Need a 2-liner pattern method for ImagesUpdateNameCommand; need to separate from updateMetadata
-    // Need a 2-liner pattern method for ImagesEditDescriptionCommand; need to separate from updateMetadata
-    // Delete updateMetadata
-    // Need a 2-liner pattern method for ImagesEditURLCommand
-    // Need a 2-liner pattern method for ImagesHardDeleteCommand
-
     public void syncToKafka(Actor actor) {
         ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
         ImagesBehavior.verifySyncAuthority(actor);
         this.applyChange(actor, new ImageDataSyncedEvent(imagesUuId, imagesBusinessUuId, imageName, imageDescription, imageUrl, productBooleans, actor), null);
     }
 
-    public void updateMetadata(ImageName name, ImageDescription description, Actor actor) {
+    public void rename(ImageName newName, Actor actor) {
         ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
-        var patch = ImagesBehavior.evaluateMetadataUpdate(name, description, actor);
+
+        var validatedName = ImagesBehavior.evaluateRename(this.imageName, newName, actor);
 
         this.applyChange(actor,
-                new ImageMetadataUpdatedEvent(this.imagesUuId, patch.name(), actor),
-                () -> {
-                    this.imageName = patch.name();
-                    this.imageDescription = patch.description();
-                }
-        );
+                new ImageNameUpdatedEvent(imagesUuId, validatedName, actor),
+                () -> this.imageName = validatedName);
+    }
+
+    public void updateDescription(ImageDescription newDescription, Actor actor) {
+        ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
+        var validatedDescription = ImagesBehavior.evaluateDescriptionUpdate(this.imageDescription, newDescription, actor);
+
+        this.applyChange(actor,
+                new ImageDescriptionUpdatedEvent(this.imagesUuId, validatedDescription, actor),
+                () -> this.imageDescription = validatedDescription);
+    }
+
+    public void updateUrl(ImageUrl newUrl, Actor actor) {
+        ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
+        var validatedUrl = ImagesBehavior.evaluateUrlUpdate(this.imageUrl, newUrl, actor);
+
+        this.applyChange(actor,
+                new ImageUrlUpdatedEvent(this.imagesUuId, validatedUrl, actor),
+                () -> this.imageUrl = validatedUrl);
     }
 
     public void archive(Actor actor) {
@@ -115,6 +124,11 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
                 new ImageSoftDeletedEvent(this.imagesUuId, actor),
                 () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), true)
         );
+    }
+
+    public void hardDelete(Actor actor) {
+        ImagesBehavior.verifyHardDeleteAuthority(actor);
+        this.applyChange(actor, new ImageHardDeletedEvent(imagesUuId, actor), null);
     }
 
     public void restore(Actor actor) {
