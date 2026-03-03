@@ -11,15 +11,29 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.typelist.TypeListDomainWrapper.TypeListUuId;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListDomainWrapper.PriceListUuId;
 
+/**
+ * Factory for creating and reconstituting ProductAggregateRoot instances.
+ * Ensures alignment with the 15-parameter constructor in ProductAggregateRoot.
+ */
 public class ProductFactory {
 
     private ProductFactory() {}
 
+    /**
+     * Creates a Bespoke product with complex physical specifications.
+     */
     public static ProductAggregateRoot createBespoke(
-            ProductBusinessUuId businessId, ProductName name, ProductCategory category,
-            ProductDescription description, ProductWeight weight, ProductDimensions dimensions,
-            ProductCareInstructions careInstructions, PriceListUuId priceListId,
-            VariantListUuId variantListId, Actor actor) {
+            ProductBusinessUuId businessId,
+            ProductName name,
+            ProductCategory category,
+            ProductDescription description,
+            ProductThumbnailUrl thumbnail,
+            ProductWeight weight,
+            ProductDimensions dimensions,
+            ProductCareInstructions careInstructions,
+            PriceListUuId priceListId,
+            VariantListUuId variantListId,
+            Actor actor) {
 
         ProductManifest manifest = new ProductManifest(name, category, description);
         ProductPhysicalSpecs physicalSpecs = new ProductPhysicalSpecs(
@@ -27,37 +41,92 @@ public class ProductFactory {
         );
 
         return new ProductAggregateRoot(
-                null, ProductUuId.generate(), businessId, manifest, ProductVersion.INITIAL,
-                ProductStatus.DRAFT, physicalSpecs, new ProductBooleans(false, false), // Added Record
-                GalleryUuId.generate(), (variantListId != null) ? variantListId : VariantListUuId.NONE,
-                TypeListUuId.NONE, priceListId, AuditMetadata.create(actor)
+                null,                           // productId
+                ProductUuId.generate(),         // productUuId
+                businessId,                     // productBusinessUuId
+                manifest,                       // manifest
+                ProductVersion.INITIAL,         // productVersion
+                ProductStatus.DRAFT,            // productStatus
+                physicalSpecs,                  // physicalSpecs
+                new ProductBooleans(false, false), // productBooleans
+                description,                    // productDescription
+                thumbnail,                      // productThumbnailUrl
+                GalleryUuId.generate(),         // galleryUuId
+                (variantListId != null) ? variantListId : VariantListUuId.NONE,
+                TypeListUuId.NONE,              // typeListUuId
+                priceListId,                    // priceListUuId
+                AuditMetadata.create(actor)     // auditMetadata
         );
     }
 
+    /**
+     * Creates a Standard product with minimal physical overhead.
+     */
     public static ProductAggregateRoot createStandard(
-            ProductBusinessUuId businessId, ProductName name, ProductCategory category,
-            ProductDescription description, TypeListUuId typeListId,
-            VariantListUuId variantListId, Actor actor) {
+            ProductBusinessUuId businessId,
+            ProductName name,
+            ProductCategory category,
+            ProductDescription description,
+            ProductThumbnailUrl thumbnail,
+            TypeListUuId typeListId,
+            VariantListUuId variantListId,
+            Actor actor) {
 
         return new ProductAggregateRoot(
-                null, ProductUuId.generate(), businessId, new ProductManifest(name, category, description),
-                ProductVersion.INITIAL, ProductStatus.DRAFT, ProductPhysicalSpecs.NONE,
-                new ProductBooleans(false, false), // Added Record
-                GalleryUuId.generate(), (variantListId != null) ? variantListId : VariantListUuId.NONE,
-                typeListId, PriceListUuId.NONE, AuditMetadata.create(actor)
+                null,                           // productId
+                ProductUuId.generate(),         // productUuId
+                businessId,                     // productBusinessUuId
+                new ProductManifest(name, category, description),
+                ProductVersion.INITIAL,         // productVersion
+                ProductStatus.DRAFT,            // productStatus
+                ProductPhysicalSpecs.NONE,      // physicalSpecs
+                new ProductBooleans(false, false),
+                description,                    // productDescription
+                thumbnail,                      // productThumbnailUrl
+                GalleryUuId.generate(),         // galleryUuId
+                (variantListId != null) ? variantListId : VariantListUuId.NONE,
+                typeListId,                     // typeListUuId
+                PriceListUuId.NONE,             // priceListUuId
+                AuditMetadata.create(actor)
         );
     }
 
+    /**
+     * Reconstitutes an existing product from persistence.
+     */
     public static ProductAggregateRoot reconstitute(
-            ProductId id, ProductUuId uuId, ProductBusinessUuId businessId,
-            ProductManifest manifest, ProductVersion version, ProductStatus status,
-            ProductPhysicalSpecs physicalSpecs, ProductBooleans productBooleans, // Added Record
-            GalleryUuId galleryId, VariantListUuId variantId, TypeListUuId typeId,
-            PriceListUuId priceId, AuditMetadata auditMetadata) {
+            ProductId id,
+            ProductUuId uuId,
+            ProductBusinessUuId businessId,
+            ProductManifest manifest,
+            ProductVersion version,
+            ProductStatus status,
+            ProductPhysicalSpecs physicalSpecs,
+            ProductBooleans productBooleans,
+            ProductDescription description,
+            ProductThumbnailUrl thumbnail,
+            GalleryUuId galleryId,
+            VariantListUuId variantId,
+            TypeListUuId typeId,
+            PriceListUuId priceId,
+            AuditMetadata auditMetadata) {
 
-        return new ProductAggregateRoot(id, uuId, businessId, manifest, version,
-                status, physicalSpecs, productBooleans, galleryId, variantId,
-                typeId, priceId, auditMetadata);
+        return new ProductAggregateRoot(
+                id,
+                uuId,
+                businessId,
+                manifest,
+                version,
+                status,
+                physicalSpecs,
+                productBooleans,
+                description,
+                thumbnail,
+                galleryId,
+                variantId,
+                typeId,
+                priceId,
+                auditMetadata
+        );
     }
 }
-

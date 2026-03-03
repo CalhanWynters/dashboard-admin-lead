@@ -3,6 +3,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 import com.github.calhanwynters.dashboard_admin_lead.common.*;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.PhysicalSpecs;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper;
 
 public interface ProductDomainWrapper {
 
@@ -39,6 +40,12 @@ public interface ProductDomainWrapper {
     }
 
     record ProductDescription(Description value) {}
+
+    record ProductThumbnailUrl(String value) {
+        public static ImagesDomainWrapper.ImageUrl of(String url) {
+            return new ImagesDomainWrapper.ImageUrl(url);
+        }
+    }
 
     record ProductStatus(StatusEnums value) {
         public static final ProductStatus DRAFT = new ProductStatus(StatusEnums.DRAFT);
