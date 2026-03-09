@@ -1,0 +1,98 @@
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities;
+
+import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
+@Entity
+@Table(name = "system_product_types")
+public class TypesEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "uuid", nullable = false, unique = true)
+    private UUID uuid;
+
+    @Column(name = "business_uuid", nullable = false)
+    private UUID businessUuid;
+
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    // --- Flattened Physical Specs ---
+    @Column(name = "weight_amount", precision = 19, scale = 5)
+    private BigDecimal weightAmount;
+
+    @Column(name = "weight_unit")
+    private String weightUnit;
+
+    @Column(name = "dim_length", precision = 19, scale = 10)
+    private BigDecimal length;
+
+    @Column(name = "dim_width", precision = 19, scale = 10)
+    private BigDecimal width;
+
+    @Column(name = "dim_height", precision = 19, scale = 10)
+    private BigDecimal height;
+
+    @Column(name = "dim_unit")
+    private String dimensionUnit;
+
+    @Column(name = "care_instructions", columnDefinition = "TEXT")
+    private String careInstructions;
+
+    // --- Booleans & Audit ---
+    @Column(name = "is_archived", nullable = false)
+    private boolean archived;
+
+    @Column(name = "is_soft_deleted", nullable = false)
+    private boolean softDeleted;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @Column(name = "last_modified_at", nullable = false)
+    private OffsetDateTime lastModifiedAt;
+
+    @Column(name = "last_modified_by", nullable = false)
+    private String lastModifiedBy;
+
+    public TypesEntity() {}
+
+    // --- Getters and Setters ---
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public UUID getUuid() { return uuid; }
+    public void setUuid(UUID uuid) { this.uuid = uuid; }
+    public UUID getBusinessUuid() { return businessUuid; }
+    public void setBusinessUuid(UUID businessUuid) { this.businessUuid = businessUuid; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public BigDecimal getWeightAmount() { return weightAmount; }
+    public void setWeightAmount(BigDecimal weightAmount) { this.weightAmount = weightAmount; }
+    public String getWeightUnit() { return weightUnit; }
+    public void setWeightUnit(String weightUnit) { this.weightUnit = weightUnit; }
+    public BigDecimal getLength() { return length; }
+    public void setLength(BigDecimal length) { this.length = length; }
+    public BigDecimal getWidth() { return width; }
+    public void setWidth(BigDecimal width) { this.width = width; }
+    public BigDecimal getHeight() { return height; }
+    public void setHeight(BigDecimal height) { this.height = height; }
+    public String getDimensionUnit() { return dimensionUnit; }
+    public void setDimensionUnit(String dimensionUnit) { this.dimensionUnit = dimensionUnit; }
+    public String getCareInstructions() { return careInstructions; }
+    public void setCareInstructions(String careInstructions) { this.careInstructions = careInstructions; }
+    public boolean isArchived() { return archived; }
+    public void setArchived(boolean archived) { this.archived = archived; }
+    public boolean isSoftDeleted() { return softDeleted; }
+    public void setSoftDeleted(boolean softDeleted) { this.softDeleted = softDeleted; }
+    public OffsetDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
+    public OffsetDateTime getLastModifiedAt() { return lastModifiedAt; }
+    public void setLastModifiedAt(OffsetDateTime lastModifiedAt) { this.lastModifiedAt = lastModifiedAt; }
+    public String getLastModifiedBy() { return lastModifiedBy; }
+    public void setLastModifiedBy(String lastModifiedBy) { this.lastModifiedBy = lastModifiedBy; }
+}

@@ -164,11 +164,9 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
 
         this.applyChange(actor,
                 new BulkPriceAdjustmentEvent(this.priceListUuId, reason, percentage, actor),
-                () -> {
-                    this.multiCurrencyPrices.values().forEach(currencyMap ->
-                            currencyMap.replaceAll((currency, pricing) -> pricing.adjustedBy(factor))
-                    );
-                }
+                () -> this.multiCurrencyPrices.values().forEach(currencyMap ->
+                        currencyMap.replaceAll((currency, pricing) -> pricing.adjustedBy(factor))
+                )
         );
     }
 
@@ -271,5 +269,9 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
                         ),
                         Collections::unmodifiableMap
                 ));
+    }
+
+    public Class<? extends PurchasePricing> getStrategyBoundary() {
+        return strategyBoundary;
     }
 }
