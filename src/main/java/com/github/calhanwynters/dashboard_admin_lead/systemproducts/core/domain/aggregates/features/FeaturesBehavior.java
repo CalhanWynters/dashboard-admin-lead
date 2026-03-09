@@ -82,12 +82,16 @@ public final class FeaturesBehavior {
         return newName;
     }
 
-    public static FeatureLabel evaluateCompatibilityTagUpdate(FeatureLabel newTag, Actor actor) {
+    public static FeatureLabel evaluateCompatibilityTagUpdate(FeatureLabel newTag,
+                                                              FeatureLabel currentTag,Actor actor) {
         if (!actor.hasRole(Actor.ROLE_MANAGER)) {
             throw new DomainAuthorizationException("Only Managers can modify compatibility tags.", "SEC-403", actor);
         }
 
         DomainGuard.notNull(newTag, "New Compatibility Tag");
+        if (newTag.equals(currentTag)) {
+            throw new IllegalArgumentException("The new tag is identical to the current tag.");
+        }
         return newTag;
     }
 
@@ -114,19 +118,6 @@ public final class FeaturesBehavior {
         if (!actor.hasRole(Actor.ROLE_ADMIN)) {
             throw new DomainAuthorizationException("Only Administrators can restore deleted features.", "SEC-403", actor);
         }
-    }
-
-    public static FeatureLabel evaluateCompatibilityChange(FeatureLabel newTag,
-                                                           FeatureLabel currentTag, Actor actor) {
-        if (!actor.hasRole(Actor.ROLE_MANAGER)) {
-            throw new DomainAuthorizationException("Only Managers can modify compatibility tags.", "SEC-403", actor);
-        }
-
-        DomainGuard.notNull(newTag, "New Compatibility Tag");
-        if (newTag.equals(currentTag)) {
-            throw new IllegalArgumentException("The new tag is identical to the current tag.");
-        }
-        return newTag;
     }
 
     public static void verifyHardDeleteAuthority(Actor actor) {

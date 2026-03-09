@@ -3,7 +3,6 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.ProductDomainWrapper.*;
 
@@ -170,14 +169,6 @@ public final class ProductBehavior {
         return newId;
     }
 
-    public static ProductDescription evaluateDescriptionUpdate(ProductDescription current, ProductDescription next, Actor actor) {
-        verifyManagementAuthority(actor);
-        DomainGuard.notNull(next, "New Product Description");
-        if (next.equals(current)) {
-            throw new IllegalArgumentException("New description must be different from current description.");
-        }
-        return next;
-    }
 
     public static ProductThumbnailUrl evaluateUrlUpdate(ProductThumbnailUrl current, ProductThumbnailUrl next, Actor actor) {
         verifyManagementAuthority(actor);

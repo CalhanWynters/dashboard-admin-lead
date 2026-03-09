@@ -7,6 +7,7 @@ import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.
 @DomainEvent(name = "Feature Compatibility Tag Updated", namespace = "features")
 public record FeatureCompTagUpdatedEvent(
         FeatureUuId featureUuId,
+        FeatureLabel oldTag,
         FeatureLabel newTag,
         Actor actor
 ) {}

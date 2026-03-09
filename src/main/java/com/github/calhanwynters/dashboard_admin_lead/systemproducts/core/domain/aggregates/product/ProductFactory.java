@@ -49,7 +49,6 @@ public class ProductFactory {
                 ProductStatus.DRAFT,            // productStatus
                 physicalSpecs,                  // physicalSpecs
                 new ProductBooleans(false, false), // productBooleans
-                description,                    // productDescription
                 thumbnail,                      // productThumbnailUrl
                 GalleryUuId.generate(),         // galleryUuId
                 (variantListId != null) ? variantListId : VariantListUuId.NONE,
@@ -81,7 +80,6 @@ public class ProductFactory {
                 ProductStatus.DRAFT,            // productStatus
                 ProductPhysicalSpecs.NONE,      // physicalSpecs
                 new ProductBooleans(false, false),
-                description,                    // productDescription
                 thumbnail,                      // productThumbnailUrl
                 GalleryUuId.generate(),         // galleryUuId
                 (variantListId != null) ? variantListId : VariantListUuId.NONE,
@@ -103,7 +101,6 @@ public class ProductFactory {
             ProductStatus status,
             ProductPhysicalSpecs physicalSpecs,
             ProductBooleans productBooleans,
-            ProductDescription description,
             ProductThumbnailUrl thumbnail,
             GalleryUuId galleryId,
             VariantListUuId variantId,
@@ -120,7 +117,6 @@ public class ProductFactory {
                 status,
                 physicalSpecs,
                 productBooleans,
-                description,
                 thumbnail,
                 galleryId,
                 variantId,

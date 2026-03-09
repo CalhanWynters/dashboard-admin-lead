@@ -13,10 +13,6 @@ import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesBehavior;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.events.ImageDescriptionUpdatedEvent;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.events.ImageUrlUpdatedEvent;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.events.*;
 
 public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot> {
@@ -28,11 +24,10 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     private ProductVersion productVersion;
     private ProductStatus productStatus;
 
-    private ProductManifest manifest;
+    private ProductManifest manifest; // Composite class of Name, Category, and Description
     private ProductPhysicalSpecs physicalSpecs;
     private ProductBooleans productBooleans; // Record integration
-    private ProductDescription productDescription; // Product Description needs to be added
-    private ProductThumbnailUrl productThumbnailUrl; // Product Thumbnail needs to be added
+    private ProductThumbnailUrl productThumbnailUrl;
 
     private GalleryUuId galleryUuId;
     private VariantListUuId variantListUuId;
@@ -47,7 +42,6 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
                                 ProductStatus productStatus,
                                 ProductPhysicalSpecs physicalSpecs,
                                 ProductBooleans productBooleans,
-                                ProductDescription productDescription,
                                 ProductThumbnailUrl productThumbnailUrl,
                                 GalleryUuId galleryUuId,
                                 VariantListUuId variantListUuId,
@@ -62,7 +56,6 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
         this.productVersion = DomainGuard.notNull(productVersion, "Version");
         this.productStatus = DomainGuard.notNull(productStatus, "Status");
         this.manifest = DomainGuard.notNull(manifest, "Product Manifest");
-        this.productDescription = DomainGuard.notNull(productDescription, "Product Description");
         this.productThumbnailUrl = DomainGuard.notNull(productThumbnailUrl, "Product Thumbnail");
 
         // Record Null-Safety
@@ -81,7 +74,6 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
             ProductUuId uuId,
             ProductBusinessUuId bUuId,
             ProductManifest manifest,
-            ProductDescription description,
             ProductThumbnailUrl thumbnail,
             ProductStatus status,
             GalleryUuId gallery,
@@ -102,7 +94,6 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
                 status,
                 specs,
                 new ProductBooleans(false, false),
-                description,
                 thumbnail,
                 gallery,
                 variants,
@@ -155,15 +146,6 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
                 new ProductStatusUpdatedEvent(this.productUuId, this.productStatus, validatedStatus, actor),
                 () -> this.productStatus = validatedStatus
         );
-    }
-
-    public void updateDescription(ProductDescription newDescription, Actor actor) {
-        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
-        var validatedDescription = ProductBehavior.evaluateDescriptionUpdate(this.productDescription, newDescription, actor);
-
-        this.applyChange(actor,
-                new ProductDescriptionUpdatedEvent(this.productUuId, validatedDescription, actor),
-                () -> this.productDescription = validatedDescription);
     }
 
     public void updateUrl(ProductThumbnailUrl newUrl, Actor actor) {
@@ -342,7 +324,6 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     public ProductVersion getProductVersion() { return productVersion; }
     public ProductPhysicalSpecs getProductPhysicalSpecs() { return physicalSpecs; }
     public ProductManifest getManifest() { return manifest; }
-    public ProductDescription getProductDescription() { return productDescription; }
     public ProductThumbnailUrl getProductThumbnailUrl() {return productThumbnailUrl; }
     public GalleryUuId getGalleryUuId() { return galleryUuId; }
     public VariantListUuId getVariantListUuId() { return variantListUuId; }

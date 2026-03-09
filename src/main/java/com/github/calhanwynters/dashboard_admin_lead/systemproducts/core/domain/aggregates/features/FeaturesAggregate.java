@@ -49,6 +49,7 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
 
     // --- DOMAIN ACTIONS ---
 
+
     public void syncToKafka(Actor actor) {
         FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
         FeaturesBehavior.verifySyncAuthority(actor);
@@ -69,16 +70,6 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
                 () -> this.featuresBusinessUuId = validatedId);
     }
 
-    public void changeCompatibilityTag(FeatureLabel newTag, Actor actor) {
-        FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
-        var validatedTag = FeaturesBehavior.evaluateCompatibilityChange(newTag, this.compatibilityTag, actor);
-
-        this.applyChange(actor,
-                new FeatureCompatibilityChangedEvent(featuresUuId, this.compatibilityTag, validatedTag, actor),
-                () -> this.compatibilityTag = validatedTag
-        );
-    }
-
     public void rename(FeatureName newName, Actor actor) {
         FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
 
@@ -92,10 +83,10 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
     public void updateCompatibilityTag(FeatureLabel newTag, Actor actor) {
         FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
 
-        var validatedTag = FeaturesBehavior.evaluateCompatibilityTagUpdate(newTag, actor);
+        var validatedTag = FeaturesBehavior.evaluateCompatibilityTagUpdate(newTag, this.compatibilityTag, actor);
 
         this.applyChange(actor,
-                new FeatureCompTagUpdatedEvent(featuresUuId, validatedTag, actor),
+                new FeatureCompTagUpdatedEvent(featuresUuId, this.compatibilityTag, validatedTag, actor),
                 () -> this.compatibilityTag = validatedTag);
     }
 
