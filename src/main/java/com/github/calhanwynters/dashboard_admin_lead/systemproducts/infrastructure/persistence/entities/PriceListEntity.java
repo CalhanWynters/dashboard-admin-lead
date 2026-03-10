@@ -32,10 +32,10 @@ public class PriceListEntity {
     @CollectionTable(name = "price_list_entries", joinColumns = @JoinColumn(name = "price_list_id"))
     private List<PriceEntryEmbeddable> prices = new ArrayList<>();
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private OffsetDateTime createdAt;
 
-    @Column(name = "last_modified_at", nullable = false)
+    @Column(name = "last_modified_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private OffsetDateTime lastModifiedAt;
 
     @Column(name = "last_modified_by", nullable = false)

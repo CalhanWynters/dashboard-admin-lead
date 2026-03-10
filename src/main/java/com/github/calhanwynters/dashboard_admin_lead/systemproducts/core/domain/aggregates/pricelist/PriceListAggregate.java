@@ -8,6 +8,7 @@ import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.Pro
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.events.*;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.PricingStrategyType;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.PurchasePricing;
 
 import java.util.*;
@@ -23,7 +24,7 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
 
     private final PriceListId priceListId;
     private final PriceListUuId priceListUuId;
-    private final Class<? extends PurchasePricing> strategyBoundary;
+    private PricingStrategyType strategyBoundary;
 
     private PriceListBusinessUuId priceListBusinessUuId;
     private PriceListVersion priceListVersion;
@@ -33,7 +34,7 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
 
     public PriceListAggregate(PriceListId priceListId,
                               PriceListUuId priceListUuId,
-                              Class<? extends PurchasePricing> strategyBoundary,
+                              PricingStrategyType strategyBoundary,
                               PriceListBusinessUuId priceListBusinessUuId,
                               PriceListVersion priceListVersion,
                               boolean isActive,
@@ -52,23 +53,35 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
         this.multiCurrencyPrices = new HashMap<>(multiCurrencyPrices);
     }
 
-    public static PriceListAggregate create(PriceListUuId uuId, PriceListBusinessUuId bUuId,
-            Class<? extends PurchasePricing> strategyBoundary, ProductBooleans booleans, Actor actor) {
+    public static PriceListAggregate create(
+            PriceListUuId uuId,
+            PriceListBusinessUuId bUuId,
+            PricingStrategyType strategyBoundary, // Changed from Class to Enum
+            ProductBooleans booleans,
+            Actor actor) {
 
-        // 1. Verify authority using PriceList-specific behavior
+        // 1. Verify authority
         PriceListBehavior.verifyCreationAuthority(actor);
 
-        // 2. Initialize with default/initial state
-        PriceListAggregate priceList = new PriceListAggregate(null, uuId, strategyBoundary, bUuId, PriceListVersion.INITIAL,
-                true, booleans, AuditMetadata.create(actor),
-                new HashMap<>() // Initial empty pricing map
+        // 2. Initialize (Constructor now matches: Enum is passed as 3rd argument)
+        PriceListAggregate priceList = new PriceListAggregate(
+                null,
+                uuId,
+                strategyBoundary, // This now matches the Enum type in your constructor
+                bUuId,
+                PriceListVersion.INITIAL,
+                true,
+                booleans,
+                AuditMetadata.create(actor),
+                new HashMap<>()
         );
 
-        // 3. Register PriceList-specific event
+        // 3. Register event
         priceList.registerEvent(new PriceListCreatedEvent(uuId, bUuId, actor));
 
         return priceList;
     }
+
 
     // --- DOMAIN ACTIONS ---
 
@@ -170,14 +183,22 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
         );
     }
 
-    public void shiftStrategy(Class<? extends PurchasePricing> newStrategy, Actor actor) {
-        PriceListBehavior.verifyBulkAdjustmentAuthority(actor); // Admin level
+    public void shiftStrategy(PricingStrategyType newStrategy, Actor actor) {
+        PriceListBehavior.verifyBulkAdjustmentAuthority(actor);
         PriceListBehavior.ensureActive(this.isActive);
-        String oldName = this.strategyBoundary.getSimpleName();
+
+        // Convert current Enum and new Enum to String for the Event
+        String oldName = this.strategyBoundary.name();
+        String newName = newStrategy.name();
 
         this.applyChange(actor,
-                new PriceListStrategyChangedEvent(this.priceListUuId, oldName, newStrategy.getSimpleName(), actor),
-                null
+                new PriceListStrategyChangedEvent(this.priceListUuId, oldName, newName, actor),
+                // Update the aggregate's internal state
+                () -> {
+                    this.strategyBoundary = newStrategy;
+                    // Optional: You might want to clear multiCurrencyPrices
+                    // if the new strategy is incompatible with existing prices.
+                }
         );
     }
 
@@ -271,7 +292,7 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
                 ));
     }
 
-    public Class<? extends PurchasePricing> getStrategyBoundary() {
+    public PricingStrategyType getStrategyBoundary() {
         return strategyBoundary;
     }
 }

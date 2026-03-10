@@ -5,6 +5,7 @@ import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListAggregate;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListDomainWrapper.*;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.PricingStrategyType;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.PurchasePricing;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.PriceListEntity;
 import javax.annotation.processing.Generated;
@@ -35,7 +36,7 @@ public class PriceListMapperImpl extends PriceListMapper {
         PriceListId priceListId = toPriceListId( entity.getId() );
         PriceListUuId priceListUuId = toPriceListUuId( entity.getUuid() );
         PriceListBusinessUuId priceListBusinessUuId = toBusinessUuId( entity.getBusinessUuid() );
-        Class<? extends PurchasePricing> strategyBoundary = slugToClass( entity.getStrategySlug() );
+        PricingStrategyType strategyBoundary = slugToEnum( entity.getStrategySlug() );
         Map<UuId, Map<Currency, PurchasePricing>> multiCurrencyPrices = toPricingMap( entity.getPrices() );
         AuditMetadata auditMetadata = toAuditMetadata( entity );
         PriceListVersion priceListVersion = toVersion( entity.getVersion() );
@@ -70,7 +71,7 @@ public class PriceListMapperImpl extends PriceListMapper {
         priceListEntity.setBusinessUuid( stringToUuid( aggregate.getPriceListBusinessUuId().value().value() ) );
 
         // Calls your slug logic
-        priceListEntity.setStrategySlug( classToSlug( aggregate.getStrategyBoundary() ) );
+        priceListEntity.setStrategySlug( enumToSlug( aggregate.getStrategyBoundary() ) );
 
         // Calls your JSONB/Jackson logic
         priceListEntity.setPrices( fromPricingMap( aggregate.getMultiCurrencyPrices() ) );

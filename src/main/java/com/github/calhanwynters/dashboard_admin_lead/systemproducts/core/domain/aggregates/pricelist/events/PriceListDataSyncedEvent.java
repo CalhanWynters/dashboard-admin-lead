@@ -1,6 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.events;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.PricingStrategyType;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.PurchasePricing;
 import org.jmolecules.event.annotation.DomainEvent;
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
@@ -14,7 +15,7 @@ import java.util.Map; // Or whatever collection type multiCurrencyPrices uses
 public record PriceListDataSyncedEvent(
         PriceListUuId priceListUuId,
         PriceListBusinessUuId priceListBusinessUuId,
-        Class<? extends PurchasePricing> strategyBoundary, // Match the Class type
+        PricingStrategyType strategyBoundary, // Match the Class type
         PriceListVersion priceListVersion,
         boolean isActive,
         ProductBooleans productBooleans,

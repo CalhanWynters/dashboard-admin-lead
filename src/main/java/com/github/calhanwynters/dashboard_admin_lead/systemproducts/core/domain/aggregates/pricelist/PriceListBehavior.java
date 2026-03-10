@@ -4,10 +4,11 @@ import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.PurchasePricing;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.ProductDomainWrapper;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListDomainWrapper.*;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListDomainWrapper.PriceListUuId.NONE;
 
 import java.util.Currency;
 import java.util.Map;
@@ -61,10 +62,27 @@ public final class PriceListBehavior {
     }
 
 
-    public static void validateStrategyMatch(Class<? extends PurchasePricing> boundary, PurchasePricing pricing) {
+    public static void validateStrategyMatch(PricingStrategyType boundary, PurchasePricing pricing) {
         DomainGuard.notNull(pricing, "Pricing strategy");
-        if (!boundary.isInstance(pricing)) {
-            throw new IllegalStateException("Domain Violation: Price strategy mismatch for " + boundary.getSimpleName());
+
+        // We check if the 'pricing' object is the correct implementation for the Enum choice
+        boolean matches = switch (boundary) {
+            case FIXED -> pricing instanceof PriceFixedPurchase;
+            case NONE -> pricing instanceof PriceNonePurchase;
+            case FRACT_TIERED_GRAD -> pricing instanceof PriceFractTieredGradPurchase;
+            case FRACT_SCALED -> pricing instanceof PriceFractScaledPurchase;
+            case INT_SCALED -> pricing instanceof PriceIntScaledPurchase;
+            case INT_TIERED_GRAD -> pricing instanceof PriceIntTieredGradPurchase;
+            case INT_TIERED_VOL -> pricing instanceof PriceIntTieredVolPurchase;
+            case FRACT_TIERED_VOL -> pricing instanceof PriceFractTieredVolPurchase;
+            // The compiler will force you to add a case if you add a new Enum value
+        };
+
+        if (!matches) {
+            throw new IllegalStateException(
+                    "Domain Violation: Price strategy mismatch. Expected " + boundary.name() +
+                            " but received " + pricing.getClass().getSimpleName()
+            );
         }
     }
 

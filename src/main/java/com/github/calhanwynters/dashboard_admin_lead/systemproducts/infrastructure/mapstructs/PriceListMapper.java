@@ -19,11 +19,18 @@ public abstract class PriceListMapper {
 
     protected final ObjectMapper jsonMapper;
 
-    private static final Map<String, Class<? extends PurchasePricing>> STRATEGY_REGISTRY = Map.of(
-            "SIMPLE", SimplePurchasePricing.class,
-            "FIXED", PriceFixedPurchase.class,
-            "TIERED_GRAD", PriceFractTieredGradPurchase.class
+    // Internal registry: Links the Domain Enum to the Concrete Value Object Class
+    private static final Map<PricingStrategyType, Class<? extends PurchasePricing>> STRATEGY_MAP = Map.ofEntries(
+            Map.entry(PricingStrategyType.FIXED, PriceFixedPurchase.class),
+            Map.entry(PricingStrategyType.NONE, PriceNonePurchase.class),
+            Map.entry(PricingStrategyType.FRACT_TIERED_GRAD, PriceFractTieredGradPurchase.class),
+            Map.entry(PricingStrategyType.FRACT_SCALED, PriceFractScaledPurchase.class),
+            Map.entry(PricingStrategyType.FRACT_TIERED_VOL, PriceFractTieredVolPurchase.class),
+            Map.entry(PricingStrategyType.INT_SCALED, PriceIntScaledPurchase.class),
+            Map.entry(PricingStrategyType.INT_TIERED_GRAD, PriceIntTieredGradPurchase.class),
+            Map.entry(PricingStrategyType.INT_TIERED_VOL, PriceIntTieredVolPurchase.class)
     );
+
 
     public PriceListMapper(ObjectMapper jsonMapper) {
         this.jsonMapper = jsonMapper;
@@ -32,7 +39,7 @@ public abstract class PriceListMapper {
     @Mapping(target = "priceListId", source = "id", qualifiedByName = "toPriceListId")
     @Mapping(target = "priceListUuId", source = "uuid", qualifiedByName = "toPriceListUuId")
     @Mapping(target = "priceListBusinessUuId", source = "businessUuid", qualifiedByName = "toBusinessUuId")
-    @Mapping(target = "strategyBoundary", source = "strategySlug", qualifiedByName = "slugToClass")
+    @Mapping(target = "strategyBoundary", source = "strategySlug", qualifiedByName = "slugToEnum")
     @Mapping(target = "multiCurrencyPrices", source = "prices", qualifiedByName = "toPricingMap")
     @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
     @Mapping(target = "priceListVersion", source = "version", qualifiedByName = "toVersion")
@@ -41,7 +48,7 @@ public abstract class PriceListMapper {
     @Mapping(target = "id", source = "priceListId.value.value")
     @Mapping(target = "uuid", source = "priceListUuId.value.value", qualifiedByName = "stringToUuid")
     @Mapping(target = "businessUuid", source = "priceListBusinessUuId.value.value", qualifiedByName = "stringToUuid")
-    @Mapping(target = "strategySlug", source = "strategyBoundary", qualifiedByName = "classToSlug")
+    @Mapping(target = "strategySlug", source = "strategyBoundary", qualifiedByName = "enumToSlug")
     @Mapping(target = "prices", source = "multiCurrencyPrices", qualifiedByName = "fromPricingMap")
     @Mapping(target = "version", source = "priceListVersion.value.value")
     @Mapping(target = "createdAt", source = "auditMetadata.createdAt.value")
@@ -79,30 +86,32 @@ public abstract class PriceListMapper {
 
     // --- Strategy & JSON Helpers ---
 
-    @Named("slugToClass")
-    protected Class<? extends PurchasePricing> slugToClass(String slug) {
-        return STRATEGY_REGISTRY.getOrDefault(slug, PurchasePricing.class);
+    @Named("slugToEnum") // Changed from slugToClass
+    protected PricingStrategyType slugToEnum(String slug) {
+        return slug == null ? null : PricingStrategyType.valueOf(slug);
     }
 
-    @Named("classToSlug")
-    protected String classToSlug(Class<?> clazz) {
-        return STRATEGY_REGISTRY.entrySet().stream()
-                .filter(e -> e.getValue().isAssignableFrom(clazz))
-                .map(Map.Entry::getKey)
-                .findFirst()
-                .orElse("UNKNOWN");
+    @Named("enumToSlug") // Changed from classToSlug
+    protected String enumToSlug(PricingStrategyType type) {
+        return type == null ? null : type.name();
     }
 
     @Named("toPricingMap")
     protected Map<UuId, Map<Currency, PurchasePricing>> toPricingMap(List<PriceEntryEmbeddable> entries) {
         Map<UuId, Map<Currency, PurchasePricing>> rootMap = new HashMap<>();
+        if (entries == null) return rootMap;
+
         for (var entry : entries) {
             UuId itemKey = new UuId(entry.getItemId().toString());
             Currency currency = Currency.getInstance(entry.getCurrencyCode());
 
+            // Use the Enum to find the concrete class for Jackson
+            PricingStrategyType strategyType = PricingStrategyType.valueOf(entry.getPricingType());
+            Class<? extends PurchasePricing> concreteClass = STRATEGY_MAP.get(strategyType);
+
             PurchasePricing pricing = jsonMapper.convertValue(
                     entry.getStrategyDetails(),
-                    getConcreteClass(entry.getPricingType())
+                    concreteClass
             );
 
             rootMap.computeIfAbsent(itemKey, k -> new HashMap<>()).put(currency, pricing);
@@ -113,26 +122,27 @@ public abstract class PriceListMapper {
     @Named("fromPricingMap")
     protected List<PriceEntryEmbeddable> fromPricingMap(Map<UuId, Map<Currency, PurchasePricing>> map) {
         List<PriceEntryEmbeddable> flatList = new ArrayList<>();
+        if (map == null) return flatList;
 
-        // Define a type reference for Map<String, Object> to satisfy the compiler
         TypeReference<Map<String, Object>> typeRef = new TypeReference<>() {};
 
         map.forEach((itemId, currencyMap) -> currencyMap.forEach((currency, pricing) -> {
             PriceEntryEmbeddable entry = new PriceEntryEmbeddable();
             entry.setItemId(UUID.fromString(itemId.value()));
             entry.setCurrencyCode(currency.getCurrencyCode());
-            entry.setPricingType(classToSlug(pricing.getClass()));
 
-            // Use the TypeReference to perform a type-safe conversion
+            // Helper logic to find the Enum name for the DB slug
+            String slug = STRATEGY_MAP.entrySet().stream()
+                    .filter(e -> e.getValue().isInstance(pricing))
+                    .map(e -> e.getKey().name())
+                    .findFirst()
+                    .orElse("UNKNOWN");
+
+            entry.setPricingType(slug);
             entry.setStrategyDetails(jsonMapper.convertValue(pricing, typeRef));
-
             flatList.add(entry);
         }));
         return flatList;
-    }
-
-    private Class<? extends PurchasePricing> getConcreteClass(String type) {
-        return STRATEGY_REGISTRY.get(type);
     }
 
     // --- Audit Helper ---
