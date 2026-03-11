@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.LEGACYBaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.events.*;
@@ -13,7 +13,7 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
  * Aggregate Root for Product Types.
  * Standardized via Rich Domain Model to ensure physical spec integrity and auditing.
  */
-public class TypesAggregate extends BaseAggregateRoot<TypesAggregate> {
+public class TypesAggregateLEGACY extends LEGACYBaseAggregateRoot<TypesAggregateLEGACY> {
 
     private final TypesId typesId;
     private final TypesUuId typesUuId;
@@ -22,14 +22,16 @@ public class TypesAggregate extends BaseAggregateRoot<TypesAggregate> {
     private TypesName typesName;
     private TypesPhysicalSpecs typesPhysicalSpecs;
     private ProductBooleans productBooleans; // Replaced boolean deleted
+    // Add Version-Based Optimistic Locking "optLockVer"
 
-    public TypesAggregate(TypesId typesId,
-                          TypesUuId typesUuId,
-                          TypesBusinessUuId typesBusinessUuId,
-                          TypesName typesName,
-                          TypesPhysicalSpecs typesPhysicalSpecs,
-                          ProductBooleans productBooleans, // Updated parameter
-                          AuditMetadata auditMetadata) {
+
+    public TypesAggregateLEGACY(TypesId typesId,
+                                TypesUuId typesUuId,
+                                TypesBusinessUuId typesBusinessUuId,
+                                TypesName typesName,
+                                TypesPhysicalSpecs typesPhysicalSpecs,
+                                ProductBooleans productBooleans, // Updated parameter
+                                AuditMetadata auditMetadata) {
         super(auditMetadata);
         this.typesId = typesId;
         this.typesUuId = DomainGuard.notNull(typesUuId, "Types UUID");
@@ -40,12 +42,12 @@ public class TypesAggregate extends BaseAggregateRoot<TypesAggregate> {
         this.productBooleans = productBooleans != null ? productBooleans : new ProductBooleans(false, false);
     }
 
-    public static TypesAggregate create(TypesUuId uuId, TypesBusinessUuId bUuId,
-                                        TypesName name, TypesPhysicalSpecs specs, Actor actor) {
+    public static TypesAggregateLEGACY create(TypesUuId uuId, TypesBusinessUuId bUuId,
+                                              TypesName name, TypesPhysicalSpecs specs, Actor actor) {
         TypesBehavior.verifyCreationAuthority(actor);
 
         // Initialize with default ProductBooleans state
-        TypesAggregate aggregate = new TypesAggregate(
+        TypesAggregateLEGACY aggregate = new TypesAggregateLEGACY(
                 null, uuId, bUuId, name, specs, new ProductBooleans(false, false), AuditMetadata.create(actor)
         );
         aggregate.registerEvent(new TypeCreatedEvent(uuId, bUuId, actor));

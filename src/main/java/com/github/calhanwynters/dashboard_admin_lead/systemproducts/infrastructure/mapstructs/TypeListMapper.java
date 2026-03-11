@@ -26,7 +26,7 @@ public interface TypeListMapper {
     @Mapping(target = "typeUuIds", source = "typeUuIds", qualifiedByName = "toTypesUuIdSet")
     @Mapping(target = "productBooleans", source = ".", qualifiedByName = "toProductBooleans")
     @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
-    TypeListAggregate toAggregate(TypeListEntity entity);
+    TypeListAggregateLEGACY toAggregate(TypeListEntity entity);
 
     @Mapping(target = "id", source = "typeListId.value.id")
     @Mapping(target = "uuid", source = "typeListUuId.value.value", qualifiedByName = "stringToUuid")
@@ -37,7 +37,7 @@ public interface TypeListMapper {
     @Mapping(target = "createdAt", source = "auditMetadata.createdAt.value")
     @Mapping(target = "lastModifiedAt", source = "auditMetadata.lastModified.value")
     @Mapping(target = "lastModifiedBy", source = "auditMetadata.lastModifiedBy.identity")
-    TypeListEntity toEntity(TypeListAggregate aggregate);
+    TypeListEntity toEntity(TypeListAggregateLEGACY aggregate);
 
     // --- Collection Helpers ---
 

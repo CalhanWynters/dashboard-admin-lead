@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.LEGACYBaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 
@@ -15,20 +15,23 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
+public class TypeListAggregateLEGACY extends LEGACYBaseAggregateRoot<TypeListAggregateLEGACY> {
 
     private final TypeListId typeListId;
     private final TypeListUuId typeListUuId;
     private TypeListBusinessUuId typeListBusinessUuId;
     private final Set<TypesUuId> typeUuIds;
     private ProductBooleans productBooleans; // Corrected: No more primitive boolean
+    // Add Version-Based Optimistic Locking "optLockVer"
+    // Add Schema-Based Versioning "schemaVer"
 
-    public TypeListAggregate(TypeListId typeListId,
-                             TypeListUuId typeListUuId,
-                             TypeListBusinessUuId typeListBusinessUuId,
-                             Set<TypesUuId> typeUuIds,
-                             ProductBooleans productBooleans, // Replaced boolean
-                             AuditMetadata auditMetadata) {
+
+    public TypeListAggregateLEGACY(TypeListId typeListId,
+                                   TypeListUuId typeListUuId,
+                                   TypeListBusinessUuId typeListBusinessUuId,
+                                   Set<TypesUuId> typeUuIds,
+                                   ProductBooleans productBooleans, // Replaced boolean
+                                   AuditMetadata auditMetadata) {
         super(auditMetadata);
         this.typeListId = typeListId;
         this.typeListUuId = DomainGuard.notNull(typeListUuId, "TypeList UUID");
@@ -37,10 +40,10 @@ public class TypeListAggregate extends BaseAggregateRoot<TypeListAggregate> {
         this.productBooleans = productBooleans != null ? productBooleans : new ProductBooleans(false, false);
     }
 
-    public static TypeListAggregate create(TypeListUuId uuId, TypeListBusinessUuId bUuId, Actor actor) {
+    public static TypeListAggregateLEGACY create(TypeListUuId uuId, TypeListBusinessUuId bUuId, Actor actor) {
         TypeListBehavior.verifyCreationAuthority(actor);
 
-        TypeListAggregate aggregate = new TypeListAggregate(
+        TypeListAggregateLEGACY aggregate = new TypeListAggregateLEGACY(
                 null, uuId, bUuId, new HashSet<>(), new ProductBooleans(false, false), AuditMetadata.create(actor)
         );
         aggregate.registerEvent(new TypeListCreatedEvent(uuId, bUuId, actor));

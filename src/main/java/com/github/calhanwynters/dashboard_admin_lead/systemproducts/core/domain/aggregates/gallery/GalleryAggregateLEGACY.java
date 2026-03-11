@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.LEGACYBaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.events.*;
@@ -13,7 +13,7 @@ import java.util.List;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryDomainWrapper.*;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.ImageUuId;
 
-public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
+public class GalleryAggregateLEGACY extends LEGACYBaseAggregateRoot<GalleryAggregateLEGACY> {
 
     private final GalleryId galleryId;
     private final GalleryUuId galleryUuId;
@@ -22,14 +22,17 @@ public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
     private final List<ImageUuId> imageUuIds = new ArrayList<>();
     private boolean isPublic;
     private ProductBooleans productBooleans; // Record integration
+    // Add Version-Based Optimistic Locking "optLockVer"
+    // Add Schema-Based Versioning "schemaVer"
 
-    public GalleryAggregate(GalleryId galleryId,
-                            GalleryUuId galleryUuId,
-                            GalleryBusinessUuId galleryBusinessUuId,
-                            boolean isPublic,
-                            List<ImageUuId> imageUuIds,
-                            ProductBooleans productBooleans, // Added param
-                            AuditMetadata auditMetadata) {
+
+    public GalleryAggregateLEGACY(GalleryId galleryId,
+                                  GalleryUuId galleryUuId,
+                                  GalleryBusinessUuId galleryBusinessUuId,
+                                  boolean isPublic,
+                                  List<ImageUuId> imageUuIds,
+                                  ProductBooleans productBooleans, // Added param
+                                  AuditMetadata auditMetadata) {
         super(auditMetadata);
         this.galleryId = DomainGuard.notNull(galleryId, "Gallery PK ID");
         this.galleryUuId = DomainGuard.notNull(galleryUuId, "Gallery UUID");
@@ -41,10 +44,10 @@ public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate> {
         this.productBooleans = (productBooleans != null) ? productBooleans : new ProductBooleans(false, false);
     }
 
-    public static GalleryAggregate create(GalleryUuId uuId, GalleryBusinessUuId bUuId, Actor actor) {
+    public static GalleryAggregateLEGACY create(GalleryUuId uuId, GalleryBusinessUuId bUuId, Actor actor) {
         GalleryBehavior.verifyCreationAuthority(actor);
 
-        GalleryAggregate aggregate = new GalleryAggregate(
+        GalleryAggregateLEGACY aggregate = new GalleryAggregateLEGACY(
                 null, uuId, bUuId, false, List.of(), new ProductBooleans(false, false), AuditMetadata.create(actor)
         );
         aggregate.registerEvent(new GalleryCreatedEvent(uuId, bUuId, actor));

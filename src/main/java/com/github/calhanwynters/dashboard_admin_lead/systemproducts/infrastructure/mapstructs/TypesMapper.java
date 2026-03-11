@@ -21,7 +21,7 @@ public interface TypesMapper {
     @Mapping(target = "typesPhysicalSpecs", source = ".", qualifiedByName = "toTypesPhysicalSpecs")
     @Mapping(target = "productBooleans", source = ".", qualifiedByName = "toBooleans")
     @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
-    TypesAggregate toAggregate(TypesEntity entity);
+    TypesAggregateLEGACY toAggregate(TypesEntity entity);
 
     @Mapping(target = "id", source = "typesId.value.id")
     @Mapping(target = "uuid", source = "typesUuId.value.value", qualifiedByName = "stringToUuid")
@@ -39,7 +39,7 @@ public interface TypesMapper {
     @Mapping(target = "createdAt", source = "auditMetadata.createdAt.value")
     @Mapping(target = "lastModifiedAt", source = "auditMetadata.lastModified.value")
     @Mapping(target = "lastModifiedBy", source = "auditMetadata.lastModifiedBy.identity")
-    TypesEntity toEntity(TypesAggregate aggregate);
+    TypesEntity toEntity(TypesAggregateLEGACY aggregate);
 
     // --- Complex Composite Helper ---
 

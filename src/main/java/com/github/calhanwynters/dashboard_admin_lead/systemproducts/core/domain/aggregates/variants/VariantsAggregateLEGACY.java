@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.LEGACYBaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper.FeatureUuId;
@@ -14,7 +14,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class VariantsAggregate extends BaseAggregateRoot<VariantsAggregate> {
+public class VariantsAggregateLEGACY extends LEGACYBaseAggregateRoot<VariantsAggregateLEGACY> {
 
     private final VariantsId variantsId;
     private final VariantsUuId variantsUuId;
@@ -22,14 +22,17 @@ public class VariantsAggregate extends BaseAggregateRoot<VariantsAggregate> {
     private VariantsName variantsName;
     private final Set<FeatureUuId> assignedFeatureUuIds;
     private ProductBooleans productBooleans;
+    // Add Version-Based Optimistic Locking "optLockVer"
+    // Add Schema-Based Versioning "schemaVer"
 
-    public VariantsAggregate(VariantsId variantsId,
-                             VariantsUuId variantsUuId,
-                             VariantsBusinessUuId variantsBusinessUuId,
-                             VariantsName variantsName,
-                             Set<FeatureUuId> assignedFeatureUuIds,
-                             ProductBooleans productBooleans, // 2. Updated param
-                             AuditMetadata auditMetadata) {
+
+    public VariantsAggregateLEGACY(VariantsId variantsId,
+                                   VariantsUuId variantsUuId,
+                                   VariantsBusinessUuId variantsBusinessUuId,
+                                   VariantsName variantsName,
+                                   Set<FeatureUuId> assignedFeatureUuIds,
+                                   ProductBooleans productBooleans, // 2. Updated param
+                                   AuditMetadata auditMetadata) {
         super(auditMetadata);
         this.variantsId = variantsId;
         this.variantsUuId = DomainGuard.notNull(variantsUuId, "Variant UUID");
@@ -40,12 +43,12 @@ public class VariantsAggregate extends BaseAggregateRoot<VariantsAggregate> {
         this.productBooleans = productBooleans != null ? productBooleans : new ProductBooleans(false, false);
     }
 
-    public static VariantsAggregate create(VariantsUuId uuId, VariantsBusinessUuId bUuId,
-                                           VariantsName name, Actor actor) {
+    public static VariantsAggregateLEGACY create(VariantsUuId uuId, VariantsBusinessUuId bUuId,
+                                                 VariantsName name, Actor actor) {
         VariantsBehavior.verifyCreationAuthority(actor);
 
         // 4. Initialize with default record state
-        VariantsAggregate aggregate = new VariantsAggregate(
+        VariantsAggregateLEGACY aggregate = new VariantsAggregateLEGACY(
                 null, uuId, bUuId, name, new HashSet<>(), new ProductBooleans(false, false), AuditMetadata.create(actor)
         );
         aggregate.registerEvent(new VariantCreatedEvent(uuId, bUuId, actor));

@@ -2,14 +2,14 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.LEGACYBaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.*;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper.*;
 
-public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
+public class FeaturesAggregateLEGACY extends LEGACYBaseAggregateRoot<FeaturesAggregateLEGACY> {
 
     private final FeatureId featuresId;
     private final FeatureUuId featuresUuId;
@@ -18,14 +18,16 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
     private FeatureName featuresName;
     private FeatureLabel compatibilityTag;
     private ProductBooleans productBooleans; // Record integration
+    // Add Version-Based Optimistic Locking "optLockVer"
+    // Add Schema-Based Versioning "schemaVer"
 
-    public FeaturesAggregate(FeatureId featuresId,
-                             FeatureUuId featuresUuId,
-                             FeatureBusinessUuId featuresBusinessUuId,
-                             FeatureName featuresName,
-                             FeatureLabel compatibilityTag,
-                             ProductBooleans productBooleans, // Added param
-                             AuditMetadata auditMetadata) {
+    public FeaturesAggregateLEGACY(FeatureId featuresId,
+                                   FeatureUuId featuresUuId,
+                                   FeatureBusinessUuId featuresBusinessUuId,
+                                   FeatureName featuresName,
+                                   FeatureLabel compatibilityTag,
+                                   ProductBooleans productBooleans, // Added param
+                                   AuditMetadata auditMetadata) {
 
         super(auditMetadata);
         this.featuresId = DomainGuard.notNull(featuresId, "Feature PK ID");
@@ -36,11 +38,11 @@ public class FeaturesAggregate extends BaseAggregateRoot<FeaturesAggregate> {
         this.productBooleans = (productBooleans != null) ? productBooleans : new ProductBooleans(false, false);
     }
 
-    public static FeaturesAggregate create(FeatureUuId uuId, FeatureBusinessUuId bUuId,
-                                           FeatureName name, FeatureLabel tag, Actor actor) {
+    public static FeaturesAggregateLEGACY create(FeatureUuId uuId, FeatureBusinessUuId bUuId,
+                                                 FeatureName name, FeatureLabel tag, Actor actor) {
         FeaturesBehavior.validateCreation(uuId, bUuId, name, tag, actor);
 
-        FeaturesAggregate aggregate = new FeaturesAggregate(
+        FeaturesAggregateLEGACY aggregate = new FeaturesAggregateLEGACY(
                 null, uuId, bUuId, name, tag, new ProductBooleans(false, false), AuditMetadata.create(actor)
         );
         aggregate.registerEvent(new FeatureCreatedEvent(uuId, bUuId, actor));

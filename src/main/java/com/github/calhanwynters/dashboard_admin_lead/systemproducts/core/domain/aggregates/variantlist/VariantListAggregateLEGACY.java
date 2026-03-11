@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.LEGACYBaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist.events.*;
@@ -18,20 +18,23 @@ import java.util.Set;
  * Aggregate Root for managing collections of Variants.
  * Follows Two-Liner Pattern with mandatory SOC 2 Authorizations.
  */
-public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate> {
+public class VariantListAggregateLEGACY extends LEGACYBaseAggregateRoot<VariantListAggregateLEGACY> {
 
     private final VariantListId variantListId;
     private final VariantListUuId variantListUuId;
     private VariantListBusinessUuId variantListBusinessUuId;
     private final Set<VariantsUuId> variantUuIds;
     private ProductBooleans productBooleans; // Replaced boolean deleted
+    // Add Version-Based Optimistic Locking "optLockVer"
+    // Add Schema-Based Versioning "schemaVer"
 
-    public VariantListAggregate(VariantListId variantListId,
-                                VariantListUuId variantListUuId,
-                                VariantListBusinessUuId variantListBusinessUuId,
-                                Set<VariantsUuId> variantUuIds,
-                                ProductBooleans productBooleans, // Updated parameter
-                                AuditMetadata auditMetadata) {
+
+    public VariantListAggregateLEGACY(VariantListId variantListId,
+                                      VariantListUuId variantListUuId,
+                                      VariantListBusinessUuId variantListBusinessUuId,
+                                      Set<VariantsUuId> variantUuIds,
+                                      ProductBooleans productBooleans, // Updated parameter
+                                      AuditMetadata auditMetadata) {
         super(auditMetadata);
         this.variantListId = variantListId;
         this.variantListUuId = DomainGuard.notNull(variantListUuId, "VariantList UUID");
@@ -41,10 +44,10 @@ public class VariantListAggregate extends BaseAggregateRoot<VariantListAggregate
         this.productBooleans = productBooleans != null ? productBooleans : new ProductBooleans(false, false);
     }
 
-    public static VariantListAggregate create(VariantListUuId uuId, VariantListBusinessUuId bUuId, Actor actor) {
+    public static VariantListAggregateLEGACY create(VariantListUuId uuId, VariantListBusinessUuId bUuId, Actor actor) {
         VariantListBehavior.verifyCreationAuthority(actor);
 
-        VariantListAggregate aggregate = new VariantListAggregate(
+        VariantListAggregateLEGACY aggregate = new VariantListAggregateLEGACY(
                 null, uuId, bUuId, new HashSet<>(), new ProductBooleans(false, false), AuditMetadata.create(actor)
         );
         aggregate.registerEvent(new VariantListCreatedEvent(uuId, bUuId, actor));

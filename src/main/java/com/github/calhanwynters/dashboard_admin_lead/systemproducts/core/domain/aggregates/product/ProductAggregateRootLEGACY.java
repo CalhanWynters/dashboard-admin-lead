@@ -10,12 +10,12 @@ import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.StatusEnums;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
-import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.LEGACYBaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.events.*;
 
-public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot> {
+public class ProductAggregateRootLEGACY extends LEGACYBaseAggregateRoot<ProductAggregateRootLEGACY> {
 
     private final ProductId productId;
     private final ProductUuId productUuId;
@@ -27,6 +27,9 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     private ProductManifest manifest; // Composite class of Name, Category, and Description
     private ProductPhysicalSpecs physicalSpecs;
     private ProductBooleans productBooleans; // Record integration
+    // Add Version-Based Optimistic Locking "optLockVer"
+    // Add Schema-Based Versioning "schemaVer"
+
     private ProductThumbnailUrl productThumbnailUrl;
 
     private GalleryUuId galleryUuId;
@@ -34,20 +37,20 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
     private TypeListUuId typeListUuId;
     private PriceListUuId priceListUuId;
 
-    public ProductAggregateRoot(ProductId productId,
-                                ProductUuId productUuId,
-                                ProductBusinessUuId productBusinessUuId,
-                                ProductManifest manifest,
-                                ProductVersion productVersion,
-                                ProductStatus productStatus,
-                                ProductPhysicalSpecs physicalSpecs,
-                                ProductBooleans productBooleans,
-                                ProductThumbnailUrl productThumbnailUrl,
-                                GalleryUuId galleryUuId,
-                                VariantListUuId variantListUuId,
-                                TypeListUuId typeListUuId,
-                                PriceListUuId priceListUuId,
-                                AuditMetadata auditMetadata) {
+    public ProductAggregateRootLEGACY(ProductId productId,
+                                      ProductUuId productUuId,
+                                      ProductBusinessUuId productBusinessUuId,
+                                      ProductManifest manifest,
+                                      ProductVersion productVersion,
+                                      ProductStatus productStatus,
+                                      ProductPhysicalSpecs physicalSpecs,
+                                      ProductBooleans productBooleans,
+                                      ProductThumbnailUrl productThumbnailUrl,
+                                      GalleryUuId galleryUuId,
+                                      VariantListUuId variantListUuId,
+                                      TypeListUuId typeListUuId,
+                                      PriceListUuId priceListUuId,
+                                      AuditMetadata auditMetadata) {
 
         super(auditMetadata);
         this.productId = productId;
@@ -70,7 +73,7 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
         ProductBehavior.validateComposition(this);
     }
 
-    public static ProductAggregateRoot create(
+    public static ProductAggregateRootLEGACY create(
             ProductUuId uuId,
             ProductBusinessUuId bUuId,
             ProductManifest manifest,
@@ -85,7 +88,7 @@ public class ProductAggregateRoot extends BaseAggregateRoot<ProductAggregateRoot
 
         ProductBehavior.verifyCreationAuthority(actor);
 
-        ProductAggregateRoot product = new ProductAggregateRoot(
+        ProductAggregateRootLEGACY product = new ProductAggregateRootLEGACY(
                 null,
                 uuId,
                 bUuId,

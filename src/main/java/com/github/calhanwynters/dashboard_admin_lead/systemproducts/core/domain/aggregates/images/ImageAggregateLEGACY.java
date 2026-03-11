@@ -2,14 +2,14 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.LEGACYBaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.events.*;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.*;
 
-public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
+public class ImageAggregateLEGACY extends LEGACYBaseAggregateRoot<ImageAggregateLEGACY> {
 
     private final ImageId imageId;
     private final ImageUuId imagesUuId;
@@ -19,15 +19,18 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
 
     private ImageName imageName;
     private ImageDescription imageDescription;
+    // Add Version-Based Optimistic Locking "optLockVer"
+    // Add Schema-Based Versioning "schemaVer"
 
-    public ImageAggregate(ImageId imageId,
-                          ImageUuId imagesUuId,
-                          ImagesBusinessUuId imagesBusinessUuId,
-                          ImageName imageName,
-                          ImageDescription imageDescription,
-                          ImageUrl imageUrl,
-                          ProductBooleans productBooleans, // Updated param
-                          AuditMetadata auditMetadata) {
+
+    public ImageAggregateLEGACY(ImageId imageId,
+                                ImageUuId imagesUuId,
+                                ImagesBusinessUuId imagesBusinessUuId,
+                                ImageName imageName,
+                                ImageDescription imageDescription,
+                                ImageUrl imageUrl,
+                                ProductBooleans productBooleans, // Updated param
+                                AuditMetadata auditMetadata) {
         super(auditMetadata);
         this.imageId = DomainGuard.notNull(imageId, "Image PK ID");
         this.imagesUuId = DomainGuard.notNull(imagesUuId, "Image UUID");
@@ -38,11 +41,11 @@ public class ImageAggregate extends BaseAggregateRoot<ImageAggregate> {
         this.productBooleans = productBooleans != null ? productBooleans : new ProductBooleans(false, false);
     }
 
-    public static ImageAggregate create(ImageUuId uuId, ImagesBusinessUuId bUuId, ImageName name,
-                                        ImageDescription desc, ImageUrl url, Actor actor) {
+    public static ImageAggregateLEGACY create(ImageUuId uuId, ImagesBusinessUuId bUuId, ImageName name,
+                                              ImageDescription desc, ImageUrl url, Actor actor) {
         ImagesBehavior.verifyCreationAuthority(actor);
 
-        ImageAggregate aggregate = new ImageAggregate(
+        ImageAggregateLEGACY aggregate = new ImageAggregateLEGACY(
                 null, uuId, bUuId, name, desc, url, new ProductBooleans(false, false), AuditMetadata.create(actor)
         );
         aggregate.registerEvent(new ImageUploadedEvent(uuId, url, actor));

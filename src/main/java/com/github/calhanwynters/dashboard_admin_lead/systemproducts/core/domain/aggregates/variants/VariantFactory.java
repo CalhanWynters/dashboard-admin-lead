@@ -10,11 +10,11 @@ import java.util.Set;
 
 public class VariantFactory {
 
-    public static VariantsAggregate create(VariantsBusinessUuId bizId, VariantsName name, Actor creator) {
-        return VariantsAggregate.create(VariantsUuId.generate(), bizId, name, creator);
+    public static VariantsAggregateLEGACY create(VariantsBusinessUuId bizId, VariantsName name, Actor creator) {
+        return VariantsAggregateLEGACY.create(VariantsUuId.generate(), bizId, name, creator);
     }
 
-    public static VariantsAggregate reconstitute(
+    public static VariantsAggregateLEGACY reconstitute(
             VariantsId id,
             VariantsUuId uuId,
             VariantsBusinessUuId bizId,
@@ -23,6 +23,6 @@ public class VariantFactory {
             ProductBooleans productBooleans, // Replaced boolean
             AuditMetadata audit) {
 
-        return new VariantsAggregate(id, uuId, bizId, name, features, productBooleans, audit);
+        return new VariantsAggregateLEGACY(id, uuId, bizId, name, features, productBooleans, audit);
     }
 }

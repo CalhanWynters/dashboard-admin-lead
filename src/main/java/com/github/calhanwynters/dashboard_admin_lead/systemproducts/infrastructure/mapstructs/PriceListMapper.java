@@ -43,7 +43,7 @@ public abstract class PriceListMapper {
     @Mapping(target = "multiCurrencyPrices", source = "prices", qualifiedByName = "toPricingMap")
     @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
     @Mapping(target = "priceListVersion", source = "version", qualifiedByName = "toVersion")
-    public abstract PriceListAggregate toAggregate(PriceListEntity entity);
+    public abstract PriceListAggregateLEGACY toAggregate(PriceListEntity entity);
 
     @Mapping(target = "id", source = "priceListId.value.value")
     @Mapping(target = "uuid", source = "priceListUuId.value.value", qualifiedByName = "stringToUuid")
@@ -54,7 +54,7 @@ public abstract class PriceListMapper {
     @Mapping(target = "createdAt", source = "auditMetadata.createdAt.value")
     @Mapping(target = "lastModifiedAt", source = "auditMetadata.lastModified.value")
     @Mapping(target = "lastModifiedBy", source = "auditMetadata.lastModifiedBy.identity")
-    public abstract PriceListEntity toEntity(PriceListAggregate aggregate);
+    public abstract PriceListEntity toEntity(PriceListAggregateLEGACY aggregate);
 
 
     // --- Identity & Version Helpers ---

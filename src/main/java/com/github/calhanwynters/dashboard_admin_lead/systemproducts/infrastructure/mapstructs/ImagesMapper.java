@@ -23,7 +23,7 @@ public interface ImagesMapper {
     @Mapping(target = "imageUrl", source = "url", qualifiedByName = "toImageUrl")
     @Mapping(target = "productBooleans", source = ".", qualifiedByName = "toProductBooleans")
     @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
-    ImageAggregate toAggregate(ImagesEntity entity);
+    ImageAggregateLEGACY toAggregate(ImagesEntity entity);
 
     @Mapping(target = "id", source = "imageId.value.id")
     @Mapping(target = "uuid", source = "imagesUuId.value.value", qualifiedByName = "stringToUuid")
@@ -36,7 +36,7 @@ public interface ImagesMapper {
     @Mapping(target = "createdAt", source = "auditMetadata.createdAt.value")
     @Mapping(target = "lastModifiedAt", source = "auditMetadata.lastModified.value")
     @Mapping(target = "lastModifiedBy", source = "auditMetadata.lastModifiedBy.identity")
-    ImagesEntity toEntity(ImageAggregate aggregate);
+    ImagesEntity toEntity(ImageAggregateLEGACY aggregate);
 
     // --- MAPPING HELPERS ---
 

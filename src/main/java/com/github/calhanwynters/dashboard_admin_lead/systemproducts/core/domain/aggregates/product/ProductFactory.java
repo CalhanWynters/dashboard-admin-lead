@@ -22,7 +22,7 @@ public class ProductFactory {
     /**
      * Creates a Bespoke product with complex physical specifications.
      */
-    public static ProductAggregateRoot createBespoke(
+    public static ProductAggregateRootLEGACY createBespoke(
             ProductBusinessUuId businessId,
             ProductName name,
             ProductCategory category,
@@ -40,7 +40,7 @@ public class ProductFactory {
                 new PhysicalSpecs(weight.value(), dimensions.value(), careInstructions.value())
         );
 
-        return new ProductAggregateRoot(
+        return new ProductAggregateRootLEGACY(
                 null,                           // productId
                 ProductUuId.generate(),         // productUuId
                 businessId,                     // productBusinessUuId
@@ -61,7 +61,7 @@ public class ProductFactory {
     /**
      * Creates a Standard product with minimal physical overhead.
      */
-    public static ProductAggregateRoot createStandard(
+    public static ProductAggregateRootLEGACY createStandard(
             ProductBusinessUuId businessId,
             ProductName name,
             ProductCategory category,
@@ -71,7 +71,7 @@ public class ProductFactory {
             VariantListUuId variantListId,
             Actor actor) {
 
-        return new ProductAggregateRoot(
+        return new ProductAggregateRootLEGACY(
                 null,                           // productId
                 ProductUuId.generate(),         // productUuId
                 businessId,                     // productBusinessUuId
@@ -92,7 +92,7 @@ public class ProductFactory {
     /**
      * Reconstitutes an existing product from persistence.
      */
-    public static ProductAggregateRoot reconstitute(
+    public static ProductAggregateRootLEGACY reconstitute(
             ProductId id,
             ProductUuId uuId,
             ProductBusinessUuId businessId,
@@ -108,7 +108,7 @@ public class ProductFactory {
             PriceListUuId priceId,
             AuditMetadata auditMetadata) {
 
-        return new ProductAggregateRoot(
+        return new ProductAggregateRootLEGACY(
                 id,
                 uuId,
                 businessId,

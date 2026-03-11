@@ -10,17 +10,17 @@ import org.springframework.data.domain.AbstractAggregateRoot;
 import java.util.Optional;
 
 @MappedSuperclass
-public abstract class BaseAggregateRoot<T extends BaseAggregateRoot<T>>
+public abstract class LEGACYBaseAggregateRoot<T extends LEGACYBaseAggregateRoot<T>>
         extends AbstractAggregateRoot<T> {
 
     @Embedded
     protected AuditMetadata auditMetadata;
 
-    protected BaseAggregateRoot(AuditMetadata auditMetadata) {
+    protected LEGACYBaseAggregateRoot(AuditMetadata auditMetadata) {
         this.auditMetadata = auditMetadata;
     }
 
-    protected BaseAggregateRoot() {} // JPA Requirement
+    protected LEGACYBaseAggregateRoot() {} // JPA Requirement
 
     /**
      * The core helper for the "Two-Liner" pattern.

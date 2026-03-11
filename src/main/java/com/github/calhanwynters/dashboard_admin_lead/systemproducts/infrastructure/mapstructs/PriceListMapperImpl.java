@@ -3,7 +3,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastruct
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListAggregate;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListAggregateLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListDomainWrapper.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.PricingStrategyType;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.PurchasePricing;
@@ -27,7 +27,7 @@ public class PriceListMapperImpl extends PriceListMapper {
     }
 
     @Override
-    public PriceListAggregate toAggregate(PriceListEntity entity) {
+    public PriceListAggregateLEGACY toAggregate(PriceListEntity entity) {
         if ( entity == null ) {
             return null;
         }
@@ -42,7 +42,7 @@ public class PriceListMapperImpl extends PriceListMapper {
         PriceListVersion priceListVersion = toVersion( entity.getVersion() );
 
         // MapStruct calls your Aggregate constructor
-        PriceListAggregate priceListAggregate = new PriceListAggregate(
+        PriceListAggregateLEGACY priceListAggregate = new PriceListAggregateLEGACY(
                 priceListId,
                 priceListUuId,
                 strategyBoundary,
@@ -58,7 +58,7 @@ public class PriceListMapperImpl extends PriceListMapper {
     }
 
     @Override
-    public PriceListEntity toEntity(PriceListAggregate aggregate) {
+    public PriceListEntity toEntity(PriceListAggregateLEGACY aggregate) {
         if ( aggregate == null ) {
             return null;
         }

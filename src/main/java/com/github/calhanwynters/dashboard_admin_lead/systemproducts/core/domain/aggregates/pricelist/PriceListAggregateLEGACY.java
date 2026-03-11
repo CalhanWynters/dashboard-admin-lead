@@ -3,7 +3,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
-import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
+import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.LEGACYBaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
@@ -20,7 +20,7 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
  * Aggregate Root for Price Lists.
  * Optimized for SOC 2 Processing Integrity and Role-Based Access Control.
  */
-public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
+public class PriceListAggregateLEGACY extends LEGACYBaseAggregateRoot<PriceListAggregateLEGACY> {
 
     private final PriceListId priceListId;
     private final PriceListUuId priceListUuId;
@@ -31,16 +31,19 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
     private ProductBooleans productBooleans;
     private boolean isActive;
     private final Map<UuId, Map<Currency, PurchasePricing>> multiCurrencyPrices;
+    // Add Version-Based Optimistic Locking "optLockVer"
+    // Add Schema-Based Versioning "schemaVer"
 
-    public PriceListAggregate(PriceListId priceListId,
-                              PriceListUuId priceListUuId,
-                              PricingStrategyType strategyBoundary,
-                              PriceListBusinessUuId priceListBusinessUuId,
-                              PriceListVersion priceListVersion,
-                              boolean isActive,
-                              ProductBooleans productBooleans, // Added param
-                              AuditMetadata auditMetadata,
-                              Map<UuId, Map<Currency, PurchasePricing>> multiCurrencyPrices) {
+
+    public PriceListAggregateLEGACY(PriceListId priceListId,
+                                    PriceListUuId priceListUuId,
+                                    PricingStrategyType strategyBoundary,
+                                    PriceListBusinessUuId priceListBusinessUuId,
+                                    PriceListVersion priceListVersion,
+                                    boolean isActive,
+                                    ProductBooleans productBooleans, // Added param
+                                    AuditMetadata auditMetadata,
+                                    Map<UuId, Map<Currency, PurchasePricing>> multiCurrencyPrices) {
 
         super(auditMetadata);
         this.priceListId = priceListId;
@@ -53,7 +56,7 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
         this.multiCurrencyPrices = new HashMap<>(multiCurrencyPrices);
     }
 
-    public static PriceListAggregate create(
+    public static PriceListAggregateLEGACY create(
             PriceListUuId uuId,
             PriceListBusinessUuId bUuId,
             PricingStrategyType strategyBoundary, // Changed from Class to Enum
@@ -64,7 +67,7 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate> {
         PriceListBehavior.verifyCreationAuthority(actor);
 
         // 2. Initialize (Constructor now matches: Enum is passed as 3rd argument)
-        PriceListAggregate priceList = new PriceListAggregate(
+        PriceListAggregateLEGACY priceList = new PriceListAggregateLEGACY(
                 null,
                 uuId,
                 strategyBoundary, // This now matches the Enum type in your constructor
