@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import org.jmolecules.event.annotation.DomainEvent;
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 // Import TypesPhysicalSpecs from your local wrapper
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesDomainWrapper.*;
 
@@ -12,6 +12,6 @@ public record TypeDataSyncedEvent(
         TypesBusinessUuId typesBusinessUuId,
         TypesName typesName,
         TypesPhysicalSpecs typesPhysicalSpecs, // Use the Types version here
-        ProductBooleans productBooleans,
+        ProductBooleansLEGACY productBooleansLEGACY,
         Actor actor
 ) { }

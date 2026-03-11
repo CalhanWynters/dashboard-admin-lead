@@ -32,7 +32,7 @@ public interface ProductMapper {
     @Mapping(target = "typeListUuId", source = "typeListUuid", qualifiedByName = "toTypeListUuId")
     @Mapping(target = "priceListUuId", source = "priceListUuid", qualifiedByName = "toPriceListUuId")
     @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
-    ProductAggregateRoot toAggregate(ProductEntity entity);
+    ProductAggregateRootLEGACY toAggregate(ProductEntity entity);
 
     @Mapping(target = "id", source = "productId.value.id")
     @Mapping(target = "uuid", source = "productUuId.value.value", qualifiedByName = "stringToUuid")
@@ -59,7 +59,7 @@ public interface ProductMapper {
     @Mapping(target = "createdAt", source = "auditMetadata.createdAt.value")
     @Mapping(target = "lastModifiedAt", source = "auditMetadata.lastModified.value")
     @Mapping(target = "lastModifiedBy", source = "auditMetadata.lastModifiedBy.identity")
-    ProductEntity toEntity(ProductAggregateRoot aggregate);
+    ProductEntity toEntity(ProductAggregateRootLEGACY aggregate);
 
     // --- Complex Composite Construction ---
 
@@ -122,7 +122,7 @@ public interface ProductMapper {
     default ProductThumbnailUrl toThumbnail(String url) { return new ProductThumbnailUrl(url); }
 
     @Named("toBooleans")
-    default ProductBooleans toBooleans(ProductEntity entity) { return new ProductBooleans(entity.isArchived(), entity.isSoftDeleted()); }
+    default ProductBooleansLEGACY toBooleans(ProductEntity entity) { return new ProductBooleansLEGACY(entity.isArchived(), entity.isSoftDeleted()); }
 
     @Named("toGalleryUuId")
     default GalleryUuId toGalleryUuId(java.util.UUID uuid) { return uuid != null ? new GalleryUuId(UuId.fromString(uuid.toString())) : GalleryUuId.NONE; }

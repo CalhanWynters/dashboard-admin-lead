@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import org.jmolecules.event.annotation.DomainEvent;
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryDomainWrapper.GalleryUuId;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryDomainWrapper.GalleryBusinessUuId;
 
@@ -11,6 +11,6 @@ public record GalleryDataSyncedEvent(
         GalleryUuId galleryUuId,
         GalleryBusinessUuId galleryBusinessUuId,
         boolean isPublic,
-        ProductBooleans productBooleans,
+        ProductBooleansLEGACY productBooleansLEGACY,
         Actor actor
 ) { }

@@ -4,10 +4,10 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListDomainWrapper.PriceListUuId;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist.VariantListDomainWrapper.VariantListUuId;
 
-public class ProductCompositionSpecification implements Specification<ProductAggregateRoot> {
+public class ProductCompositionSpecification implements Specification<ProductAggregateRootLEGACY> {
 
     @Override
-    public boolean isSatisfiedBy(ProductAggregateRoot product) {
+    public boolean isSatisfiedBy(ProductAggregateRootLEGACY product) {
         boolean hasType = !product.getTypeListUuId().equals(TypeListUuId.NONE);
         boolean hasVariant = !product.getVariantListUuId().equals(VariantListUuId.NONE);
         boolean hasPrice = !product.getPriceListUuId().equals(PriceListUuId.NONE);

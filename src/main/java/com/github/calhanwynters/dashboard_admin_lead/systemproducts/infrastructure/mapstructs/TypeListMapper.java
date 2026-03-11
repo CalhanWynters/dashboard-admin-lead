@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastruct
 
 import com.github.calhanwynters.dashboard_admin_lead.common.*;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.typelist.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesDomainWrapper.TypesUuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.TypeListEntity;
@@ -69,8 +69,8 @@ public interface TypeListMapper {
     default TypeListBusinessUuId toBusinessUuId(UUID uuid) { return new TypeListBusinessUuId(UuId.fromString(uuid.toString())); }
 
     @Named("toProductBooleans")
-    default ProductBooleans toProductBooleans(TypeListEntity entity) {
-        return new ProductBooleans(entity.isArchived(), entity.isSoftDeleted());
+    default ProductBooleansLEGACY toProductBooleans(TypeListEntity entity) {
+        return new ProductBooleansLEGACY(entity.isArchived(), entity.isSoftDeleted());
     }
 
     @Named("toAuditMetadata")

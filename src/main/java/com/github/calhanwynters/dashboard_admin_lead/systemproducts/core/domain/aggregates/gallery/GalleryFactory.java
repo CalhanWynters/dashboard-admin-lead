@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryDomainWrapper.*;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.ImageUuId;
@@ -10,16 +10,16 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 import java.util.List;
 
 public class GalleryFactory {
-    public static GalleryAggregate create(GalleryBusinessUuId bizId, Actor creator) {
-        return new GalleryAggregate(
+    public static GalleryAggregateLEGACY create(GalleryBusinessUuId bizId, Actor creator) {
+        return new GalleryAggregateLEGACY(
                 null, GalleryUuId.generate(), bizId, false, List.of(),
-                new ProductBooleans(false, false), AuditMetadata.create(creator)
+                new ProductBooleansLEGACY(false, false), AuditMetadata.create(creator)
         );
     }
 
-    public static GalleryAggregate reconstitute(GalleryId id, GalleryUuId uuId, GalleryBusinessUuId bizId,
-                                                boolean isPublic, List<ImageUuId> imageUuIds, ProductBooleans booleans, AuditMetadata auditMetadata) {
-        return new GalleryAggregate(id, uuId, bizId, isPublic, imageUuIds, booleans, auditMetadata);
+    public static GalleryAggregateLEGACY reconstitute(GalleryId id, GalleryUuId uuId, GalleryBusinessUuId bizId,
+                                                      boolean isPublic, List<ImageUuId> imageUuIds, ProductBooleansLEGACY booleans, AuditMetadata auditMetadata) {
+        return new GalleryAggregateLEGACY(id, uuId, bizId, isPublic, imageUuIds, booleans, auditMetadata);
     }
 }
 

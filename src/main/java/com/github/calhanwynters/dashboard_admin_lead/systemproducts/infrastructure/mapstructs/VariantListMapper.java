@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastruct
 
 import com.github.calhanwynters.dashboard_admin_lead.common.*;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants.VariantsDomainWrapper.VariantsUuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.VariantListEntity;
@@ -26,7 +26,7 @@ public interface VariantListMapper {
     @Mapping(target = "variantUuIds", source = "variantUuids", qualifiedByName = "toVariantUuIdSet")
     @Mapping(target = "productBooleans", source = ".", qualifiedByName = "toProductBooleans")
     @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
-    VariantListAggregate toAggregate(VariantListEntity entity);
+    VariantListAggregateLEGACY toAggregate(VariantListEntity entity);
 
     @Mapping(target = "id", source = "variantListId.value.id")
     @Mapping(target = "uuid", source = "variantListUuId.value.value", qualifiedByName = "stringToUuid")
@@ -37,7 +37,7 @@ public interface VariantListMapper {
     @Mapping(target = "createdAt", source = "auditMetadata.createdAt.value")
     @Mapping(target = "lastModifiedAt", source = "auditMetadata.lastModified.value")
     @Mapping(target = "lastModifiedBy", source = "auditMetadata.lastModifiedBy.identity")
-    VariantListEntity toEntity(VariantListAggregate aggregate);
+    VariantListEntity toEntity(VariantListAggregateLEGACY aggregate);
 
     // --- Set Converters ---
 
@@ -69,8 +69,8 @@ public interface VariantListMapper {
     default VariantListBusinessUuId toBusinessUuId(UUID uuid) { return new VariantListBusinessUuId(UuId.fromString(uuid.toString())); }
 
     @Named("toProductBooleans")
-    default ProductBooleans toProductBooleans(VariantListEntity entity) {
-        return new ProductBooleans(entity.isArchived(), entity.isSoftDeleted());
+    default ProductBooleansLEGACY toProductBooleans(VariantListEntity entity) {
+        return new ProductBooleansLEGACY(entity.isArchived(), entity.isSoftDeleted());
     }
 
     @Named("toAuditMetadata")

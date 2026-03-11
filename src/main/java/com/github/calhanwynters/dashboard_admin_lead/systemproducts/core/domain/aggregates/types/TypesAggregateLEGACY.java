@@ -3,7 +3,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.LEGACYBaseAggregateRoot;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.events.*;
 
@@ -21,7 +21,7 @@ public class TypesAggregateLEGACY extends LEGACYBaseAggregateRoot<TypesAggregate
 
     private TypesName typesName;
     private TypesPhysicalSpecs typesPhysicalSpecs;
-    private ProductBooleans productBooleans; // Replaced boolean deleted
+    private ProductBooleansLEGACY productBooleansLEGACY; // Replaced boolean deleted
     // Add Version-Based Optimistic Locking "optLockVer"
 
 
@@ -30,7 +30,7 @@ public class TypesAggregateLEGACY extends LEGACYBaseAggregateRoot<TypesAggregate
                                 TypesBusinessUuId typesBusinessUuId,
                                 TypesName typesName,
                                 TypesPhysicalSpecs typesPhysicalSpecs,
-                                ProductBooleans productBooleans, // Updated parameter
+                                ProductBooleansLEGACY productBooleansLEGACY, // Updated parameter
                                 AuditMetadata auditMetadata) {
         super(auditMetadata);
         this.typesId = typesId;
@@ -39,7 +39,7 @@ public class TypesAggregateLEGACY extends LEGACYBaseAggregateRoot<TypesAggregate
         this.typesName = DomainGuard.notNull(typesName, "Types Name");
         this.typesPhysicalSpecs = DomainGuard.notNull(typesPhysicalSpecs, "Types Physical Specs");
         // Null-safe assignment for the record
-        this.productBooleans = productBooleans != null ? productBooleans : new ProductBooleans(false, false);
+        this.productBooleansLEGACY = productBooleansLEGACY != null ? productBooleansLEGACY : new ProductBooleansLEGACY(false, false);
     }
 
     public static TypesAggregateLEGACY create(TypesUuId uuId, TypesBusinessUuId bUuId,
@@ -48,7 +48,7 @@ public class TypesAggregateLEGACY extends LEGACYBaseAggregateRoot<TypesAggregate
 
         // Initialize with default ProductBooleans state
         TypesAggregateLEGACY aggregate = new TypesAggregateLEGACY(
-                null, uuId, bUuId, name, specs, new ProductBooleans(false, false), AuditMetadata.create(actor)
+                null, uuId, bUuId, name, specs, new ProductBooleansLEGACY(false, false), AuditMetadata.create(actor)
         );
         aggregate.registerEvent(new TypeCreatedEvent(uuId, bUuId, actor));
         return aggregate;
@@ -57,7 +57,7 @@ public class TypesAggregateLEGACY extends LEGACYBaseAggregateRoot<TypesAggregate
     // --- DOMAIN ACTIONS ---
 
     public void updateBusinessUuId(TypesBusinessUuId newId, Actor actor) {
-        TypesBehavior.ensureActive(this.productBooleans.softDeleted());
+        TypesBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
 
         // Validate using your existing logic (Admin-only, non-null, difference check)
         var validatedId = TypesBehavior.evaluateBusinessIdChange(this.typesBusinessUuId, newId, actor);
@@ -68,16 +68,16 @@ public class TypesAggregateLEGACY extends LEGACYBaseAggregateRoot<TypesAggregate
     }
 
     public void syncToKafka(Actor actor) {
-        TypesBehavior.ensureActive(this.productBooleans.softDeleted());
+        TypesBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         TypesBehavior.verifySyncAuthority(actor);
 
         this.applyChange(actor,
-                new TypeDataSyncedEvent(typesUuId, typesBusinessUuId, typesName, typesPhysicalSpecs, productBooleans, actor),
+                new TypeDataSyncedEvent(typesUuId, typesBusinessUuId, typesName, typesPhysicalSpecs, productBooleansLEGACY, actor),
                 null);
     }
 
     public void rename(TypesName newName, Actor actor) {
-        TypesBehavior.ensureActive(this.productBooleans.softDeleted()); // Accessing via record
+        TypesBehavior.ensureActive(this.productBooleansLEGACY.softDeleted()); // Accessing via record
         var validatedName = TypesBehavior.evaluateRename(this.typesName, newName, actor);
 
         this.applyChange(actor,
@@ -87,7 +87,7 @@ public class TypesAggregateLEGACY extends LEGACYBaseAggregateRoot<TypesAggregate
     }
 
     public void updatePhysicalSpecs(TypesPhysicalSpecs newSpecs, Actor actor) {
-        TypesBehavior.ensureActive(this.productBooleans.softDeleted());
+        TypesBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         TypesBehavior.validateSpecs(newSpecs, actor);
 
         boolean dimensionsChanged = TypesBehavior.detectDimensionChange(this.typesPhysicalSpecs, newSpecs);
@@ -114,24 +114,24 @@ public class TypesAggregateLEGACY extends LEGACYBaseAggregateRoot<TypesAggregate
     }
 
     public void softDelete(Actor actor) {
-        TypesBehavior.ensureActive(this.productBooleans.softDeleted());
+        TypesBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         TypesBehavior.verifyLifecycleAuthority(actor);
 
         // Replace the record to update state
         this.applyChange(actor,
                 new TypeSoftDeletedEvent(this.typesUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), true)
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(this.productBooleansLEGACY.archived(), true)
         );
     }
 
     public void restore(Actor actor) {
-        if (!this.productBooleans.softDeleted()) return;
+        if (!this.productBooleansLEGACY.softDeleted()) return;
         TypesBehavior.verifyLifecycleAuthority(actor);
 
         // Replace the record to update state
         this.applyChange(actor,
                 new TypeRestoredEvent(this.typesUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), false)
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(this.productBooleansLEGACY.archived(), false)
         );
     }
 
@@ -147,7 +147,7 @@ public class TypesAggregateLEGACY extends LEGACYBaseAggregateRoot<TypesAggregate
         // Line 2: Side-Effect (Replace record instance)
         this.applyChange(actor,
                 new TypeArchivedEvent(this.typesUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(true, this.productBooleans.softDeleted())
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(true, this.productBooleansLEGACY.softDeleted())
         );
     }
 
@@ -158,14 +158,14 @@ public class TypesAggregateLEGACY extends LEGACYBaseAggregateRoot<TypesAggregate
         // Line 2: Side-Effect (Replace record instance)
         this.applyChange(actor,
                 new TypeUnarchivedEvent(this.typesUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(false, this.productBooleans.softDeleted())
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(false, this.productBooleansLEGACY.softDeleted())
         );
     }
 
 
     // --- ACCESSORS ---
-    public ProductBooleans getProductBooleans() { return productBooleans; }
-    public boolean isDeleted() { return productBooleans.softDeleted(); }
+    public ProductBooleansLEGACY getProductBooleans() { return productBooleansLEGACY; }
+    public boolean isDeleted() { return productBooleansLEGACY.softDeleted(); }
     public TypesId getTypesId() { return typesId; }
     public TypesUuId getTypesUuId() { return typesUuId; }
     public TypesBusinessUuId getTypesBusinessUuId() { return typesBusinessUuId; }

@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper.FeatureUuId;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants.VariantsDomainWrapper.*;
 
@@ -20,9 +20,9 @@ public class VariantFactory {
             VariantsBusinessUuId bizId,
             VariantsName name,
             Set<FeatureUuId> features,
-            ProductBooleans productBooleans, // Replaced boolean
+            ProductBooleansLEGACY productBooleansLEGACY, // Replaced boolean
             AuditMetadata audit) {
 
-        return new VariantsAggregateLEGACY(id, uuId, bizId, name, features, productBooleans, audit);
+        return new VariantsAggregateLEGACY(id, uuId, bizId, name, features, productBooleansLEGACY, audit);
     }
 }

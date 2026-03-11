@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.*;
 
@@ -13,7 +13,7 @@ public class ImageFactory {
     }
 
     public static ImageAggregateLEGACY reconstitute(ImageId id, ImageUuId uuId, ImagesBusinessUuId bizId, ImageName name,
-                                                    ImageDescription desc, ImageUrl url, ProductBooleans booleans, AuditMetadata auditMetadata) {
+                                                    ImageDescription desc, ImageUrl url, ProductBooleansLEGACY booleans, AuditMetadata auditMetadata) {
         return new ImageAggregateLEGACY(id, uuId, bizId, name, desc, url, booleans, auditMetadata);
     }
 }

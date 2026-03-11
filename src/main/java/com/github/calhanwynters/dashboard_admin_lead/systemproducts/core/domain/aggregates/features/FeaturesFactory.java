@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper.*;
 
 /**
@@ -15,16 +15,16 @@ public class FeaturesFactory {
      * Creation Factory
      * Used to bring a new Feature into existence with a fresh audit trail.
      */
-    public static FeaturesAggregate create(FeatureBusinessUuId businessId, FeatureName name, FeatureLabel tag, Actor creator) {
+    public static FeaturesAggregateLEGACY create(FeatureBusinessUuId businessId, FeatureName name, FeatureLabel tag, Actor creator) {
         // Initial state is always false/false (not archived, not deleted)
-        return new FeaturesAggregate(
+        return new FeaturesAggregateLEGACY(
                 null, FeatureUuId.generate(), businessId, name, tag,
-                new ProductBooleans(false, false), AuditMetadata.create(creator)
+                new ProductBooleansLEGACY(false, false), AuditMetadata.create(creator)
         );
     }
 
-    public static FeaturesAggregate reconstitute(FeatureId id, FeatureUuId uuId, FeatureBusinessUuId businessId,
-                                                 FeatureName name, FeatureLabel tag, ProductBooleans booleans, AuditMetadata auditMetadata) {
-        return new FeaturesAggregate(id, uuId, businessId, name, tag, booleans, auditMetadata);
+    public static FeaturesAggregateLEGACY reconstitute(FeatureId id, FeatureUuId uuId, FeatureBusinessUuId businessId,
+                                                       FeatureName name, FeatureLabel tag, ProductBooleansLEGACY booleans, AuditMetadata auditMetadata) {
+        return new FeaturesAggregateLEGACY(id, uuId, businessId, name, tag, booleans, auditMetadata);
     }
 }

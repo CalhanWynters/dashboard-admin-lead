@@ -70,7 +70,7 @@ public interface TypesMapper {
     default TypesName toTypesName(String name) { return new TypesName(new Name(name)); }
 
     @Named("toBooleans")
-    default ProductBooleans toBooleans(TypesEntity entity) { return new ProductBooleans(entity.isArchived(), entity.isSoftDeleted()); }
+    default ProductBooleansLEGACY toBooleans(TypesEntity entity) { return new ProductBooleansLEGACY(entity.isArchived(), entity.isSoftDeleted()); }
 
     @Named("toAuditMetadata")
     default AuditMetadata toAuditMetadata(TypesEntity entity) {

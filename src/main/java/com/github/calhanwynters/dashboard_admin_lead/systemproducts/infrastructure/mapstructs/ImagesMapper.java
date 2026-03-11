@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastruct
 
 import com.github.calhanwynters.dashboard_admin_lead.common.*;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.ImagesEntity;
 import org.mapstruct.Mapper;
@@ -67,8 +67,8 @@ public interface ImagesMapper {
     }
 
     @Named("toProductBooleans")
-    default ProductBooleans toProductBooleans(ImagesEntity entity) {
-        return new ProductBooleans(entity.isArchived(), entity.isSoftDeleted());
+    default ProductBooleansLEGACY toProductBooleans(ImagesEntity entity) {
+        return new ProductBooleansLEGACY(entity.isArchived(), entity.isSoftDeleted());
     }
 
     @Named("toAuditMetadata")

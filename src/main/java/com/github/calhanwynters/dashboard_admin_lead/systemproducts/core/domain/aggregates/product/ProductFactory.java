@@ -3,7 +3,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.PhysicalSpecs;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.ProductDomainWrapper.*;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryDomainWrapper.GalleryUuId;
@@ -48,7 +48,7 @@ public class ProductFactory {
                 ProductVersion.INITIAL,         // productVersion
                 ProductStatus.DRAFT,            // productStatus
                 physicalSpecs,                  // physicalSpecs
-                new ProductBooleans(false, false), // productBooleans
+                new ProductBooleansLEGACY(false, false), // productBooleans
                 thumbnail,                      // productThumbnailUrl
                 GalleryUuId.generate(),         // galleryUuId
                 (variantListId != null) ? variantListId : VariantListUuId.NONE,
@@ -79,7 +79,7 @@ public class ProductFactory {
                 ProductVersion.INITIAL,         // productVersion
                 ProductStatus.DRAFT,            // productStatus
                 ProductPhysicalSpecs.NONE,      // physicalSpecs
-                new ProductBooleans(false, false),
+                new ProductBooleansLEGACY(false, false),
                 thumbnail,                      // productThumbnailUrl
                 GalleryUuId.generate(),         // galleryUuId
                 (variantListId != null) ? variantListId : VariantListUuId.NONE,
@@ -100,7 +100,7 @@ public class ProductFactory {
             ProductVersion version,
             ProductStatus status,
             ProductPhysicalSpecs physicalSpecs,
-            ProductBooleans productBooleans,
+            ProductBooleansLEGACY productBooleansLEGACY,
             ProductThumbnailUrl thumbnail,
             GalleryUuId galleryId,
             VariantListUuId variantId,
@@ -116,7 +116,7 @@ public class ProductFactory {
                 version,
                 status,
                 physicalSpecs,
-                productBooleans,
+                productBooleansLEGACY,
                 thumbnail,
                 galleryId,
                 variantId,

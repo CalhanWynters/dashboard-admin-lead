@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastruct
 
 import com.github.calhanwynters.dashboard_admin_lead.common.*;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.ImageUuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.GalleryEntity;
@@ -26,7 +26,7 @@ public interface GalleryMapper {
     @Mapping(target = "imageUuIds", source = "imageUuids", qualifiedByName = "toImageUuIdList")
     @Mapping(target = "productBooleans", source = ".", qualifiedByName = "toProductBooleans")
     @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
-    GalleryAggregate toAggregate(GalleryEntity entity);
+    GalleryAggregateLEGACY toAggregate(GalleryEntity entity);
 
     @Mapping(target = "id", source = "galleryId.value.id")
     @Mapping(target = "uuid", source = "galleryUuId.value.value", qualifiedByName = "stringToUuid")
@@ -37,7 +37,7 @@ public interface GalleryMapper {
     @Mapping(target = "createdAt", source = "auditMetadata.createdAt.value")
     @Mapping(target = "lastModifiedAt", source = "auditMetadata.lastModified.value")
     @Mapping(target = "lastModifiedBy", source = "auditMetadata.lastModifiedBy.identity")
-    GalleryEntity toEntity(GalleryAggregate aggregate);
+    GalleryEntity toEntity(GalleryAggregateLEGACY aggregate);
 
     // --- Helper Methods ---
 
@@ -71,8 +71,8 @@ public interface GalleryMapper {
     }
 
     @Named("toProductBooleans")
-    default ProductBooleans toProductBooleans(GalleryEntity entity) {
-        return new ProductBooleans(entity.isArchived(), entity.isSoftDeleted());
+    default ProductBooleansLEGACY toProductBooleans(GalleryEntity entity) {
+        return new ProductBooleansLEGACY(entity.isArchived(), entity.isSoftDeleted());
     }
 
     @Named("toAuditMetadata")

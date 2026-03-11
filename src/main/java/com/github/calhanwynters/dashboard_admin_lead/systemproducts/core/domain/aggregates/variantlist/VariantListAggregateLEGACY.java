@@ -3,7 +3,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.LEGACYBaseAggregateRoot;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist.events.*;
 
@@ -24,7 +24,7 @@ public class VariantListAggregateLEGACY extends LEGACYBaseAggregateRoot<VariantL
     private final VariantListUuId variantListUuId;
     private VariantListBusinessUuId variantListBusinessUuId;
     private final Set<VariantsUuId> variantUuIds;
-    private ProductBooleans productBooleans; // Replaced boolean deleted
+    private ProductBooleansLEGACY productBooleansLEGACY; // Replaced boolean deleted
     // Add Version-Based Optimistic Locking "optLockVer"
     // Add Schema-Based Versioning "schemaVer"
 
@@ -33,7 +33,7 @@ public class VariantListAggregateLEGACY extends LEGACYBaseAggregateRoot<VariantL
                                       VariantListUuId variantListUuId,
                                       VariantListBusinessUuId variantListBusinessUuId,
                                       Set<VariantsUuId> variantUuIds,
-                                      ProductBooleans productBooleans, // Updated parameter
+                                      ProductBooleansLEGACY productBooleansLEGACY, // Updated parameter
                                       AuditMetadata auditMetadata) {
         super(auditMetadata);
         this.variantListId = variantListId;
@@ -41,14 +41,14 @@ public class VariantListAggregateLEGACY extends LEGACYBaseAggregateRoot<VariantL
         this.variantListBusinessUuId = DomainGuard.notNull(variantListBusinessUuId, "Business UUID");
         this.variantUuIds = new HashSet<>(variantUuIds != null ? variantUuIds : Collections.emptySet());
         // Defaulting to false/false if null is passed
-        this.productBooleans = productBooleans != null ? productBooleans : new ProductBooleans(false, false);
+        this.productBooleansLEGACY = productBooleansLEGACY != null ? productBooleansLEGACY : new ProductBooleansLEGACY(false, false);
     }
 
     public static VariantListAggregateLEGACY create(VariantListUuId uuId, VariantListBusinessUuId bUuId, Actor actor) {
         VariantListBehavior.verifyCreationAuthority(actor);
 
         VariantListAggregateLEGACY aggregate = new VariantListAggregateLEGACY(
-                null, uuId, bUuId, new HashSet<>(), new ProductBooleans(false, false), AuditMetadata.create(actor)
+                null, uuId, bUuId, new HashSet<>(), new ProductBooleansLEGACY(false, false), AuditMetadata.create(actor)
         );
         aggregate.registerEvent(new VariantListCreatedEvent(uuId, bUuId, actor));
         return aggregate;
@@ -57,7 +57,7 @@ public class VariantListAggregateLEGACY extends LEGACYBaseAggregateRoot<VariantL
     // --- DOMAIN ACTIONS ---
 
     public void updateBusinessUuId(VariantListBusinessUuId newId, Actor actor) {
-        VariantListBehavior.ensureActive(this.productBooleans.softDeleted());
+        VariantListBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
 
         // Validate using your existing logic (Admin-only, non-null, difference check)
         var validatedId = VariantListBehavior.evaluateBusinessIdChange(this.variantListBusinessUuId, newId, actor);
@@ -68,17 +68,17 @@ public class VariantListAggregateLEGACY extends LEGACYBaseAggregateRoot<VariantL
     }
 
     public void syncToKafka(Actor actor) {
-        VariantListBehavior.ensureActive(this.productBooleans.softDeleted());
+        VariantListBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         VariantListBehavior.verifySyncAuthority(actor);
 
         this.applyChange(actor,
-                new VariantListDataSyncedEvent(variantListUuId, variantListBusinessUuId, variantUuIds, productBooleans, actor),
+                new VariantListDataSyncedEvent(variantListUuId, variantListBusinessUuId, variantUuIds, productBooleansLEGACY, actor),
                 null);
     }
 
 
     public void attachVariant(VariantsUuId variantUuId, Actor actor) {
-        VariantListBehavior.ensureActive(this.productBooleans.softDeleted());
+        VariantListBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         VariantListBehavior.ensureCanAttach(this.variantUuIds, variantUuId, actor);
 
         this.applyChange(actor,
@@ -88,7 +88,7 @@ public class VariantListAggregateLEGACY extends LEGACYBaseAggregateRoot<VariantL
     }
 
     public void detachVariant(VariantsUuId variantUuId, Actor actor) {
-        VariantListBehavior.ensureActive(this.productBooleans.softDeleted());
+        VariantListBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         VariantListBehavior.ensureCanDetach(this.variantUuIds, variantUuId, actor);
 
         this.applyChange(actor,
@@ -98,14 +98,14 @@ public class VariantListAggregateLEGACY extends LEGACYBaseAggregateRoot<VariantL
     }
 
     public void reorder(Actor actor) {
-        VariantListBehavior.ensureActive(this.productBooleans.softDeleted());
+        VariantListBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         VariantListBehavior.ensureCanReorder(this.variantUuIds, actor);
 
         this.applyChange(actor, new VariantListReorderedEvent(this.variantListUuId, actor), null);
     }
 
     public void clearAllVariants(Actor actor) {
-        VariantListBehavior.ensureActive(this.productBooleans.softDeleted());
+        VariantListBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         VariantListBehavior.verifyMembershipAuthority(actor);
 
         if (this.variantUuIds.isEmpty()) return;
@@ -117,24 +117,24 @@ public class VariantListAggregateLEGACY extends LEGACYBaseAggregateRoot<VariantL
     }
 
     public void softDelete(Actor actor) {
-        VariantListBehavior.ensureActive(this.productBooleans.softDeleted());
+        VariantListBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         VariantListBehavior.verifyLifecycleAuthority(actor);
 
         // Replace the record to change softDeleted to true
         this.applyChange(actor,
                 new VariantListSoftDeletedEvent(this.variantListUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), true)
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(this.productBooleansLEGACY.archived(), true)
         );
     }
 
     public void restore(Actor actor) {
-        if (!this.productBooleans.softDeleted()) return;
+        if (!this.productBooleansLEGACY.softDeleted()) return;
         VariantListBehavior.verifyLifecycleAuthority(actor);
 
         // Replace the record to change softDeleted to false
         this.applyChange(actor,
                 new VariantListRestoredEvent(this.variantListUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), false)
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(this.productBooleansLEGACY.archived(), false)
         );
     }
 
@@ -150,7 +150,7 @@ public class VariantListAggregateLEGACY extends LEGACYBaseAggregateRoot<VariantL
         // Line 2: Side-Effect (Replace record to set archived = true)
         this.applyChange(actor,
                 new VariantListArchivedEvent(this.variantListUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(true, this.productBooleans.softDeleted())
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(true, this.productBooleansLEGACY.softDeleted())
         );
     }
 
@@ -161,13 +161,13 @@ public class VariantListAggregateLEGACY extends LEGACYBaseAggregateRoot<VariantL
         // Line 2: Side-Effect (Replace record to set archived = false)
         this.applyChange(actor,
                 new VariantListUnarchivedEvent(this.variantListUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(false, this.productBooleans.softDeleted())
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(false, this.productBooleansLEGACY.softDeleted())
         );
     }
 
     // --- ACCESSORS ---
-    public ProductBooleans getProductBooleans() { return productBooleans; }
-    public boolean isDeleted() { return productBooleans.softDeleted(); }
+    public ProductBooleansLEGACY getProductBooleans() { return productBooleansLEGACY; }
+    public boolean isDeleted() { return productBooleansLEGACY.softDeleted(); }
     public VariantListId getVariantListId() { return variantListId; }
     public VariantListUuId getVariantListUuId() { return variantListUuId; }
     public VariantListBusinessUuId getVariantListBusinessUuId() {return  variantListBusinessUuId; }

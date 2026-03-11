@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastruct
 
 import com.github.calhanwynters.dashboard_admin_lead.common.*;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.FeaturesEntity;
 import org.mapstruct.Mapper;
@@ -23,7 +23,7 @@ public interface FeaturesMapper {
     @Mapping(target = "compatibilityTag", source = "label", qualifiedByName = "toFeatureLabel")
     @Mapping(target = "productBooleans", source = ".", qualifiedByName = "toProductBooleans")
     @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
-    FeaturesAggregate toAggregate(FeaturesEntity entity);
+    FeaturesAggregateLEGACY toAggregate(FeaturesEntity entity);
 
     // TO ENTITY (Unwrapping the nested records back to flat columns)
     @Mapping(target = "id", source = "featuresId.value.id")
@@ -36,7 +36,7 @@ public interface FeaturesMapper {
     @Mapping(target = "createdAt", source = "auditMetadata.createdAt.value")
     @Mapping(target = "lastModifiedAt", source = "auditMetadata.lastModified.value")
     @Mapping(target = "lastModifiedBy", source = "auditMetadata.lastModifiedBy.identity")
-    FeaturesEntity toEntity(FeaturesAggregate aggregate);
+    FeaturesEntity toEntity(FeaturesAggregateLEGACY aggregate);
 
     // --- MAPPING HELPERS ---
 
@@ -66,9 +66,9 @@ public interface FeaturesMapper {
     }
 
     @Named("toProductBooleans")
-    default ProductBooleans toProductBooleans(FeaturesEntity entity) {
+    default ProductBooleansLEGACY toProductBooleans(FeaturesEntity entity) {
         // Passing the whole entity (".") allows access to both fields here
-        return new ProductBooleans(entity.isArchived(), entity.isSoftDeleted());
+        return new ProductBooleansLEGACY(entity.isArchived(), entity.isSoftDeleted());
     }
 
     @Named("toAuditMetadata")

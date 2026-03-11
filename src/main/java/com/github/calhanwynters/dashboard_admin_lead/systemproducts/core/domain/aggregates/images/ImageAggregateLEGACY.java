@@ -3,7 +3,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.LEGACYBaseAggregateRoot;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.events.*;
 
@@ -15,7 +15,7 @@ public class ImageAggregateLEGACY extends LEGACYBaseAggregateRoot<ImageAggregate
     private final ImageUuId imagesUuId;
     private ImagesBusinessUuId imagesBusinessUuId;
     private ImageUrl imageUrl;
-    private ProductBooleans productBooleans;
+    private ProductBooleansLEGACY productBooleansLEGACY;
 
     private ImageName imageName;
     private ImageDescription imageDescription;
@@ -29,7 +29,7 @@ public class ImageAggregateLEGACY extends LEGACYBaseAggregateRoot<ImageAggregate
                                 ImageName imageName,
                                 ImageDescription imageDescription,
                                 ImageUrl imageUrl,
-                                ProductBooleans productBooleans, // Updated param
+                                ProductBooleansLEGACY productBooleansLEGACY, // Updated param
                                 AuditMetadata auditMetadata) {
         super(auditMetadata);
         this.imageId = DomainGuard.notNull(imageId, "Image PK ID");
@@ -38,7 +38,7 @@ public class ImageAggregateLEGACY extends LEGACYBaseAggregateRoot<ImageAggregate
         this.imageName = DomainGuard.notNull(imageName, "Image Name");
         this.imageDescription = DomainGuard.notNull(imageDescription, "Image Description");
         this.imageUrl = DomainGuard.notNull(imageUrl, "Image URL");
-        this.productBooleans = productBooleans != null ? productBooleans : new ProductBooleans(false, false);
+        this.productBooleansLEGACY = productBooleansLEGACY != null ? productBooleansLEGACY : new ProductBooleansLEGACY(false, false);
     }
 
     public static ImageAggregateLEGACY create(ImageUuId uuId, ImagesBusinessUuId bUuId, ImageName name,
@@ -46,7 +46,7 @@ public class ImageAggregateLEGACY extends LEGACYBaseAggregateRoot<ImageAggregate
         ImagesBehavior.verifyCreationAuthority(actor);
 
         ImageAggregateLEGACY aggregate = new ImageAggregateLEGACY(
-                null, uuId, bUuId, name, desc, url, new ProductBooleans(false, false), AuditMetadata.create(actor)
+                null, uuId, bUuId, name, desc, url, new ProductBooleansLEGACY(false, false), AuditMetadata.create(actor)
         );
         aggregate.registerEvent(new ImageUploadedEvent(uuId, url, actor));
         return aggregate;
@@ -55,7 +55,7 @@ public class ImageAggregateLEGACY extends LEGACYBaseAggregateRoot<ImageAggregate
     // --- DOMAIN ACTIONS ---
 
     public void updateBusinessUuId(ImagesBusinessUuId newId, Actor actor) {
-        ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
+        ImagesBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
 
         // Validate using your existing logic (Admin-only, non-null, difference check)
         var validatedId = ImagesBehavior.evaluateBusinessIdChange(this.imagesBusinessUuId, newId, actor);
@@ -66,13 +66,13 @@ public class ImageAggregateLEGACY extends LEGACYBaseAggregateRoot<ImageAggregate
     }
 
     public void syncToKafka(Actor actor) {
-        ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
+        ImagesBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         ImagesBehavior.verifySyncAuthority(actor);
-        this.applyChange(actor, new ImageDataSyncedEvent(imagesUuId, imagesBusinessUuId, imageName, imageDescription, imageUrl, productBooleans, actor), null);
+        this.applyChange(actor, new ImageDataSyncedEvent(imagesUuId, imagesBusinessUuId, imageName, imageDescription, imageUrl, productBooleansLEGACY, actor), null);
     }
 
     public void rename(ImageName newName, Actor actor) {
-        ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
+        ImagesBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
 
         var validatedName = ImagesBehavior.evaluateRename(this.imageName, newName, actor);
 
@@ -82,7 +82,7 @@ public class ImageAggregateLEGACY extends LEGACYBaseAggregateRoot<ImageAggregate
     }
 
     public void updateDescription(ImageDescription newDescription, Actor actor) {
-        ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
+        ImagesBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         var validatedDescription = ImagesBehavior.evaluateDescriptionUpdate(this.imageDescription, newDescription, actor);
 
         this.applyChange(actor,
@@ -91,7 +91,7 @@ public class ImageAggregateLEGACY extends LEGACYBaseAggregateRoot<ImageAggregate
     }
 
     public void updateUrl(ImageUrl newUrl, Actor actor) {
-        ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
+        ImagesBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         var validatedUrl = ImagesBehavior.evaluateUrlUpdate(this.imageUrl, newUrl, actor);
 
         this.applyChange(actor,
@@ -106,7 +106,7 @@ public class ImageAggregateLEGACY extends LEGACYBaseAggregateRoot<ImageAggregate
         // Line 2: Side-Effect (Replace record instance)
         this.applyChange(actor,
                 new ImageArchivedEvent(imagesUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(true, this.productBooleans.softDeleted())
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(true, this.productBooleansLEGACY.softDeleted())
         );
     }
 
@@ -115,17 +115,17 @@ public class ImageAggregateLEGACY extends LEGACYBaseAggregateRoot<ImageAggregate
 
         this.applyChange(actor,
                 new ImageUnarchivedEvent(imagesUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(false, this.productBooleans.softDeleted())
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(false, this.productBooleansLEGACY.softDeleted())
         );
     }
 
     public void softDelete(Actor actor) {
-        ImagesBehavior.ensureActive(this.productBooleans.softDeleted());
+        ImagesBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         ImagesBehavior.verifyLifecycleAuthority(actor);
 
         this.applyChange(actor,
                 new ImageSoftDeletedEvent(this.imagesUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), true)
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(this.productBooleansLEGACY.archived(), true)
         );
     }
 
@@ -135,20 +135,20 @@ public class ImageAggregateLEGACY extends LEGACYBaseAggregateRoot<ImageAggregate
     }
 
     public void restore(Actor actor) {
-        if (!this.productBooleans.softDeleted()) return;
+        if (!this.productBooleansLEGACY.softDeleted()) return;
         ImagesBehavior.verifyLifecycleAuthority(actor);
 
         this.applyChange(actor,
                 new ImageRestoredEvent(this.imagesUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), false)
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(this.productBooleansLEGACY.archived(), false)
         );
     }
 
 
     // Getters
-    public boolean isDeleted() { return productBooleans.softDeleted(); }
-    public boolean isArchived() { return productBooleans.archived(); }
-    public ProductBooleans getProductBooleans() { return productBooleans; }
+    public boolean isDeleted() { return productBooleansLEGACY.softDeleted(); }
+    public boolean isArchived() { return productBooleansLEGACY.archived(); }
+    public ProductBooleansLEGACY getProductBooleans() { return productBooleansLEGACY; }
     public ImageId getImageId() { return imageId; }
     public ImageUuId getImagesUuId() { return imagesUuId; }
     public ImagesBusinessUuId getImageBusinessUuId() { return imagesBusinessUuId; }

@@ -11,7 +11,7 @@ import com.github.calhanwynters.dashboard_admin_lead.common.StatusEnums;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.LEGACYBaseAggregateRoot;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.events.*;
 
@@ -26,7 +26,7 @@ public class ProductAggregateRootLEGACY extends LEGACYBaseAggregateRoot<ProductA
 
     private ProductManifest manifest; // Composite class of Name, Category, and Description
     private ProductPhysicalSpecs physicalSpecs;
-    private ProductBooleans productBooleans; // Record integration
+    private ProductBooleansLEGACY productBooleansLEGACY; // Record integration
     // Add Version-Based Optimistic Locking "optLockVer"
     // Add Schema-Based Versioning "schemaVer"
 
@@ -44,7 +44,7 @@ public class ProductAggregateRootLEGACY extends LEGACYBaseAggregateRoot<ProductA
                                       ProductVersion productVersion,
                                       ProductStatus productStatus,
                                       ProductPhysicalSpecs physicalSpecs,
-                                      ProductBooleans productBooleans,
+                                      ProductBooleansLEGACY productBooleansLEGACY,
                                       ProductThumbnailUrl productThumbnailUrl,
                                       GalleryUuId galleryUuId,
                                       VariantListUuId variantListUuId,
@@ -62,7 +62,7 @@ public class ProductAggregateRootLEGACY extends LEGACYBaseAggregateRoot<ProductA
         this.productThumbnailUrl = DomainGuard.notNull(productThumbnailUrl, "Product Thumbnail");
 
         // Record Null-Safety
-        this.productBooleans = (productBooleans != null) ? productBooleans : new ProductBooleans(false, false);
+        this.productBooleansLEGACY = (productBooleansLEGACY != null) ? productBooleansLEGACY : new ProductBooleansLEGACY(false, false);
 
         this.typeListUuId = (typeListUuId != null) ? typeListUuId : TypeListUuId.NONE;
         this.physicalSpecs = (physicalSpecs != null) ? physicalSpecs : ProductPhysicalSpecs.NONE;
@@ -96,7 +96,7 @@ public class ProductAggregateRootLEGACY extends LEGACYBaseAggregateRoot<ProductA
                 ProductVersion.INITIAL,
                 status,
                 specs,
-                new ProductBooleans(false, false),
+                new ProductBooleansLEGACY(false, false),
                 thumbnail,
                 gallery,
                 variants,
@@ -113,7 +113,7 @@ public class ProductAggregateRootLEGACY extends LEGACYBaseAggregateRoot<ProductA
 
     public void reassignVariantList(VariantListUuId newVariantListId, Actor actor) {
         // Line 1: Auth & Logic
-        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
+        ProductBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         ProductBehavior.verifyStructuralChangeAuthority(actor);
         var validatedId = DomainGuard.notNull(newVariantListId, "Variant List ID");
 
@@ -128,7 +128,7 @@ public class ProductAggregateRootLEGACY extends LEGACYBaseAggregateRoot<ProductA
     }
 
     public void updateBusinessUuId(ProductBusinessUuId newId, Actor actor) {
-        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
+        ProductBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
 
         // Validate using your existing logic (Admin-only, non-null, difference check)
         var validatedId = ProductBehavior.evaluateBusinessIdChange(this.productBusinessUuId, newId, actor);
@@ -139,7 +139,7 @@ public class ProductAggregateRootLEGACY extends LEGACYBaseAggregateRoot<ProductA
     }
 
     public void updateStatus(StatusEnums newStatus, Actor actor) {
-        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
+        ProductBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
 
         // Map raw enum to Domain Wrapper and validate logic/auth
         var targetStatus = ProductStatus.of(newStatus);
@@ -152,7 +152,7 @@ public class ProductAggregateRootLEGACY extends LEGACYBaseAggregateRoot<ProductA
     }
 
     public void updateUrl(ProductThumbnailUrl newUrl, Actor actor) {
-        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
+        ProductBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         var validatedUrl = ProductBehavior.evaluateUrlUpdate(this.productThumbnailUrl, newUrl, actor);
 
         this.applyChange(actor,
@@ -173,15 +173,15 @@ public class ProductAggregateRootLEGACY extends LEGACYBaseAggregateRoot<ProductA
     }
 
     public void syncToKafka(Actor actor) {
-        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
+        ProductBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         ProductBehavior.verifySyncAuthority(actor);
 
-        this.applyChange(actor, new ProductDataSyncedEvent(productUuId, productBusinessUuId, productStatus, productBooleans, actor), null);
+        this.applyChange(actor, new ProductDataSyncedEvent(productUuId, productBusinessUuId, productStatus, productBooleansLEGACY, actor), null);
     }
 
     public void reassignTypeList(TypeListUuId newTypeListId, Actor actor) {
         // Line 1: Auth & Logic
-        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
+        ProductBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         ProductBehavior.verifyStructuralChangeAuthority(actor);
         DomainGuard.notNull(newTypeListId, "Type List ID");
 
@@ -197,7 +197,7 @@ public class ProductAggregateRootLEGACY extends LEGACYBaseAggregateRoot<ProductA
 
     public void updateManifest(ProductManifest newManifest, Actor actor) {
         // Line 1: Auth & Logic
-        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
+        ProductBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         ProductBehavior.verifyManifestUpdateAuthority(actor);
         ProductBehavior.validateManifest(newManifest);
 
@@ -210,7 +210,7 @@ public class ProductAggregateRootLEGACY extends LEGACYBaseAggregateRoot<ProductA
 
     public void reassignGallery(GalleryUuId newGalleryId, Actor actor) {
         // Line 1: Auth & Invariants
-        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
+        ProductBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         ProductBehavior.verifyManifestUpdateAuthority(actor);
         DomainGuard.notNull(newGalleryId, "Gallery ID");
 
@@ -223,7 +223,7 @@ public class ProductAggregateRootLEGACY extends LEGACYBaseAggregateRoot<ProductA
 
     public void reassignPriceList(PriceListUuId newPriceListId, Actor actor) {
         // Line 1: Structural Auth
-        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
+        ProductBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         ProductBehavior.verifyStructuralChangeAuthority(actor);
         DomainGuard.notNull(newPriceListId, "Price List ID");
 
@@ -239,7 +239,7 @@ public class ProductAggregateRootLEGACY extends LEGACYBaseAggregateRoot<ProductA
 
     public void updatePhysicalSpecs(ProductPhysicalSpecs newSpecs, Actor actor) {
         // Line 1: Auth & Invariants
-        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
+        ProductBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         ProductBehavior.verifyManifestUpdateAuthority(actor);
         ProductBehavior.validatePhysicalSpecs(newSpecs);
 
@@ -271,7 +271,7 @@ public class ProductAggregateRootLEGACY extends LEGACYBaseAggregateRoot<ProductA
         // Line 2: Side-Effect (Replace record instance)
         this.applyChange(actor,
                 new ProductArchivedEvent(this.productUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(true, this.productBooleans.softDeleted())
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(true, this.productBooleansLEGACY.softDeleted())
         );
     }
 
@@ -282,31 +282,31 @@ public class ProductAggregateRootLEGACY extends LEGACYBaseAggregateRoot<ProductA
         // Line 2: Side-Effect (Replace record instance)
         this.applyChange(actor,
                 new ProductUnarchivedEvent(this.productUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(false, this.productBooleans.softDeleted())
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(false, this.productBooleansLEGACY.softDeleted())
         );
     }
 
     public void softDelete(Actor actor) {
         // Line 1: Logic & Auth
-        ProductBehavior.ensureActive(this.productBooleans.softDeleted());
+        ProductBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         ProductBehavior.verifyLifecycleAuthority(actor);
 
         // Line 2: Side-Effect (Replace record instance)
         this.applyChange(actor,
                 new ProductSoftDeletedEvent(this.productUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), true)
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(this.productBooleansLEGACY.archived(), true)
         );
     }
 
     public void restore(Actor actor) {
         // Line 1: Logic & Auth
-        if (!this.productBooleans.softDeleted()) return;
+        if (!this.productBooleansLEGACY.softDeleted()) return;
         ProductBehavior.verifyLifecycleAuthority(actor);
 
         // Line 2: Side-Effect (Replace record instance)
         this.applyChange(actor,
                 new ProductRestoredEvent(this.productUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), false)
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(this.productBooleansLEGACY.archived(), false)
         );
     }
 

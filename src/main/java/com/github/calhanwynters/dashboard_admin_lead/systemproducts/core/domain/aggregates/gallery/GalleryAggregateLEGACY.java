@@ -3,7 +3,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.LEGACYBaseAggregateRoot;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.events.*;
 
@@ -21,7 +21,7 @@ public class GalleryAggregateLEGACY extends LEGACYBaseAggregateRoot<GalleryAggre
 
     private final List<ImageUuId> imageUuIds = new ArrayList<>();
     private boolean isPublic;
-    private ProductBooleans productBooleans; // Record integration
+    private ProductBooleansLEGACY productBooleansLEGACY; // Record integration
     // Add Version-Based Optimistic Locking "optLockVer"
     // Add Schema-Based Versioning "schemaVer"
 
@@ -31,7 +31,7 @@ public class GalleryAggregateLEGACY extends LEGACYBaseAggregateRoot<GalleryAggre
                                   GalleryBusinessUuId galleryBusinessUuId,
                                   boolean isPublic,
                                   List<ImageUuId> imageUuIds,
-                                  ProductBooleans productBooleans, // Added param
+                                  ProductBooleansLEGACY productBooleansLEGACY, // Added param
                                   AuditMetadata auditMetadata) {
         super(auditMetadata);
         this.galleryId = DomainGuard.notNull(galleryId, "Gallery PK ID");
@@ -41,14 +41,14 @@ public class GalleryAggregateLEGACY extends LEGACYBaseAggregateRoot<GalleryAggre
         if (imageUuIds != null) {
             this.imageUuIds.addAll(imageUuIds);
         }
-        this.productBooleans = (productBooleans != null) ? productBooleans : new ProductBooleans(false, false);
+        this.productBooleansLEGACY = (productBooleansLEGACY != null) ? productBooleansLEGACY : new ProductBooleansLEGACY(false, false);
     }
 
     public static GalleryAggregateLEGACY create(GalleryUuId uuId, GalleryBusinessUuId bUuId, Actor actor) {
         GalleryBehavior.verifyCreationAuthority(actor);
 
         GalleryAggregateLEGACY aggregate = new GalleryAggregateLEGACY(
-                null, uuId, bUuId, false, List.of(), new ProductBooleans(false, false), AuditMetadata.create(actor)
+                null, uuId, bUuId, false, List.of(), new ProductBooleansLEGACY(false, false), AuditMetadata.create(actor)
         );
         aggregate.registerEvent(new GalleryCreatedEvent(uuId, bUuId, actor));
         return aggregate;
@@ -57,7 +57,7 @@ public class GalleryAggregateLEGACY extends LEGACYBaseAggregateRoot<GalleryAggre
     // --- DOMAIN ACTIONS ---
 
     public void updateBusinessUuId(GalleryBusinessUuId newId, Actor actor) {
-        GalleryBehavior.ensureActive(this.productBooleans.softDeleted());
+        GalleryBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
 
         // Validate using your existing logic (Admin-only, non-null, difference check)
         var validatedId = GalleryBehavior.evaluateBusinessIdChange(this.galleryBusinessUuId, newId, actor);
@@ -68,7 +68,7 @@ public class GalleryAggregateLEGACY extends LEGACYBaseAggregateRoot<GalleryAggre
     }
 
     public void togglePublicStatus(boolean newStatus, Actor actor) {
-        GalleryBehavior.ensureActive(this.productBooleans.softDeleted());
+        GalleryBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
 
         // Call the behavior to validate roles and state redundancy
         var validatedStatus = GalleryBehavior.evaluatePublicityChange(this.isPublic, newStatus, actor);
@@ -80,16 +80,16 @@ public class GalleryAggregateLEGACY extends LEGACYBaseAggregateRoot<GalleryAggre
     }
 
     public void syncToKafka(Actor actor) {
-        GalleryBehavior.ensureActive(this.productBooleans.softDeleted());
+        GalleryBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         GalleryBehavior.verifySyncAuthority(actor);
 
         this.applyChange(actor,
-                new GalleryDataSyncedEvent(galleryUuId, galleryBusinessUuId, isPublic, productBooleans, actor),
+                new GalleryDataSyncedEvent(galleryUuId, galleryBusinessUuId, isPublic, productBooleansLEGACY, actor),
                 null);
     }
 
     public void addImage(ImageUuId imageUuId, Actor actor) {
-        GalleryBehavior.ensureActive(this.productBooleans.softDeleted());
+        GalleryBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         var validatedImage = GalleryBehavior.evaluateImageAddition(imageUuId, this.imageUuIds.size(), actor);
 
         this.applyChange(actor,
@@ -98,7 +98,7 @@ public class GalleryAggregateLEGACY extends LEGACYBaseAggregateRoot<GalleryAggre
     }
 
     public void removeImage(ImageUuId imageUuId, Actor actor) {
-        GalleryBehavior.ensureActive(this.productBooleans.softDeleted());
+        GalleryBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         var validatedImage = GalleryBehavior.evaluateImageRemoval(imageUuId, this.imageUuIds.contains(imageUuId), actor);
 
         this.applyChange(actor,
@@ -111,7 +111,7 @@ public class GalleryAggregateLEGACY extends LEGACYBaseAggregateRoot<GalleryAggre
 
         this.applyChange(actor,
                 new GalleryArchivedEvent(galleryUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(true, this.productBooleans.softDeleted())
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(true, this.productBooleansLEGACY.softDeleted())
         );
     }
 
@@ -120,27 +120,27 @@ public class GalleryAggregateLEGACY extends LEGACYBaseAggregateRoot<GalleryAggre
 
         this.applyChange(actor,
                 new GalleryUnarchivedEvent(galleryUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(false, this.productBooleans.softDeleted())
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(false, this.productBooleansLEGACY.softDeleted())
         );
     }
 
     public void softDelete(Actor actor) {
-        GalleryBehavior.ensureActive(this.productBooleans.softDeleted());
+        GalleryBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         GalleryBehavior.verifyLifecycleAuthority(actor);
 
         this.applyChange(actor,
                 new GallerySoftDeletedEvent(galleryUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), true)
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(this.productBooleansLEGACY.archived(), true)
         );
     }
 
     public void restore(Actor actor) {
-        if (!this.productBooleans.softDeleted()) return;
+        if (!this.productBooleansLEGACY.softDeleted()) return;
         GalleryBehavior.verifyLifecycleAuthority(actor);
 
         this.applyChange(actor,
                 new GalleryRestoredEvent(galleryUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), false)
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(this.productBooleansLEGACY.archived(), false)
         );
     }
 
@@ -150,9 +150,9 @@ public class GalleryAggregateLEGACY extends LEGACYBaseAggregateRoot<GalleryAggre
     }
 
     // --- GETTERS ---
-    public ProductBooleans getProductBooleans() { return productBooleans; }
-    public boolean isDeleted() { return productBooleans.softDeleted(); }
-    public boolean isArchived() { return productBooleans.archived(); }
+    public ProductBooleansLEGACY getProductBooleans() { return productBooleansLEGACY; }
+    public boolean isDeleted() { return productBooleansLEGACY.softDeleted(); }
+    public boolean isArchived() { return productBooleansLEGACY.archived(); }
     public GalleryId getGalleryId() { return galleryId; }
     public GalleryUuId getGalleryUuId() { return galleryUuId; }
     public GalleryBusinessUuId getGalleryBusinessUuId() { return galleryBusinessUuId; }

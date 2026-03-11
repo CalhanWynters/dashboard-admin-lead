@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesDomainWrapper.*;
 
 public class TypesFactory {
@@ -12,13 +12,13 @@ public class TypesFactory {
      * TypeCreatedEvent is properly registered in the AbstractAggregateRoot.
      * The Aggregate factory internally initializes ProductBooleans(false, false).
      */
-    public static TypesAggregate create(
+    public static TypesAggregateLEGACY create(
             TypesBusinessUuId bizId,
             TypesName name,
             TypesPhysicalSpecs physicalSpecs,
             Actor creator) {
 
-        return TypesAggregate.create(
+        return TypesAggregateLEGACY.create(
                 TypesUuId.generate(),
                 bizId,
                 name,
@@ -31,22 +31,22 @@ public class TypesFactory {
      * Rebuilds the aggregate from persistence state.
      * Uses the ProductBooleans record to restore both archival and deletion status.
      */
-    public static TypesAggregate reconstitute(
+    public static TypesAggregateLEGACY reconstitute(
             TypesId id,
             TypesUuId uuId,
             TypesBusinessUuId bizId,
             TypesName name,
             TypesPhysicalSpecs physicalSpecs,
-            ProductBooleans productBooleans, // Replaced boolean deleted
+            ProductBooleansLEGACY productBooleansLEGACY, // Replaced boolean deleted
             AuditMetadata audit) {
 
-        return new TypesAggregate(
+        return new TypesAggregateLEGACY(
                 id,
                 uuId,
                 bizId,
                 name,
                 physicalSpecs,
-                productBooleans,
+                productBooleansLEGACY,
                 audit
         );
     }

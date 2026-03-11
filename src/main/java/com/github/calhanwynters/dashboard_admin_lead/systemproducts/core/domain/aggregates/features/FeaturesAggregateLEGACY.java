@@ -3,7 +3,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.LEGACYBaseAggregateRoot;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.*;
 
@@ -17,7 +17,7 @@ public class FeaturesAggregateLEGACY extends LEGACYBaseAggregateRoot<FeaturesAgg
     private FeatureBusinessUuId featuresBusinessUuId;
     private FeatureName featuresName;
     private FeatureLabel compatibilityTag;
-    private ProductBooleans productBooleans; // Record integration
+    private ProductBooleansLEGACY productBooleansLEGACY; // Record integration
     // Add Version-Based Optimistic Locking "optLockVer"
     // Add Schema-Based Versioning "schemaVer"
 
@@ -26,7 +26,7 @@ public class FeaturesAggregateLEGACY extends LEGACYBaseAggregateRoot<FeaturesAgg
                                    FeatureBusinessUuId featuresBusinessUuId,
                                    FeatureName featuresName,
                                    FeatureLabel compatibilityTag,
-                                   ProductBooleans productBooleans, // Added param
+                                   ProductBooleansLEGACY productBooleansLEGACY, // Added param
                                    AuditMetadata auditMetadata) {
 
         super(auditMetadata);
@@ -35,7 +35,7 @@ public class FeaturesAggregateLEGACY extends LEGACYBaseAggregateRoot<FeaturesAgg
         this.featuresBusinessUuId = DomainGuard.notNull(featuresBusinessUuId, "Feature Business UUID");
         this.featuresName = DomainGuard.notNull(featuresName, "Feature Name");
         this.compatibilityTag = DomainGuard.notNull(compatibilityTag, "Compatibility Tag");
-        this.productBooleans = (productBooleans != null) ? productBooleans : new ProductBooleans(false, false);
+        this.productBooleansLEGACY = (productBooleansLEGACY != null) ? productBooleansLEGACY : new ProductBooleansLEGACY(false, false);
     }
 
     public static FeaturesAggregateLEGACY create(FeatureUuId uuId, FeatureBusinessUuId bUuId,
@@ -43,7 +43,7 @@ public class FeaturesAggregateLEGACY extends LEGACYBaseAggregateRoot<FeaturesAgg
         FeaturesBehavior.validateCreation(uuId, bUuId, name, tag, actor);
 
         FeaturesAggregateLEGACY aggregate = new FeaturesAggregateLEGACY(
-                null, uuId, bUuId, name, tag, new ProductBooleans(false, false), AuditMetadata.create(actor)
+                null, uuId, bUuId, name, tag, new ProductBooleansLEGACY(false, false), AuditMetadata.create(actor)
         );
         aggregate.registerEvent(new FeatureCreatedEvent(uuId, bUuId, actor));
         return aggregate;
@@ -53,16 +53,16 @@ public class FeaturesAggregateLEGACY extends LEGACYBaseAggregateRoot<FeaturesAgg
 
 
     public void syncToKafka(Actor actor) {
-        FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
+        FeaturesBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         FeaturesBehavior.verifySyncAuthority(actor);
 
         this.applyChange(actor,
-                new FeatureDataSyncedEvent(featuresUuId, featuresBusinessUuId, featuresName, compatibilityTag, productBooleans, actor),
+                new FeatureDataSyncedEvent(featuresUuId, featuresBusinessUuId, featuresName, compatibilityTag, productBooleansLEGACY, actor),
                 null);
     }
 
     public void updateBusinessUuId(FeatureBusinessUuId newId, Actor actor) {
-        FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
+        FeaturesBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
 
         // Validate using your existing logic (Admin-only, non-null, difference check)
         var validatedId = FeaturesBehavior.evaluateBusinessIdChange(this.featuresBusinessUuId, newId, actor);
@@ -73,7 +73,7 @@ public class FeaturesAggregateLEGACY extends LEGACYBaseAggregateRoot<FeaturesAgg
     }
 
     public void rename(FeatureName newName, Actor actor) {
-        FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
+        FeaturesBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
 
         var validatedName = FeaturesBehavior.evaluateRename(this.featuresName, newName, actor);
 
@@ -83,7 +83,7 @@ public class FeaturesAggregateLEGACY extends LEGACYBaseAggregateRoot<FeaturesAgg
     }
 
     public void updateCompatibilityTag(FeatureLabel newTag, Actor actor) {
-        FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
+        FeaturesBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
 
         var validatedTag = FeaturesBehavior.evaluateCompatibilityTagUpdate(newTag, this.compatibilityTag, actor);
 
@@ -98,7 +98,7 @@ public class FeaturesAggregateLEGACY extends LEGACYBaseAggregateRoot<FeaturesAgg
 
         this.applyChange(actor,
                 new FeatureArchivedEvent(featuresUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(true, this.productBooleans.softDeleted())
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(true, this.productBooleansLEGACY.softDeleted())
         );
     }
 
@@ -107,25 +107,25 @@ public class FeaturesAggregateLEGACY extends LEGACYBaseAggregateRoot<FeaturesAgg
 
         this.applyChange(actor,
                 new FeatureUnarchivedEvent(featuresUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(false, this.productBooleans.softDeleted())
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(false, this.productBooleansLEGACY.softDeleted())
         );
     }
 
     public void softDelete(Actor actor) {
-        FeaturesBehavior.ensureActive(this.productBooleans.softDeleted());
+        FeaturesBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         FeaturesBehavior.verifyLifecycleAuthority(actor);
 
         this.applyChange(actor, new FeatureSoftDeletedEvent(featuresUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), true)
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(this.productBooleansLEGACY.archived(), true)
         );
     }
 
     public void restore(Actor actor) {
-        if (!this.productBooleans.softDeleted()) return;
+        if (!this.productBooleansLEGACY.softDeleted()) return;
         FeaturesBehavior.verifyRestorable(actor);
 
         this.applyChange(actor, new FeatureRestoredEvent(featuresUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), false)
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(this.productBooleansLEGACY.archived(), false)
         );
     }
 
@@ -135,9 +135,9 @@ public class FeaturesAggregateLEGACY extends LEGACYBaseAggregateRoot<FeaturesAgg
     }
 
     // --- GETTERS ---
-    public boolean isDeleted() { return productBooleans.softDeleted(); }
-    public boolean isArchived() { return productBooleans.archived(); }
-    public ProductBooleans getProductBooleans() { return productBooleans; }
+    public boolean isDeleted() { return productBooleansLEGACY.softDeleted(); }
+    public boolean isArchived() { return productBooleansLEGACY.archived(); }
+    public ProductBooleansLEGACY getProductBooleans() { return productBooleansLEGACY; }
     public FeatureId getFeaturesId() { return featuresId; }
     public FeatureUuId getFeaturesUuId() { return featuresUuId; }
     public FeatureBusinessUuId getFeaturesBusinessUuId() { return featuresBusinessUuId; }

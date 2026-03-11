@@ -3,7 +3,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.LEGACYBaseAggregateRoot;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.typelist.events.*;
@@ -21,7 +21,7 @@ public class TypeListAggregateLEGACY extends LEGACYBaseAggregateRoot<TypeListAgg
     private final TypeListUuId typeListUuId;
     private TypeListBusinessUuId typeListBusinessUuId;
     private final Set<TypesUuId> typeUuIds;
-    private ProductBooleans productBooleans; // Corrected: No more primitive boolean
+    private ProductBooleansLEGACY productBooleansLEGACY; // Corrected: No more primitive boolean
     // Add Version-Based Optimistic Locking "optLockVer"
     // Add Schema-Based Versioning "schemaVer"
 
@@ -30,21 +30,21 @@ public class TypeListAggregateLEGACY extends LEGACYBaseAggregateRoot<TypeListAgg
                                    TypeListUuId typeListUuId,
                                    TypeListBusinessUuId typeListBusinessUuId,
                                    Set<TypesUuId> typeUuIds,
-                                   ProductBooleans productBooleans, // Replaced boolean
+                                   ProductBooleansLEGACY productBooleansLEGACY, // Replaced boolean
                                    AuditMetadata auditMetadata) {
         super(auditMetadata);
         this.typeListId = typeListId;
         this.typeListUuId = DomainGuard.notNull(typeListUuId, "TypeList UUID");
         this.typeListBusinessUuId = DomainGuard.notNull(typeListBusinessUuId, "Business UUID");
         this.typeUuIds = new HashSet<>(typeUuIds != null ? typeUuIds : Collections.emptySet());
-        this.productBooleans = productBooleans != null ? productBooleans : new ProductBooleans(false, false);
+        this.productBooleansLEGACY = productBooleansLEGACY != null ? productBooleansLEGACY : new ProductBooleansLEGACY(false, false);
     }
 
     public static TypeListAggregateLEGACY create(TypeListUuId uuId, TypeListBusinessUuId bUuId, Actor actor) {
         TypeListBehavior.verifyCreationAuthority(actor);
 
         TypeListAggregateLEGACY aggregate = new TypeListAggregateLEGACY(
-                null, uuId, bUuId, new HashSet<>(), new ProductBooleans(false, false), AuditMetadata.create(actor)
+                null, uuId, bUuId, new HashSet<>(), new ProductBooleansLEGACY(false, false), AuditMetadata.create(actor)
         );
         aggregate.registerEvent(new TypeListCreatedEvent(uuId, bUuId, actor));
         return aggregate;
@@ -53,7 +53,7 @@ public class TypeListAggregateLEGACY extends LEGACYBaseAggregateRoot<TypeListAgg
     // --- DOMAIN ACTIONS ---
 
     public void updateBusinessUuId(TypeListBusinessUuId newId, Actor actor) {
-        TypeListBehavior.ensureActive(this.productBooleans.softDeleted());
+        TypeListBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
 
         // Validate using your existing logic (Admin-only, non-null, difference check)
         var validatedId = TypeListBehavior.evaluateBusinessIdChange(this.typeListBusinessUuId, newId, actor);
@@ -64,14 +64,14 @@ public class TypeListAggregateLEGACY extends LEGACYBaseAggregateRoot<TypeListAgg
     }
 
     public void syncToKafka(Actor actor) {
-        TypeListBehavior.ensureActive(this.productBooleans.softDeleted());
+        TypeListBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         TypeListBehavior.verifySyncAuthority(actor);
 
-        this.applyChange(actor, new TypeListDataSyncedEvent(typeListUuId, typeListBusinessUuId, typeUuIds, productBooleans, actor), null);
+        this.applyChange(actor, new TypeListDataSyncedEvent(typeListUuId, typeListBusinessUuId, typeUuIds, productBooleansLEGACY, actor), null);
     }
 
     public void attachType(TypesUuId typeUuId, Actor actor) {
-        TypeListBehavior.ensureActive(this.productBooleans.softDeleted());
+        TypeListBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         TypeListBehavior.ensureCanAttach(this.typeUuIds, typeUuId, actor);
 
         this.applyChange(actor,
@@ -81,7 +81,7 @@ public class TypeListAggregateLEGACY extends LEGACYBaseAggregateRoot<TypeListAgg
     }
 
     public void detachType(TypesUuId typeUuId, Actor actor) {
-        TypeListBehavior.ensureActive(this.productBooleans.softDeleted());
+        TypeListBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         TypeListBehavior.ensureCanDetach(this.typeUuIds, typeUuId, actor);
 
         this.applyChange(actor,
@@ -91,7 +91,7 @@ public class TypeListAggregateLEGACY extends LEGACYBaseAggregateRoot<TypeListAgg
     }
 
     public void clearAllTypes(Actor actor) {
-        TypeListBehavior.ensureActive(this.productBooleans.softDeleted());
+        TypeListBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         TypeListBehavior.verifyMembershipAuthority(actor);
 
         if (this.typeUuIds.isEmpty()) return;
@@ -103,12 +103,12 @@ public class TypeListAggregateLEGACY extends LEGACYBaseAggregateRoot<TypeListAgg
     }
 
     public void softDelete(Actor actor) {
-        TypeListBehavior.ensureActive(this.productBooleans.softDeleted());
+        TypeListBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         TypeListBehavior.verifyLifecycleAuthority(actor);
 
         this.applyChange(actor,
                 new TypeListSoftDeletedEvent(this.typeListUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), true)
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(this.productBooleansLEGACY.archived(), true)
         );
     }
 
@@ -118,12 +118,12 @@ public class TypeListAggregateLEGACY extends LEGACYBaseAggregateRoot<TypeListAgg
     }
 
     public void restore(Actor actor) {
-        if (!this.productBooleans.softDeleted()) return;
+        if (!this.productBooleansLEGACY.softDeleted()) return;
         TypeListBehavior.verifyLifecycleAuthority(actor);
 
         this.applyChange(actor,
                 new TypeListRestoredEvent(this.typeListUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), false)
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(this.productBooleansLEGACY.archived(), false)
         );
     }
 
@@ -134,7 +134,7 @@ public class TypeListAggregateLEGACY extends LEGACYBaseAggregateRoot<TypeListAgg
         // Line 2: Side-Effect (Replace record instance)
         this.applyChange(actor,
                 new TypeListArchivedEvent(this.typeListUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(true, this.productBooleans.softDeleted())
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(true, this.productBooleansLEGACY.softDeleted())
         );
     }
 
@@ -145,14 +145,14 @@ public class TypeListAggregateLEGACY extends LEGACYBaseAggregateRoot<TypeListAgg
         // Line 2: Side-Effect (Replace record instance)
         this.applyChange(actor,
                 new TypeListUnarchivedEvent(this.typeListUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(false, this.productBooleans.softDeleted())
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(false, this.productBooleansLEGACY.softDeleted())
         );
     }
 
 
     // --- ACCESSORS ---
-    public boolean isDeleted() { return productBooleans.softDeleted(); }
-    public ProductBooleans getProductBooleans() { return productBooleans; }
+    public boolean isDeleted() { return productBooleansLEGACY.softDeleted(); }
+    public ProductBooleansLEGACY getProductBooleans() { return productBooleansLEGACY; }
     public TypeListId getTypeListId() { return typeListId; }
     public TypeListUuId getTypeListUuId() { return typeListUuId; }
     public TypeListBusinessUuId getTypeListBusinessUuId() { return typeListBusinessUuId; }

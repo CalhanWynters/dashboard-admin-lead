@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastruct
 
 import com.github.calhanwynters.dashboard_admin_lead.common.*;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper.FeatureUuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.VariantsEntity;
@@ -27,7 +27,7 @@ public interface VariantsMapper {
     @Mapping(target = "assignedFeatureUuIds", source = "assignedFeatureUuids", qualifiedByName = "toFeatureUuIdSet")
     @Mapping(target = "productBooleans", source = ".", qualifiedByName = "toProductBooleans")
     @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
-    VariantsAggregate toAggregate(VariantsEntity entity);
+    VariantsAggregateLEGACY toAggregate(VariantsEntity entity);
 
     @Mapping(target = "id", source = "variantsId.value.id")
     @Mapping(target = "uuid", source = "variantsUuId.value.value", qualifiedByName = "stringToUuid")
@@ -39,7 +39,7 @@ public interface VariantsMapper {
     @Mapping(target = "createdAt", source = "auditMetadata.createdAt.value")
     @Mapping(target = "lastModifiedAt", source = "auditMetadata.lastModified.value")
     @Mapping(target = "lastModifiedBy", source = "auditMetadata.lastModifiedBy.identity")
-    VariantsEntity toEntity(VariantsAggregate aggregate);
+    VariantsEntity toEntity(VariantsAggregateLEGACY aggregate);
 
     // --- Collection Helpers ---
 
@@ -74,8 +74,8 @@ public interface VariantsMapper {
     default VariantsName toVariantsName(String name) { return new VariantsName(new Name(name)); }
 
     @Named("toProductBooleans")
-    default ProductBooleans toProductBooleans(VariantsEntity entity) {
-        return new ProductBooleans(entity.isArchived(), entity.isSoftDeleted());
+    default ProductBooleansLEGACY toProductBooleans(VariantsEntity entity) {
+        return new ProductBooleansLEGACY(entity.isArchived(), entity.isSoftDeleted());
     }
 
     @Named("toAuditMetadata")

@@ -121,7 +121,7 @@ public final class ProductBehavior {
         );
     }
 
-    public static void validateComposition(ProductAggregateRoot product) {
+    public static void validateComposition(ProductAggregateRootLEGACY product) {
         DomainGuard.ensure(
                 new ProductCompositionSpecification().isSatisfiedBy(product),
                 "Invalid Product Type: Standard products (with TypeList) cannot have local Price/Specs. " +

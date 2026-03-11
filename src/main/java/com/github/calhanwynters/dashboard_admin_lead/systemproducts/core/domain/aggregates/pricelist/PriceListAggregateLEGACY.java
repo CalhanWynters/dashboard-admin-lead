@@ -4,7 +4,7 @@ import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.LEGACYBaseAggregateRoot;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleans;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.events.*;
@@ -28,7 +28,7 @@ public class PriceListAggregateLEGACY extends LEGACYBaseAggregateRoot<PriceListA
 
     private PriceListBusinessUuId priceListBusinessUuId;
     private PriceListVersion priceListVersion;
-    private ProductBooleans productBooleans;
+    private ProductBooleansLEGACY productBooleansLEGACY;
     private boolean isActive;
     private final Map<UuId, Map<Currency, PurchasePricing>> multiCurrencyPrices;
     // Add Version-Based Optimistic Locking "optLockVer"
@@ -41,7 +41,7 @@ public class PriceListAggregateLEGACY extends LEGACYBaseAggregateRoot<PriceListA
                                     PriceListBusinessUuId priceListBusinessUuId,
                                     PriceListVersion priceListVersion,
                                     boolean isActive,
-                                    ProductBooleans productBooleans, // Added param
+                                    ProductBooleansLEGACY productBooleansLEGACY, // Added param
                                     AuditMetadata auditMetadata,
                                     Map<UuId, Map<Currency, PurchasePricing>> multiCurrencyPrices) {
 
@@ -52,7 +52,7 @@ public class PriceListAggregateLEGACY extends LEGACYBaseAggregateRoot<PriceListA
         this.priceListBusinessUuId = DomainGuard.notNull(priceListBusinessUuId, "PriceList Business UUID");
         this.priceListVersion = DomainGuard.notNull(priceListVersion, "Version");
         this.isActive = isActive;
-        this.productBooleans = productBooleans != null ? productBooleans : new ProductBooleans(false, false);
+        this.productBooleansLEGACY = productBooleansLEGACY != null ? productBooleansLEGACY : new ProductBooleansLEGACY(false, false);
         this.multiCurrencyPrices = new HashMap<>(multiCurrencyPrices);
     }
 
@@ -60,7 +60,7 @@ public class PriceListAggregateLEGACY extends LEGACYBaseAggregateRoot<PriceListA
             PriceListUuId uuId,
             PriceListBusinessUuId bUuId,
             PricingStrategyType strategyBoundary, // Changed from Class to Enum
-            ProductBooleans booleans,
+            ProductBooleansLEGACY booleans,
             Actor actor) {
 
         // 1. Verify authority
@@ -101,7 +101,7 @@ public class PriceListAggregateLEGACY extends LEGACYBaseAggregateRoot<PriceListA
     }
 
     public void updateBusinessUuId(PriceListBusinessUuId newId, Actor actor) {
-        PriceListBehavior.ensureActive(this.productBooleans.softDeleted());
+        PriceListBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
 
         // Validate using your existing logic (Admin-only, non-null, difference check)
         var validatedId = PriceListBehavior.evaluateBusinessIdChange(this.priceListBusinessUuId, newId, actor);
@@ -112,11 +112,11 @@ public class PriceListAggregateLEGACY extends LEGACYBaseAggregateRoot<PriceListA
     }
 
     public void syncToKafka(Actor actor) {
-        PriceListBehavior.ensureActive(this.productBooleans.softDeleted());
+        PriceListBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
         PriceListBehavior.verifySyncAuthority(actor);
 
         this.applyChange(actor,
-                new PriceListDataSyncedEvent(priceListUuId, priceListBusinessUuId, strategyBoundary, priceListVersion, isActive, productBooleans, multiCurrencyPrices, actor),
+                new PriceListDataSyncedEvent(priceListUuId, priceListBusinessUuId, strategyBoundary, priceListVersion, isActive, productBooleansLEGACY, multiCurrencyPrices, actor),
                 null);
     }
 
@@ -144,7 +144,7 @@ public class PriceListAggregateLEGACY extends LEGACYBaseAggregateRoot<PriceListA
 
     public void addOrUpdatePrice(UuId targetId, Currency currency, PurchasePricing pricing, Actor actor) {
         // Lifecycle Guard (Hard Lock)
-        PriceListBehavior.ensureLifecycleActive(this.productBooleans.softDeleted());
+        PriceListBehavior.ensureLifecycleActive(this.productBooleansLEGACY.softDeleted());
         // Operational Guard (Soft Lock)
         PriceListBehavior.ensureOperationalActive(this.isActive);
 
@@ -232,12 +232,12 @@ public class PriceListAggregateLEGACY extends LEGACYBaseAggregateRoot<PriceListA
     }
 
     public void softDelete(Actor actor) {
-        PriceListBehavior.ensureLifecycleActive(this.productBooleans.softDeleted());
+        PriceListBehavior.ensureLifecycleActive(this.productBooleansLEGACY.softDeleted());
         PriceListBehavior.verifyLifecycleAuthority(actor);
 
         this.applyChange(actor,
                 new PriceListSoftDeletedEvent(this.priceListUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), true)
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(this.productBooleansLEGACY.archived(), true)
         );
     }
 
@@ -247,12 +247,12 @@ public class PriceListAggregateLEGACY extends LEGACYBaseAggregateRoot<PriceListA
     }
 
     public void restore(Actor actor) {
-        if (!this.productBooleans.softDeleted()) return;
+        if (!this.productBooleansLEGACY.softDeleted()) return;
         PriceListBehavior.verifyLifecycleAuthority(actor);
 
         this.applyChange(actor,
                 new PriceListRestoredEvent(this.priceListUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(this.productBooleans.archived(), false)
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(this.productBooleansLEGACY.archived(), false)
         );
     }
 
@@ -260,7 +260,7 @@ public class PriceListAggregateLEGACY extends LEGACYBaseAggregateRoot<PriceListA
         PriceListBehavior.verifyLifecycleAuthority(actor);
         this.applyChange(actor,
                 new PriceListArchivedEvent(this.priceListUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(true, this.productBooleans.softDeleted())
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(true, this.productBooleansLEGACY.softDeleted())
         );
     }
 
@@ -271,7 +271,7 @@ public class PriceListAggregateLEGACY extends LEGACYBaseAggregateRoot<PriceListA
         // Line 2: Side-Effect (Replace record with archived = false)
         this.applyChange(actor,
                 new PriceListUnarchivedEvent(this.priceListUuId, actor),
-                () -> this.productBooleans = new ProductBooleans(false, this.productBooleans.softDeleted())
+                () -> this.productBooleansLEGACY = new ProductBooleansLEGACY(false, this.productBooleansLEGACY.softDeleted())
         );
     }
 
