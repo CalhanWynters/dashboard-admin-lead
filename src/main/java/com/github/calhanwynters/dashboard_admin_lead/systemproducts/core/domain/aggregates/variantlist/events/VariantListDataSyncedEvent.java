@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import org.jmolecules.event.annotation.DomainEvent;
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.LifecycleState;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants.VariantsDomainWrapper.VariantsUuId;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist.VariantListDomainWrapper.*;
 import java.util.Set;
@@ -11,7 +11,7 @@ import java.util.Set;
 public record VariantListDataSyncedEvent(
         VariantListUuId variantListUuId,
         VariantListBusinessUuId variantListBusinessUuId,
-        Set<VariantsUuId> variantUuIds, // Matches VariantsDomainWrapper.VariantsUuId
-        ProductBooleansLEGACY productBooleansLEGACY,
+        Set<VariantsUuId> variantUuIds,
+        LifecycleState lifecycleState, // Migrated from LEGACY
         Actor actor
 ) { }

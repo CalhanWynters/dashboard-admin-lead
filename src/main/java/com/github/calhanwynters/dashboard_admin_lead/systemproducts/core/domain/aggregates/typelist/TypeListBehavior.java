@@ -1,6 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.typelist;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
+import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.typelist.TypeListDomainWrapper.*;
@@ -17,42 +18,35 @@ public final class TypeListBehavior {
 
     private TypeListBehavior() {}
 
-    public static void verifyCreationAuthority(Actor actor) {
-        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException("TypeList creation requires Manager or Admin roles.", "SEC-403", actor);
-        }
+    /**
+     * Standardized creation validation.
+     */
+    public static void validateCreation(TypeListUuId uuId, TypeListBusinessUuId bUuId, Actor actor) {
+        BaseAggregateRoot.verifyLifecycleAuthority(actor);
+        DomainGuard.notNull(uuId, "TypeList UUID");
+        DomainGuard.notNull(bUuId, "Business UUID");
     }
 
+    /**
+     * Membership logic - Keep because it has a specific ROLE_MANAGER requirement.
+     */
     public static void verifyMembershipAuthority(Actor actor) {
         if (!actor.hasRole(Actor.ROLE_MANAGER)) {
             throw new DomainAuthorizationException("Only Managers can modify TypeList memberships.", "SEC-403", actor);
         }
     }
 
+    /**
+     * STATED RULE: TypeList requires ADMIN for lifecycle (stricter than Base).
+     * If you prefer the Base rule (Manager/Admin), delete this and use the Base.
+     */
     public static void verifyLifecycleAuthority(Actor actor) {
-        // SOC 2: Deleting or restoring structural lists requires Administrator privileges
         if (!actor.hasRole(Actor.ROLE_ADMIN)) {
             throw new DomainAuthorizationException("Lifecycle actions (Delete/Restore) are restricted to Administrators.", "SEC-001", actor);
         }
     }
 
-    public static void ensureActive(boolean isDeleted) {
-        if (isDeleted) {
-            throw new IllegalStateException("Operation failed: TypeList is deleted.");
-        }
-    }
-
-    /**
-     * SOC 2: Ensures only authorized roles can trigger a manual data synchronization.
-     */
-    public static void verifySyncAuthority(Actor actor) {
-        // Typically restricted to Admin/Manager to prevent unauthorized data exfiltration
-        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException(
-                    "Data synchronization requires Manager or Admin roles.",
-                    "SEC-403", actor);
-        }
-    }
+    // --- COLLECTION INTEGRITY ---
 
     public static void ensureCanAttach(Set<TypesUuId> currentTypes, TypesUuId typeUuId, Actor actor) {
         verifyMembershipAuthority(actor);
@@ -71,18 +65,5 @@ public final class TypeListBehavior {
         if (!currentTypes.contains(typeUuId)) {
             throw new IllegalArgumentException("Type is not found in this list.");
         }
-    }
-
-    public static TypeListBusinessUuId evaluateBusinessIdChange(TypeListBusinessUuId currentId,
-                                                                TypeListBusinessUuId newId, Actor actor) {
-        if (!actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException("Business ID modification is restricted to Administrators.", "SEC-401", actor);
-        }
-
-        DomainGuard.notNull(newId, "New Business UUID");
-        if (currentId.equals(newId)) {
-            throw new IllegalArgumentException("The new Business ID must be different from the current one.");
-        }
-        return newId;
     }
 }

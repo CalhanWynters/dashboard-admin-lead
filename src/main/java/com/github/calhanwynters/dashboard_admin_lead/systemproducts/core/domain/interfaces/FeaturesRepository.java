@@ -1,6 +1,5 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.interfaces;
 
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesAggregateLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeatureUuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeatureBusinessUuId;
 

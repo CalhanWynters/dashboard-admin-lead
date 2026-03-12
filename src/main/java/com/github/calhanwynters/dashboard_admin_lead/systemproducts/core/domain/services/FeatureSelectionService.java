@@ -2,8 +2,6 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeatureCompatibilityPolicy;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesAggregateLEGACY;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesAggregateLEGACY;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.interfaces.IncompatibilityRuleRepository;
 
 import java.util.Set;

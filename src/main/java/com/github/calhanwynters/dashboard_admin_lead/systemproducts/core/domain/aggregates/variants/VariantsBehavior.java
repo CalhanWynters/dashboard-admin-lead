@@ -1,6 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
+import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper.FeatureUuId;
@@ -15,10 +16,13 @@ public final class VariantsBehavior {
 
     private VariantsBehavior() {}
 
-    public static void verifyCreationAuthority(Actor actor) {
-        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException("Variant creation requires Manager or Admin roles.", "SEC-403", actor);
-        }
+    /**
+     * Standardized creation validation.
+     */
+    public static void validateCreation(VariantsUuId uuId, VariantsBusinessUuId bUuId, Actor actor) {
+        BaseAggregateRoot.verifyLifecycleAuthority(actor);
+        DomainGuard.notNull(uuId, "Variant UUID");
+        DomainGuard.notNull(bUuId, "Business UUID");
     }
 
     public static void verifyManagementAuthority(Actor actor) {
@@ -27,29 +31,16 @@ public final class VariantsBehavior {
         }
     }
 
+    /**
+     * Specialized Rule: Variants require ADMIN for lifecycle (stricter than Base).
+     */
     public static void verifyLifecycleAuthority(Actor actor) {
         if (!actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException("Variant lifecycle actions (Delete/Restore) require Administrator privileges.", "SEC-001", actor);
+            throw new DomainAuthorizationException("Variant lifecycle actions require Administrator privileges.", "SEC-001", actor);
         }
     }
 
-    public static void ensureActive(boolean deleted) {
-        if (deleted) {
-            throw new IllegalStateException("Operation failed: Variant is deleted.");
-        }
-    }
-
-    /**
-     * SOC 2: Ensures only authorized roles can trigger a manual data synchronization.
-     */
-    public static void verifySyncAuthority(Actor actor) {
-        // Typically restricted to Admin/Manager to prevent unauthorized data exfiltration
-        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException(
-                    "Data synchronization requires Manager or Admin roles.",
-                    "SEC-403", actor);
-        }
-    }
+    // --- DOMAIN-SPECIFIC EVALUATORS ---
 
     public static VariantsName evaluateRename(VariantsName current, VariantsName next, Actor actor) {
         verifyManagementAuthority(actor);
@@ -60,18 +51,7 @@ public final class VariantsBehavior {
         return next;
     }
 
-    public static VariantsBusinessUuId evaluateBusinessIdChange(VariantsBusinessUuId currentId,
-                                                                VariantsBusinessUuId newId, Actor actor) {
-        if (!actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException("Business ID modification is restricted to Administrators.", "SEC-401", actor);
-        }
-
-        DomainGuard.notNull(newId, "New Business UUID");
-        if (currentId.equals(newId)) {
-            throw new IllegalArgumentException("The new Business ID must be different from the current one.");
-        }
-        return newId;
-    }
+    // --- FEATURE ASSIGNMENT INVARIANTS ---
 
     public static void ensureCanAssign(Set<FeatureUuId> current, FeatureUuId next, Actor actor) {
         verifyManagementAuthority(actor);
@@ -89,3 +69,4 @@ public final class VariantsBehavior {
         }
     }
 }
+

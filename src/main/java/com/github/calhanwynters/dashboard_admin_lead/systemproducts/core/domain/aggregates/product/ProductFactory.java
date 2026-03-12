@@ -2,8 +2,9 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.PhysicalSpecs;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.LifecycleState;
+
+import java.time.OffsetDateTime;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.ProductDomainWrapper.*;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryDomainWrapper.GalleryUuId;
@@ -12,117 +13,88 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListDomainWrapper.PriceListUuId;
 
 /**
- * Factory for creating and reconstituting ProductAggregateRoot instances.
- * Ensures alignment with the 15-parameter constructor in ProductAggregateRoot.
+ * Refactored Product Factory (2026 Edition).
+ * Orchestrates the creation of Bespoke and Standard product variants.
  */
 public class ProductFactory {
 
     private ProductFactory() {}
 
     /**
-     * Creates a Bespoke product with complex physical specifications.
+     * Creates a Bespoke product (Manual Pricing & Specs required).
      */
-    public static ProductAggregateRootLEGACY createBespoke(
+    public static ProductAggregate createBespoke(
             ProductBusinessUuId businessId,
-            ProductName name,
-            ProductCategory category,
-            ProductDescription description,
+            ProductManifest manifest,
             ProductThumbnailUrl thumbnail,
-            ProductWeight weight,
-            ProductDimensions dimensions,
-            ProductCareInstructions careInstructions,
+            ProductPhysicalSpecs physicalSpecs,
             PriceListUuId priceListId,
             VariantListUuId variantListId,
             Actor actor) {
 
-        ProductManifest manifest = new ProductManifest(name, category, description);
-        ProductPhysicalSpecs physicalSpecs = new ProductPhysicalSpecs(
-                new PhysicalSpecs(weight.value(), dimensions.value(), careInstructions.value())
-        );
+        // Validate via Behavior before instantiation
+        ProductUuId newUuId = ProductUuId.generate();
+        ProductBehavior.validateCreation(newUuId, businessId, actor);
 
-        return new ProductAggregateRootLEGACY(
-                null,                           // productId
-                ProductUuId.generate(),         // productUuId
-                businessId,                     // productBusinessUuId
-                manifest,                       // manifest
-                ProductVersion.INITIAL,         // productVersion
-                ProductStatus.DRAFT,            // productStatus
-                physicalSpecs,                  // physicalSpecs
-                new ProductBooleansLEGACY(false, false), // productBooleans
-                thumbnail,                      // productThumbnailUrl
-                GalleryUuId.generate(),         // galleryUuId
+        return new ProductAggregate(
+                null, newUuId, businessId, manifest,
+                ProductVersion.INITIAL, ProductStatus.DRAFT,
+                physicalSpecs, thumbnail,
+                GalleryUuId.generate(),
                 (variantListId != null) ? variantListId : VariantListUuId.NONE,
-                TypeListUuId.NONE,              // typeListUuId
-                priceListId,                    // priceListUuId
-                AuditMetadata.create(actor)     // auditMetadata
+                TypeListUuId.NONE,
+                priceListId,
+                AuditMetadata.create(actor),
+                new LifecycleState(false, false),
+                0L, 1, null
         );
     }
 
     /**
-     * Creates a Standard product with minimal physical overhead.
+     * Creates a Standard product (Inherits Pricing & Specs from TypeList).
      */
-    public static ProductAggregateRootLEGACY createStandard(
+    public static ProductAggregate createStandard(
             ProductBusinessUuId businessId,
-            ProductName name,
-            ProductCategory category,
-            ProductDescription description,
+            ProductManifest manifest,
             ProductThumbnailUrl thumbnail,
             TypeListUuId typeListId,
             VariantListUuId variantListId,
             Actor actor) {
 
-        return new ProductAggregateRootLEGACY(
-                null,                           // productId
-                ProductUuId.generate(),         // productUuId
-                businessId,                     // productBusinessUuId
-                new ProductManifest(name, category, description),
-                ProductVersion.INITIAL,         // productVersion
-                ProductStatus.DRAFT,            // productStatus
-                ProductPhysicalSpecs.NONE,      // physicalSpecs
-                new ProductBooleansLEGACY(false, false),
-                thumbnail,                      // productThumbnailUrl
-                GalleryUuId.generate(),         // galleryUuId
+        ProductUuId newUuId = ProductUuId.generate();
+        ProductBehavior.validateCreation(newUuId, businessId, actor);
+
+        return new ProductAggregate(
+                null, newUuId, businessId, manifest,
+                ProductVersion.INITIAL, ProductStatus.DRAFT,
+                ProductPhysicalSpecs.NONE, thumbnail,
+                GalleryUuId.generate(),
                 (variantListId != null) ? variantListId : VariantListUuId.NONE,
-                typeListId,                     // typeListUuId
-                PriceListUuId.NONE,             // priceListUuId
-                AuditMetadata.create(actor)
+                typeListId,
+                PriceListUuId.NONE,
+                AuditMetadata.create(actor),
+                new LifecycleState(false, false),
+                0L, 1, null
         );
     }
 
     /**
-     * Reconstitutes an existing product from persistence.
+     * Reconstitutes an existing product from Database.
      */
-    public static ProductAggregateRootLEGACY reconstitute(
-            ProductId id,
-            ProductUuId uuId,
-            ProductBusinessUuId businessId,
-            ProductManifest manifest,
-            ProductVersion version,
-            ProductStatus status,
-            ProductPhysicalSpecs physicalSpecs,
-            ProductBooleansLEGACY productBooleansLEGACY,
-            ProductThumbnailUrl thumbnail,
-            GalleryUuId galleryId,
-            VariantListUuId variantId,
-            TypeListUuId typeId,
-            PriceListUuId priceId,
-            AuditMetadata auditMetadata) {
+    public static ProductAggregate reconstitute(
+            ProductId id, ProductUuId uuId, ProductBusinessUuId businessId,
+            ProductManifest manifest, ProductVersion version, ProductStatus status,
+            ProductPhysicalSpecs physicalSpecs, LifecycleState lifecycleState,
+            ProductThumbnailUrl thumbnail, GalleryUuId galleryId,
+            VariantListUuId variantId, TypeListUuId typeId, PriceListUuId priceId,
+            AuditMetadata auditMetadata, Long optLockVer, Integer schemaVer,
+            OffsetDateTime lastSyncedAt) {
 
-        return new ProductAggregateRootLEGACY(
-                id,
-                uuId,
-                businessId,
-                manifest,
-                version,
-                status,
-                physicalSpecs,
-                productBooleansLEGACY,
-                thumbnail,
-                galleryId,
-                variantId,
-                typeId,
-                priceId,
-                auditMetadata
+        return new ProductAggregate(
+                id, uuId, businessId, manifest, version, status,
+                physicalSpecs, thumbnail, galleryId, variantId,
+                typeId, priceId, auditMetadata, lifecycleState,
+                optLockVer, schemaVer, lastSyncedAt
         );
     }
 }

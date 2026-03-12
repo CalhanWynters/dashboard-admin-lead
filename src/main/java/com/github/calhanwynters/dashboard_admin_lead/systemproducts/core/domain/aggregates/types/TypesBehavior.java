@@ -1,6 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
+import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesDomainWrapper.*;
@@ -13,10 +14,13 @@ public final class TypesBehavior {
 
     private TypesBehavior() {}
 
-    public static void verifyCreationAuthority(Actor actor) {
-        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException("Type creation requires Manager or Admin roles.", "SEC-403", actor);
-        }
+    /**
+     * Standardized creation validation.
+     */
+    public static void validateCreation(TypesUuId uuId, TypesBusinessUuId bUuId, Actor actor) {
+        BaseAggregateRoot.verifyLifecycleAuthority(actor);
+        DomainGuard.notNull(uuId, "Type UUID");
+        DomainGuard.notNull(bUuId, "Business UUID");
     }
 
     public static void verifyManagementAuthority(Actor actor) {
@@ -25,29 +29,16 @@ public final class TypesBehavior {
         }
     }
 
+    /**
+     * Specialized Rule: Types require ADMIN for lifecycle (stricter than Base).
+     */
     public static void verifyLifecycleAuthority(Actor actor) {
         if (!actor.hasRole(Actor.ROLE_ADMIN)) {
             throw new DomainAuthorizationException("Lifecycle actions (Delete/Restore) are restricted to Administrators.", "SEC-001", actor);
         }
     }
 
-    public static void ensureActive(boolean isDeleted) {
-        if (isDeleted) {
-            throw new IllegalStateException("Operation failed: Product Type is deleted.");
-        }
-    }
-
-    /**
-     * SOC 2: Ensures only authorized roles can trigger a manual data synchronization.
-     */
-    public static void verifySyncAuthority(Actor actor) {
-        // Typically restricted to Admin/Manager to prevent unauthorized data exfiltration
-        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException(
-                    "Data synchronization requires Manager or Admin roles.",
-                    "SEC-403", actor);
-        }
-    }
+    // --- DOMAIN-SPECIFIC EVALUATORS ---
 
     public static TypesName evaluateRename(TypesName current, TypesName next, Actor actor) {
         verifyManagementAuthority(actor);
@@ -56,19 +47,6 @@ public final class TypesBehavior {
             throw new IllegalArgumentException("New name must be different from current name.");
         }
         return next;
-    }
-
-    public static TypesBusinessUuId evaluateBusinessIdChange(TypesBusinessUuId currentId,
-                                                             TypesBusinessUuId newId, Actor actor) {
-        if (!actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException("Business ID modification is restricted to Administrators.", "SEC-401", actor);
-        }
-
-        DomainGuard.notNull(newId, "New Business UUID");
-        if (currentId.equals(newId)) {
-            throw new IllegalArgumentException("The new Business ID must be different from the current one.");
-        }
-        return newId;
     }
 
     public static void validateSpecs(TypesPhysicalSpecs specs, Actor actor) {

@@ -1,6 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.events;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.LifecycleState;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.PricingStrategyType;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.PurchasePricing;
 import org.jmolecules.event.annotation.DomainEvent;
@@ -18,7 +19,7 @@ public record PriceListDataSyncedEvent(
         PricingStrategyType strategyBoundary, // Match the Class type
         PriceListVersion priceListVersion,
         boolean isActive,
-        ProductBooleansLEGACY productBooleansLEGACY,
+        LifecycleState lifecycleState,
         Map<UuId, Map<Currency, PurchasePricing>> multiCurrencyPrices, // Match the nested Map
         Actor actor
 ) { }

@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
  * DomainGuard: Centralized business invariant enforcement.
  * Optimized for Java 21+ (2026 Edition).
  */
+@SuppressWarnings("unused")
 public final class DomainGuard {
 
     private DomainGuard() {}

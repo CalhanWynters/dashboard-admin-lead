@@ -101,7 +101,7 @@ public class PriceListAggregateLEGACY extends LEGACYBaseAggregateRoot<PriceListA
     }
 
     public void updateBusinessUuId(PriceListBusinessUuId newId, Actor actor) {
-        PriceListBehavior.ensureActive(this.productBooleansLEGACY.softDeleted());
+        ensureActive(this.productBooleansLEGACY.softDeleted());
 
         // Validate using your existing logic (Admin-only, non-null, difference check)
         var validatedId = PriceListBehavior.evaluateBusinessIdChange(this.priceListBusinessUuId, newId, actor);

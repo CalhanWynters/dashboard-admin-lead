@@ -1,7 +1,6 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.services;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesAggregateLEGACY;
 
 import java.util.Collections;
 import java.util.Set;

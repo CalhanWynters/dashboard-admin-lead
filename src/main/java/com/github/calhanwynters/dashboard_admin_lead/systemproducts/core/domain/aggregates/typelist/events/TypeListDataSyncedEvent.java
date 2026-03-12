@@ -3,7 +3,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesDomainWrapper;
 import org.jmolecules.event.annotation.DomainEvent;
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.LifecycleState; // Migrated from LEGACY
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.typelist.TypeListDomainWrapper.*;
 import java.util.Set;
 
@@ -12,6 +12,6 @@ public record TypeListDataSyncedEvent(
         TypeListUuId typeListUuId,
         TypeListBusinessUuId typeListBusinessUuId,
         Set<TypesDomainWrapper.TypesUuId> typeUuIds,
-        ProductBooleansLEGACY productBooleansLEGACY,
+        LifecycleState lifecycleState, // Standardized 2026 Type
         Actor actor
 ) { }

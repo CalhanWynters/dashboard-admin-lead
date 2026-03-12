@@ -1,6 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
+import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist.VariantListDomainWrapper.*;
@@ -17,10 +18,13 @@ public final class VariantListBehavior {
 
     private VariantListBehavior() {}
 
-    public static void verifyCreationAuthority(Actor actor) {
-        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException("VariantList creation requires Manager or Admin roles.", "SEC-403", actor);
-        }
+    /**
+     * Standardized creation validation.
+     */
+    public static void validateCreation(VariantListUuId uuId, VariantListBusinessUuId bUuId, Actor actor) {
+        BaseAggregateRoot.verifyLifecycleAuthority(actor);
+        DomainGuard.notNull(uuId, "VariantList UUID");
+        DomainGuard.notNull(bUuId, "Business UUID");
     }
 
     public static void verifyMembershipAuthority(Actor actor) {
@@ -29,42 +33,16 @@ public final class VariantListBehavior {
         }
     }
 
+    /**
+     * Specialized Rule: VariantLists require ADMIN for lifecycle (stricter than Base).
+     */
     public static void verifyLifecycleAuthority(Actor actor) {
         if (!actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException("VariantList lifecycle actions (Delete/Restore) are restricted to Administrators.", "SEC-001", actor);
+            throw new DomainAuthorizationException("Lifecycle actions restricted to Administrators.", "SEC-001", actor);
         }
     }
 
-    public static void ensureActive(boolean deleted) {
-        if (deleted) {
-            throw new IllegalStateException("Operation failed: VariantList is deleted.");
-        }
-    }
-
-    /**
-     * SOC 2: Ensures only authorized roles can trigger a manual data synchronization.
-     */
-    public static void verifySyncAuthority(Actor actor) {
-        // Typically restricted to Admin/Manager to prevent unauthorized data exfiltration
-        if (!actor.hasRole(Actor.ROLE_MANAGER) && !actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException(
-                    "Data synchronization requires Manager or Admin roles.",
-                    "SEC-403", actor);
-        }
-    }
-
-    public static VariantListDomainWrapper.VariantListBusinessUuId evaluateBusinessIdChange(VariantListBusinessUuId currentId,
-                                                                                            VariantListBusinessUuId newId, Actor actor) {
-        if (!actor.hasRole(Actor.ROLE_ADMIN)) {
-            throw new DomainAuthorizationException("Business ID modification is restricted to Administrators.", "SEC-401", actor);
-        }
-
-        DomainGuard.notNull(newId, "New Business UUID");
-        if (currentId.equals(newId)) {
-            throw new IllegalArgumentException("The new Business ID must be different from the current one.");
-        }
-        return newId;
-    }
+    // --- COLLECTION INTEGRITY ---
 
     public static void ensureCanAttach(Set<VariantsUuId> current, VariantsUuId next, Actor actor) {
         verifyMembershipAuthority(actor);
@@ -73,7 +51,7 @@ public final class VariantListBehavior {
             throw new IllegalStateException("VariantList limit reached (%d)".formatted(MAX_VARIANTS));
         }
         if (current.contains(next)) {
-            throw new IllegalArgumentException("Variant already attached to this list.");
+            throw new IllegalArgumentException("Variant is already in this list.");
         }
     }
 
