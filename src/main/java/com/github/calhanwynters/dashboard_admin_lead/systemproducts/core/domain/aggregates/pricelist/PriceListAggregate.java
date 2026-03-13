@@ -2,7 +2,6 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
-import com.github.calhanwynters.dashboard_admin_lead.common.Version;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.LifecycleState;
@@ -43,23 +42,7 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate, Pr
                                             PricingStrategyType strategy, Actor actor) {
 
         // 1. Centralized Validation
-        PriceListBehavior.validateCreation(uuId, bUuId, actor);
-
-        // 2. Safe Instantiation
-        return new PriceListAggregate(
-                null,
-                uuId,
-                bUuId,
-                strategy,
-                new PriceListVersion(new Version(1)), // Fixed: Removed ';' and replaced with ','
-                false,
-                new HashMap<>(),
-                AuditMetadata.create(actor),
-                new LifecycleState(false, false),
-                0L,
-                1,
-                null
-        );
+        return PriceListFactory.create(uuId, bUuId, strategy, actor);
     }
 
     // --- DOMAIN ACTIONS ---

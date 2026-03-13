@@ -2,6 +2,8 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeatureCompatibilityPolicy;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesAggregate;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesAggregate;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.interfaces.IncompatibilityRuleRepository;
 
 import java.util.Set;
@@ -14,7 +16,7 @@ public class FeatureSelectionService {
         this.ruleRepository = ruleRepository;
     }
 
-    public SelectionValidationResult validate(Set<FeaturesAggregateLEGACY> selected, Set<TypesAggregateLEGACY> types) {
+    public SelectionValidationResult validate(Set<FeaturesAggregate> selected, Set<TypesAggregate> types) {
         var rules = ruleRepository.findAllActiveRules();
         var policy = new FeatureCompatibilityPolicy(rules);
 
@@ -22,8 +24,8 @@ public class FeatureSelectionService {
         Set<UuId> forbiddenIds = policy.getIncompatibleWith(selected, types);
 
         // Cross-reference: Are any of our currently selected features in that forbidden list?
-        Set<FeaturesAggregateLEGACY> violations = selected.stream()
-                .filter(feature -> forbiddenIds.contains(feature.getFeaturesUuId().value()))
+        Set<FeaturesAggregate> violations = selected.stream()
+                .filter(feature -> forbiddenIds.contains(feature.getUuId().value()))
                 .collect(Collectors.toUnmodifiableSet());
 
         return violations.isEmpty()

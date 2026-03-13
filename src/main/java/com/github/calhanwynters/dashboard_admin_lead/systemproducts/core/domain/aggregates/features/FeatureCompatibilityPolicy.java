@@ -2,6 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper.*;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesAggregate;
 
 import java.util.*;
 
@@ -24,19 +25,18 @@ public final class FeatureCompatibilityPolicy {
         this.rulesById = Map.copyOf(byId);
     }
 
-    public Set<UuId> getIncompatibleWith(Set<FeaturesAggregateLEGACY> selectedFeatures, Set<TypesAggregateLEGACY> selectedTypes) {
+    public Set<UuId> getIncompatibleWith(Set<FeaturesAggregate> selectedFeatures, Set<TypesAggregate> selectedTypes) {
         Set<UuId> forbiddenIds = new HashSet<>();
 
-        // Query using Feature silo
-        for (FeaturesAggregateLEGACY feature : selectedFeatures) {
+        // Query using standardized getUuId() from BaseAggregateRoot
+        for (FeaturesAggregate feature : selectedFeatures) {
             forbiddenIds.addAll(rulesById.getOrDefault(
-                    TypedTrigger.feature(feature.getFeaturesUuId().value()), Collections.emptySet()));
+                    TypedTrigger.feature(feature.getUuId().value()), Collections.emptySet()));
         }
 
-        // Query using Type silo
-        for (TypesAggregateLEGACY type : selectedTypes) {
+        for (TypesAggregate type : selectedTypes) {
             forbiddenIds.addAll(rulesById.getOrDefault(
-                    TypedTrigger.type(type.getTypesUuId().value()), Collections.emptySet()));
+                    TypedTrigger.type(type.getUuId().value()), Collections.emptySet()));
         }
 
         return Collections.unmodifiableSet(forbiddenIds);

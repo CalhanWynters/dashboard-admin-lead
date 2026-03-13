@@ -66,7 +66,7 @@ public class TypeListAggregate extends BaseAggregateRoot<
                     return next;
                 },
                 val -> new TypeAttachedEvent(this.uuId, val, actor),
-                val -> this.typeUuIds.add(val)
+                this.typeUuIds::add
         );
     }
 
@@ -77,7 +77,7 @@ public class TypeListAggregate extends BaseAggregateRoot<
                     return next;
                 },
                 val -> new TypeDetachedEvent(this.uuId, val, actor),
-                val -> this.typeUuIds.remove(val)
+                this.typeUuIds::remove
         );
     }
 

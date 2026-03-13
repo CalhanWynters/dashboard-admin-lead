@@ -1,6 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.services;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesAggregate;
 
 import java.util.Collections;
 import java.util.Set;
@@ -11,16 +12,16 @@ import java.util.stream.Collectors;
  */
 public record SelectionValidationResult(
         boolean isValid,
-        Set<FeaturesAggregateLEGACY> conflictingFeatures,
+        Set<FeaturesAggregate> conflictingFeatures,
         String failureReason
 ) {
     public static SelectionValidationResult valid() {
         return new SelectionValidationResult(true, Collections.emptySet(), null);
     }
 
-    public static SelectionValidationResult invalid(Set<FeaturesAggregateLEGACY> violations) {
+    public static SelectionValidationResult invalid(Set<FeaturesAggregate> violations) {
         String names = violations.stream()
-                .map(f -> f.getFeaturesUuId().value().toString()) // Or feature name if available
+                .map(f -> f.getFeaturesName().value().toString())
                 .collect(Collectors.joining(", "));
 
         return new SelectionValidationResult(
@@ -35,7 +36,7 @@ public record SelectionValidationResult(
      */
     public Set<UuId> getConflictingIds() {
         return conflictingFeatures.stream()
-                .map(f -> f.getFeaturesUuId().value())
+                .map(f -> f.getUuId().value()) // Corrected getter
                 .collect(Collectors.toUnmodifiableSet());
     }
 }

@@ -72,7 +72,7 @@ public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate, Galler
         this.applyDomainChange(actor, imageUuId,
                 (next, auth) -> GalleryBehavior.evaluateImageAddition(next, this.imageUuIds.size(), auth),
                 val -> new ImageAddedToGalleryEvent(this.uuId, val, actor),
-                val -> this.imageUuIds.add(val)
+                this.imageUuIds::add
         );
     }
 
@@ -80,7 +80,7 @@ public class GalleryAggregate extends BaseAggregateRoot<GalleryAggregate, Galler
         this.applyDomainChange(actor, imageUuId,
                 (next, auth) -> GalleryBehavior.evaluateImageRemoval(next, this.imageUuIds.contains(next), auth),
                 val -> new ImageRemovedFromGalleryEvent(this.uuId, val, actor),
-                val -> this.imageUuIds.remove(val)
+                this.imageUuIds::remove
         );
     }
 
