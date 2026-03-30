@@ -5,6 +5,7 @@ import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.Base
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.LifecycleState;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.events.*;
+
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper.*;
 
 import java.time.OffsetDateTime;
@@ -97,8 +98,10 @@ public class FeaturesAggregate extends BaseAggregateRoot<
     // --- LIFECYCLE (One-Liners) ---
 
     public void archive(Actor actor) { this.executeArchive(actor, new FeatureArchivedEvent(this.uuId, actor)); }
+    public void unarchive(Actor actor) { this.executeUnarchive(actor, new FeatureUnarchivedEvent(this.uuId, actor)); }
     public void softDelete(Actor actor) { this.executeSoftDelete(actor, new FeatureSoftDeletedEvent(this.uuId, actor)); }
     public void restore(Actor actor) { this.executeRestore(actor, new FeatureRestoredEvent(this.uuId, actor)); }
+    public void hardDelete(Actor actor) { this.executeHardDelete(actor, new FeatureHardDeletedEvent(this.uuId, actor)); }
 
     // --- GETTERS ---
 

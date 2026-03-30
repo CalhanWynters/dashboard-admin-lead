@@ -12,6 +12,9 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import com.fasterxml.jackson.core.type.TypeReference;
 
+
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListDomainWrapper.*;
+
 import java.util.*;
 
 @Mapper(componentModel = "spring")
@@ -31,52 +34,60 @@ public abstract class PriceListMapper {
             Map.entry(PricingStrategyType.INT_TIERED_VOL, PriceIntTieredVolPurchase.class)
     );
 
-
     public PriceListMapper(ObjectMapper jsonMapper) {
         this.jsonMapper = jsonMapper;
     }
 
-    @Mapping(target = "priceListId", source = "id", qualifiedByName = "toPriceListId")
-    @Mapping(target = "priceListUuId", source = "uuid", qualifiedByName = "toPriceListUuId")
-    @Mapping(target = "priceListBusinessUuId", source = "businessUuid", qualifiedByName = "toBusinessUuId")
-    @Mapping(target = "strategyBoundary", source = "strategySlug", qualifiedByName = "slugToEnum")
-    @Mapping(target = "multiCurrencyPrices", source = "prices", qualifiedByName = "toPricingMap")
-    @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
-    @Mapping(target = "priceListVersion", source = "version", qualifiedByName = "toVersion")
-    public abstract PriceListAggregateLEGACY toAggregate(PriceListEntity entity);
 
-    @Mapping(target = "id", source = "priceListId.value.value")
-    @Mapping(target = "uuid", source = "priceListUuId.value.value", qualifiedByName = "stringToUuid")
-    @Mapping(target = "businessUuid", source = "priceListBusinessUuId.value.value", qualifiedByName = "stringToUuid")
+
+    @Mapping(target = "id", source = "id", qualifiedByName = "toPriceListId")
+    @Mapping(target = "uuId", source = "uuid", qualifiedByName = "toPriceListUuId")
+    @Mapping(target = "businessUuId", source = "businessUuid", qualifiedByName = "toBusinessUuId")
+    @Mapping(target = "strategyBoundary", source = "strategySlug", qualifiedByName = "slugToEnum")
+    @Mapping(target = "priceListVersion", source = "version", qualifiedByName = "toVersion")
+    @Mapping(target = "isActive", source = "active") // Maps boolean isActive
+    @Mapping(target = "prices", source = "prices", qualifiedByName = "toPricingMap")
+    @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
+    @Mapping(target = "lifecycleState", source = "lifecycleState") // Direct mapping if types match
+    @Mapping(target = "optLockVer", source = "version") // Example: using version for optimistic locking
+    @Mapping(target = "schemaVer", constant = "1") // Defaulting schema version
+    @Mapping(target = "lastSyncedAt", source = "lastModifiedAt")
+    public abstract PriceListAggregate toAggregate(PriceListEntity entity);
+
+    @Mapping(target = "id", source = "id.value.value")
+    @Mapping(target = "uuid", source = "uuId.value.value", qualifiedByName = "stringToUuid")
+    @Mapping(target = "businessUuid", source = "businessUuId.value.value", qualifiedByName = "stringToUuid")
     @Mapping(target = "strategySlug", source = "strategyBoundary", qualifiedByName = "enumToSlug")
     @Mapping(target = "prices", source = "multiCurrencyPrices", qualifiedByName = "fromPricingMap")
     @Mapping(target = "version", source = "priceListVersion.value.value")
+    @Mapping(target = "active", source = "active")
     @Mapping(target = "createdAt", source = "auditMetadata.createdAt.value")
     @Mapping(target = "lastModifiedAt", source = "auditMetadata.lastModified.value")
     @Mapping(target = "lastModifiedBy", source = "auditMetadata.lastModifiedBy.identity")
-    public abstract PriceListEntity toEntity(PriceListAggregateLEGACY aggregate);
+    public abstract PriceListEntity toEntity(PriceListAggregate aggregate);
+
 
 
     // --- Identity & Version Helpers ---
 
     @Named("toPriceListId")
-    protected PriceListDomainWrapper.PriceListId toPriceListId(Long id) {
-        return id == null ? null : PriceListDomainWrapper.PriceListId.of(id);
+    protected PriceListId toPriceListId(Long id) {
+        return id == null ? null : PriceListId.of(id);
     }
 
     @Named("toPriceListUuId")
-    protected PriceListDomainWrapper.PriceListUuId toPriceListUuId(UUID uuid) {
-        return new PriceListDomainWrapper.PriceListUuId(new UuId(uuid.toString()));
+    protected PriceListUuId toPriceListUuId(UUID uuid) {
+        return uuid == null ? null : new PriceListDomainWrapper.PriceListUuId(new UuId(uuid.toString()));
     }
 
     @Named("toBusinessUuId")
-    protected PriceListDomainWrapper.PriceListBusinessUuId toBusinessUuId(UUID uuid) {
-        return new PriceListDomainWrapper.PriceListBusinessUuId(new UuId(uuid.toString()));
+    protected PriceListBusinessUuId toBusinessUuId(UUID uuid) {
+        return uuid == null ? null : new PriceListBusinessUuId(new UuId(uuid.toString()));
     }
 
     @Named("toVersion")
-    protected PriceListDomainWrapper.PriceListVersion toVersion(Integer version) {
-        return new PriceListDomainWrapper.PriceListVersion(new Version(version));
+    protected PriceListVersion toVersion(Integer version) {
+        return version == null ? null : new PriceListVersion(new Version(version));
     }
 
     @Named("stringToUuid")
@@ -86,12 +97,12 @@ public abstract class PriceListMapper {
 
     // --- Strategy & JSON Helpers ---
 
-    @Named("slugToEnum") // Changed from slugToClass
+    @Named("slugToEnum")
     protected PricingStrategyType slugToEnum(String slug) {
         return slug == null ? null : PricingStrategyType.valueOf(slug);
     }
 
-    @Named("enumToSlug") // Changed from classToSlug
+    @Named("enumToSlug")
     protected String enumToSlug(PricingStrategyType type) {
         return type == null ? null : type.name();
     }
@@ -105,15 +116,10 @@ public abstract class PriceListMapper {
             UuId itemKey = new UuId(entry.getItemId().toString());
             Currency currency = Currency.getInstance(entry.getCurrencyCode());
 
-            // Use the Enum to find the concrete class for Jackson
             PricingStrategyType strategyType = PricingStrategyType.valueOf(entry.getPricingType());
             Class<? extends PurchasePricing> concreteClass = STRATEGY_MAP.get(strategyType);
 
-            PurchasePricing pricing = jsonMapper.convertValue(
-                    entry.getStrategyDetails(),
-                    concreteClass
-            );
-
+            PurchasePricing pricing = jsonMapper.convertValue(entry.getStrategyDetails(), concreteClass);
             rootMap.computeIfAbsent(itemKey, k -> new HashMap<>()).put(currency, pricing);
         }
         return rootMap;
@@ -124,14 +130,11 @@ public abstract class PriceListMapper {
         List<PriceEntryEmbeddable> flatList = new ArrayList<>();
         if (map == null) return flatList;
 
-        TypeReference<Map<String, Object>> typeRef = new TypeReference<>() {};
-
         map.forEach((itemId, currencyMap) -> currencyMap.forEach((currency, pricing) -> {
             PriceEntryEmbeddable entry = new PriceEntryEmbeddable();
             entry.setItemId(UUID.fromString(itemId.value()));
             entry.setCurrencyCode(currency.getCurrencyCode());
 
-            // Helper logic to find the Enum name for the DB slug
             String slug = STRATEGY_MAP.entrySet().stream()
                     .filter(e -> e.getValue().isInstance(pricing))
                     .map(e -> e.getKey().name())
@@ -139,24 +142,20 @@ public abstract class PriceListMapper {
                     .orElse("UNKNOWN");
 
             entry.setPricingType(slug);
-            entry.setStrategyDetails(jsonMapper.convertValue(pricing, typeRef));
+            entry.setStrategyDetails(jsonMapper.convertValue(pricing, new TypeReference<>() {
+            }));
             flatList.add(entry);
         }));
         return flatList;
     }
-
-    // --- Audit Helper ---
 
     @Named("toAuditMetadata")
     protected AuditMetadata toAuditMetadata(PriceListEntity entity) {
         return AuditMetadata.reconstitute(
                 new CreatedAt(entity.getCreatedAt()),
                 new LastModified(entity.getLastModifiedAt()),
-                // Pass an empty set for roles, as the audit trail identifies 'who',
-                // but roles are usually transient session data.
                 new Actor(entity.getLastModifiedBy(), Collections.emptySet())
         );
     }
-
-
 }
+

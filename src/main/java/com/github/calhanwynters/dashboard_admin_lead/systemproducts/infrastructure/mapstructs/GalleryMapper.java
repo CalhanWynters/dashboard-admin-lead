@@ -2,9 +2,8 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastruct
 
 import com.github.calhanwynters.dashboard_admin_lead.common.*;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.LifecycleState;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.*;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.ImageUuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.GalleryEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -12,50 +11,59 @@ import org.mapstruct.Named;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryDomainWrapper.*;
+import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.ImageUuId;
 
 @Mapper(componentModel = "spring")
 public interface GalleryMapper {
 
-    @Mapping(target = "galleryId", source = "id", qualifiedByName = "toGalleryId")
-    @Mapping(target = "galleryUuId", source = "uuid", qualifiedByName = "toGalleryUuId")
-    @Mapping(target = "galleryBusinessUuId", source = "businessUuid", qualifiedByName = "toGalleryBusinessUuId")
+    // TO AGGREGATE
+    @Mapping(target = "id", source = "id", qualifiedByName = "toGalleryId")
+    @Mapping(target = "uuId", source = "uuid", qualifiedByName = "toGalleryUuId")
+    @Mapping(target = "businessUuId", source = "businessUuid", qualifiedByName = "toBusinessUuId")
+    @Mapping(target = "public", source = "isPublic")
     @Mapping(target = "imageUuIds", source = "imageUuids", qualifiedByName = "toImageUuIdList")
-    @Mapping(target = "productBooleans", source = ".", qualifiedByName = "toProductBooleans")
     @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
-    GalleryAggregateLEGACY toAggregate(GalleryEntity entity);
+    @Mapping(target = "lifecycleState", source = ".", qualifiedByName = "toLifecycleState")
+    @Mapping(target = "optLockVer", source = "version")
+    @Mapping(target = "schemaVer", constant = "1")
+    GalleryAggregate toAggregate(GalleryEntity entity);
 
-    @Mapping(target = "id", source = "galleryId.value.id")
-    @Mapping(target = "uuid", source = "galleryUuId.value.value", qualifiedByName = "stringToUuid")
-    @Mapping(target = "businessUuid", source = "galleryBusinessUuId.value.value", qualifiedByName = "stringToUuid")
+    // TO ENTITY
+    @Mapping(target = "id", source = "id.value.id")
+    @Mapping(target = "uuid", source = "uuId.value.value", qualifiedByName = "stringToUuid")
+    @Mapping(target = "businessUuid", source = "businessUuId.value.value", qualifiedByName = "stringToUuid")
+    @Mapping(target = "isPublic", source = "public")
     @Mapping(target = "imageUuids", source = "imageUuIds", qualifiedByName = "fromImageUuIdList")
-    @Mapping(target = "archived", source = "productBooleans.archived")
-    @Mapping(target = "softDeleted", source = "productBooleans.softDeleted")
+    @Mapping(target = "archived", source = "lifecycleState.archived")
+    @Mapping(target = "softDeleted", source = "lifecycleState.softDeleted")
     @Mapping(target = "createdAt", source = "auditMetadata.createdAt.value")
     @Mapping(target = "lastModifiedAt", source = "auditMetadata.lastModified.value")
     @Mapping(target = "lastModifiedBy", source = "auditMetadata.lastModifiedBy.identity")
-    GalleryEntity toEntity(GalleryAggregateLEGACY aggregate);
+    @Mapping(target = "version", source = "optLockVer")
+    GalleryEntity toEntity(GalleryAggregate aggregate);
 
-    // --- Helper Methods ---
+    // --- MAPPING HELPERS ---
 
     @Named("toGalleryId")
-    default GalleryId toGalleryId(Long id) { return id != null ? new GalleryId(PkId.of(id)) : null; }
+    default GalleryId toGalleryId(Long id) {
+        return id != null ? new GalleryId(PkId.of(id)) : null;
+    }
 
     @Named("toGalleryUuId")
-    default GalleryUuId toGalleryUuId(UUID uuid) {
+    default GalleryUuId toGalleryUuId(java.util.UUID uuid) {
         return uuid != null ? new GalleryUuId(UuId.fromString(uuid.toString())) : null;
     }
 
-    @Named("toGalleryBusinessUuId")
-    default GalleryBusinessUuId toGalleryBusinessUuId(UUID uuid) {
+    @Named("toBusinessUuId")
+    default GalleryBusinessUuId toBusinessUuId(java.util.UUID uuid) {
         return uuid != null ? new GalleryBusinessUuId(UuId.fromString(uuid.toString())) : null;
     }
 
     @Named("toImageUuIdList")
-    default List<ImageUuId> toImageUuIdList(List<UUID> uuids) {
+    default List<ImageUuId> toImageUuIdList(List<java.util.UUID> uuids) {
         if (uuids == null) return Collections.emptyList();
         return uuids.stream()
                 .map(u -> new ImageUuId(UuId.fromString(u.toString())))
@@ -63,16 +71,16 @@ public interface GalleryMapper {
     }
 
     @Named("fromImageUuIdList")
-    default List<UUID> fromImageUuIdList(List<ImageUuId> imageUuIds) {
+    default List<java.util.UUID> fromImageUuIdList(List<ImageUuId> imageUuIds) {
         if (imageUuIds == null) return Collections.emptyList();
         return imageUuIds.stream()
-                .map(i -> UUID.fromString(i.value().value()))
+                .map(id -> java.util.UUID.fromString(id.value().value()))
                 .collect(Collectors.toList());
     }
 
-    @Named("toProductBooleans")
-    default ProductBooleansLEGACY toProductBooleans(GalleryEntity entity) {
-        return new ProductBooleansLEGACY(entity.isArchived(), entity.isSoftDeleted());
+    @Named("toLifecycleState")
+    default LifecycleState toLifecycleState(GalleryEntity entity) {
+        return new LifecycleState(entity.isArchived(), entity.isSoftDeleted());
     }
 
     @Named("toAuditMetadata")

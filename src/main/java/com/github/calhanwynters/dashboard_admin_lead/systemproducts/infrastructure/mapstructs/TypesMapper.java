@@ -8,24 +8,25 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-import java.util.Collections;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesDomainWrapper.*;
 
 @Mapper(componentModel = "spring")
 public interface TypesMapper {
 
-    @Mapping(target = "typesId", source = "id", qualifiedByName = "toTypesId")
-    @Mapping(target = "typesUuId", source = "uuid", qualifiedByName = "toTypesUuId")
-    @Mapping(target = "typesBusinessUuId", source = "businessUuid", qualifiedByName = "toBusinessUuId")
+    // --- RECONSTITUTION: Entity to Aggregate ---
+    @Mapping(target = "id", source = "id", qualifiedByName = "toTypesId")
+    @Mapping(target = "uuId", source = "uuid", qualifiedByName = "toTypesUuId")
+    @Mapping(target = "businessUuId", source = "businessUuid", qualifiedByName = "toBusinessUuId")
     @Mapping(target = "typesName", source = "name", qualifiedByName = "toTypesName")
     @Mapping(target = "typesPhysicalSpecs", source = ".", qualifiedByName = "toTypesPhysicalSpecs")
-    @Mapping(target = "productBooleans", source = ".", qualifiedByName = "toBooleans")
     @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
-    TypesAggregateLEGACY toAggregate(TypesEntity entity);
+    @Mapping(target = "lifecycleState", source = ".", qualifiedByName = "toLifecycleState")
+    TypesAggregate toAggregate(TypesEntity entity);
 
-    @Mapping(target = "id", source = "typesId.value.id")
-    @Mapping(target = "uuid", source = "typesUuId.value.value", qualifiedByName = "stringToUuid")
-    @Mapping(target = "businessUuid", source = "typesBusinessUuId.value.value", qualifiedByName = "stringToUuid")
+    // --- PERSISTENCE: Aggregate to Entity ---
+    @Mapping(target = "id", source = "id.value.id")
+    @Mapping(target = "uuid", source = "uuId.value.value", qualifiedByName = "stringToUuid")
+    @Mapping(target = "businessUuid", source = "businessUuId.value.value", qualifiedByName = "stringToUuid")
     @Mapping(target = "name", source = "typesName.value.name")
     @Mapping(target = "weightAmount", source = "typesPhysicalSpecs.value.weight.amount")
     @Mapping(target = "weightUnit", source = "typesPhysicalSpecs.value.weight.weightUnit.name")
@@ -34,28 +35,14 @@ public interface TypesMapper {
     @Mapping(target = "height", source = "typesPhysicalSpecs.value.dimensions.height")
     @Mapping(target = "dimensionUnit", source = "typesPhysicalSpecs.value.dimensions.sizeUnit.code")
     @Mapping(target = "careInstructions", source = "typesPhysicalSpecs.value.careInstructions.value.value")
-    @Mapping(target = "archived", source = "productBooleans.archived")
-    @Mapping(target = "softDeleted", source = "productBooleans.softDeleted")
+    @Mapping(target = "archived", source = "lifecycleState.archived")
+    @Mapping(target = "softDeleted", source = "lifecycleState.softDeleted")
     @Mapping(target = "createdAt", source = "auditMetadata.createdAt.value")
     @Mapping(target = "lastModifiedAt", source = "auditMetadata.lastModified.value")
     @Mapping(target = "lastModifiedBy", source = "auditMetadata.lastModifiedBy.identity")
-    TypesEntity toEntity(TypesAggregateLEGACY aggregate);
+    TypesEntity toEntity(TypesAggregate aggregate);
 
-    // --- Complex Composite Helper ---
-
-    @Named("toTypesPhysicalSpecs")
-    default TypesPhysicalSpecs toTypesPhysicalSpecs(TypesEntity entity) {
-        if (entity.getWeightAmount() == null && entity.getLength() == null) {
-            return TypesPhysicalSpecs.NONE;
-        }
-        return new TypesPhysicalSpecs(new PhysicalSpecs(
-                new Weight(entity.getWeightAmount(), WeightUnitEnums.fromString(entity.getWeightUnit())),
-                new Dimensions(entity.getLength(), entity.getWidth(), entity.getHeight(), DimensionUnitEnums.fromCode(entity.getDimensionUnit())),
-                new CareInstruction(entity.getCareInstructions())
-        ));
-    }
-
-    // --- Standard Helpers ---
+    // --- TYPES SPECIFIC HELPERS ---
 
     @Named("toTypesId")
     default TypesId toTypesId(Long id) { return id != null ? new TypesId(PkId.of(id)) : null; }
@@ -63,22 +50,25 @@ public interface TypesMapper {
     @Named("toTypesUuId")
     default TypesUuId toTypesUuId(java.util.UUID uuid) { return new TypesUuId(UuId.fromString(uuid.toString())); }
 
-    @Named("toBusinessUuId")
-    default TypesBusinessUuId toBusinessUuId(java.util.UUID uuid) { return new TypesBusinessUuId(UuId.fromString(uuid.toString())); }
-
     @Named("toTypesName")
     default TypesName toTypesName(String name) { return new TypesName(new Name(name)); }
 
-    @Named("toBooleans")
-    default ProductBooleansLEGACY toBooleans(TypesEntity entity) { return new ProductBooleansLEGACY(entity.isArchived(), entity.isSoftDeleted()); }
+    @Named("toTypesPhysicalSpecs")
+    default TypesPhysicalSpecs toTypesPhysicalSpecs(TypesEntity entity) {
+        if (entity.getWeightAmount() == null && entity.getLength() == null) {
+            return TypesPhysicalSpecs.NONE;
+        }
+        // Logic identical to ProductPhysicalSpecs, but wrapped for the Types domain
+        Weight weight = new Weight(entity.getWeightAmount(), WeightUnitEnums.fromString(entity.getWeightUnit()));
+        Dimensions dimensions = new Dimensions(entity.getLength(), entity.getWidth(), entity.getHeight(), DimensionUnitEnums.fromCode(entity.getDimensionUnit()));
+        CareInstruction care = new CareInstruction(entity.getCareInstructions());
 
-    @Named("toAuditMetadata")
-    default AuditMetadata toAuditMetadata(TypesEntity entity) {
-        return AuditMetadata.reconstitute(
-                new CreatedAt(entity.getCreatedAt()),
-                new LastModified(entity.getLastModifiedAt()),
-                new Actor(entity.getLastModifiedBy(), Collections.emptySet())
-        );
+        return new TypesPhysicalSpecs(new PhysicalSpecs(weight, dimensions, care));
+    }
+
+    @Named("toLifecycleState")
+    default LifecycleState toLifecycleState(TypesEntity entity) {
+        return new LifecycleState(entity.isArchived(), entity.isSoftDeleted());
     }
 
     @Named("stringToUuid")

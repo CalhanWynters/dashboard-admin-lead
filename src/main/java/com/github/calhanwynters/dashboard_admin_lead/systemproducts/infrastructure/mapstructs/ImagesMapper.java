@@ -1,8 +1,9 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.mapstructs;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.*;
+import com.github.calhanwynters.dashboard_admin_lead.common.ImageUrl;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.LifecycleState;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.ImagesEntity;
 import org.mapstruct.Mapper;
@@ -15,28 +16,33 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 @Mapper(componentModel = "spring")
 public interface ImagesMapper {
 
-    @Mapping(target = "imageId", source = "id", qualifiedByName = "toImageId")
-    @Mapping(target = "imagesUuId", source = "uuid", qualifiedByName = "toImageUuId")
-    @Mapping(target = "imagesBusinessUuId", source = "businessUuid", qualifiedByName = "toBusinessUuId")
+    // TO AGGREGATE
+    @Mapping(target = "id", source = "id", qualifiedByName = "toImageId")
+    @Mapping(target = "uuId", source = "uuid", qualifiedByName = "toImageUuId")
+    @Mapping(target = "businessUuId", source = "businessUuid", qualifiedByName = "toBusinessUuId")
     @Mapping(target = "imageName", source = "name", qualifiedByName = "toImageName")
     @Mapping(target = "imageDescription", source = "description", qualifiedByName = "toImageDescription")
     @Mapping(target = "imageUrl", source = "url", qualifiedByName = "toImageUrl")
-    @Mapping(target = "productBooleans", source = ".", qualifiedByName = "toProductBooleans")
+    @Mapping(target = "lifecycleState", source = ".", qualifiedByName = "toLifecycleState")
     @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
-    ImageAggregateLEGACY toAggregate(ImagesEntity entity);
+    @Mapping(target = "optLockVer", source = "version")
+    @Mapping(target = "schemaVer", constant = "1")
+    ImageAggregate toAggregate(ImagesEntity entity);
 
-    @Mapping(target = "id", source = "imageId.value.id")
-    @Mapping(target = "uuid", source = "imagesUuId.value.value", qualifiedByName = "stringToUuid")
-    @Mapping(target = "businessUuid", source = "imagesBusinessUuId.value.value", qualifiedByName = "stringToUuid")
-    @Mapping(target = "name", source = "imageName.value.name")
-    @Mapping(target = "description", source = "imageDescription.value.value") // Unwrapping Description record
+    // TO ENTITY
+    @Mapping(target = "id", source = "id.value.id")
+    @Mapping(target = "uuid", source = "uuId.value.value", qualifiedByName = "stringToUuid")
+    @Mapping(target = "businessUuid", source = "businessUuId.value.value", qualifiedByName = "stringToUuid")
+    @Mapping(target = "name", source = "imageName.value.value")
+    @Mapping(target = "description", source = "imageDescription.value.value")
     @Mapping(target = "url", source = "imageUrl.value") // ImageUrl(String value)
-    @Mapping(target = "archived", source = "productBooleans.archived")
-    @Mapping(target = "softDeleted", source = "productBooleans.softDeleted")
+    @Mapping(target = "archived", source = "lifecycleState.archived")
+    @Mapping(target = "softDeleted", source = "lifecycleState.softDeleted")
     @Mapping(target = "createdAt", source = "auditMetadata.createdAt.value")
     @Mapping(target = "lastModifiedAt", source = "auditMetadata.lastModified.value")
     @Mapping(target = "lastModifiedBy", source = "auditMetadata.lastModifiedBy.identity")
-    ImagesEntity toEntity(ImageAggregateLEGACY aggregate);
+    @Mapping(target = "version", source = "optLockVer")
+    ImagesEntity toEntity(ImageAggregate aggregate);
 
     // --- MAPPING HELPERS ---
 
@@ -62,13 +68,13 @@ public interface ImagesMapper {
     }
 
     @Named("toImageUrl")
-    default ImagesDomainWrapper.ImageUrl toImageUrl(String url) {
-        return url != null ? new ImagesDomainWrapper.ImageUrl(url) : null;
+    default ImageUrl toImageUrl(String url) {
+        return url != null ? new ImageUrl(url) : null;
     }
 
-    @Named("toProductBooleans")
-    default ProductBooleansLEGACY toProductBooleans(ImagesEntity entity) {
-        return new ProductBooleansLEGACY(entity.isArchived(), entity.isSoftDeleted());
+    @Named("toLifecycleState")
+    default LifecycleState toLifecycleState(ImagesEntity entity) {
+        return new LifecycleState(entity.isArchived(), entity.isSoftDeleted());
     }
 
     @Named("toAuditMetadata")

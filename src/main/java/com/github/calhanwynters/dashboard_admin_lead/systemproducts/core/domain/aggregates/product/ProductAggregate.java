@@ -17,7 +17,6 @@ import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.
 import java.time.OffsetDateTime;
 
 /**
- * Refactored Product Aggregate (2026 Edition).
  * Central Orchestrator for System Products, managing structural compositions and lifecycle.
  */
 public class ProductAggregate extends BaseAggregateRoot<

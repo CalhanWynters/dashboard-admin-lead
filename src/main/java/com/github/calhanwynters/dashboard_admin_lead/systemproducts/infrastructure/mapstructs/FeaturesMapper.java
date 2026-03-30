@@ -2,7 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastruct
 
 import com.github.calhanwynters.dashboard_admin_lead.common.*;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.ProductBooleansLEGACY;
+import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.LifecycleState;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.FeaturesEntity;
 import org.mapstruct.Mapper;
@@ -15,28 +15,31 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 @Mapper(componentModel = "spring")
 public interface FeaturesMapper {
 
-    // TO AGGREGATE (Uses source = "." to build composite Value Objects)
-    @Mapping(target = "featuresId", source = "id", qualifiedByName = "toFeatureId")
-    @Mapping(target = "featuresUuId", source = "uuid", qualifiedByName = "toFeatureUuId")
-    @Mapping(target = "featuresBusinessUuId", source = "businessUuid", qualifiedByName = "toBusinessUuId")
+    // TO AGGREGATE
+    @Mapping(target = "id", source = "id", qualifiedByName = "toFeatureId")
+    @Mapping(target = "uuId", source = "uuid", qualifiedByName = "toFeatureUuId")
+    @Mapping(target = "businessUuId", source = "businessUuid", qualifiedByName = "toBusinessUuId")
     @Mapping(target = "featuresName", source = "name", qualifiedByName = "toFeatureName")
     @Mapping(target = "compatibilityTag", source = "label", qualifiedByName = "toFeatureLabel")
-    @Mapping(target = "productBooleans", source = ".", qualifiedByName = "toProductBooleans")
     @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
-    FeaturesAggregateLEGACY toAggregate(FeaturesEntity entity);
+    @Mapping(target = "lifecycleState", source = ".", qualifiedByName = "toLifecycleState")
+    @Mapping(target = "optLockVer", source = "version") // Assuming entity has a version field
+    @Mapping(target = "schemaVer", constant = "1")
+    FeaturesAggregate toAggregate(FeaturesEntity entity);
 
-    // TO ENTITY (Unwrapping the nested records back to flat columns)
-    @Mapping(target = "id", source = "featuresId.value.id")
-    @Mapping(target = "uuid", source = "featuresUuId.value.value", qualifiedByName = "stringToUuid")
-    @Mapping(target = "businessUuid", source = "featuresBusinessUuId.value.value", qualifiedByName = "stringToUuid")
+    // TO ENTITY (Unwrapping the domain objects)
+    @Mapping(target = "id", source = "id.value.id")
+    @Mapping(target = "uuid", source = "uuId.value.value", qualifiedByName = "stringToUuid")
+    @Mapping(target = "businessUuid", source = "businessUuId.value.value", qualifiedByName = "stringToUuid")
     @Mapping(target = "name", source = "featuresName.value.value")
     @Mapping(target = "label", source = "compatibilityTag.value.value")
-    @Mapping(target = "archived", source = "productBooleans.archived")
-    @Mapping(target = "softDeleted", source = "productBooleans.softDeleted")
+    @Mapping(target = "archived", source = "lifecycleState.archived")
+    @Mapping(target = "softDeleted", source = "lifecycleState.softDeleted")
     @Mapping(target = "createdAt", source = "auditMetadata.createdAt.value")
     @Mapping(target = "lastModifiedAt", source = "auditMetadata.lastModified.value")
     @Mapping(target = "lastModifiedBy", source = "auditMetadata.lastModifiedBy.identity")
-    FeaturesEntity toEntity(FeaturesAggregateLEGACY aggregate);
+    @Mapping(target = "version", source = "optLockVer")
+    FeaturesEntity toEntity(FeaturesAggregate aggregate);
 
     // --- MAPPING HELPERS ---
 
@@ -65,10 +68,9 @@ public interface FeaturesMapper {
         return label != null ? new FeatureLabel(new Label(label)) : null;
     }
 
-    @Named("toProductBooleans")
-    default ProductBooleansLEGACY toProductBooleans(FeaturesEntity entity) {
-        // Passing the whole entity (".") allows access to both fields here
-        return new ProductBooleansLEGACY(entity.isArchived(), entity.isSoftDeleted());
+    @Named("toLifecycleState")
+    default LifecycleState toLifecycleState(FeaturesEntity entity) {
+        return new LifecycleState(entity.isArchived(), entity.isSoftDeleted());
     }
 
     @Named("toAuditMetadata")

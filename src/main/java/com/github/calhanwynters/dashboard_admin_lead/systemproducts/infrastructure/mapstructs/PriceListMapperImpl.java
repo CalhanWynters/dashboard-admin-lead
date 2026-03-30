@@ -1,87 +1,85 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.mapstructs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.AuditMetadata;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListAggregateLEGACY;
+import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListAggregate;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListDomainWrapper.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.PricingStrategyType;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.PurchasePricing;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.PriceListEntity;
-import javax.annotation.processing.Generated;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.processing.Generated;
 import java.util.Currency;
 import java.util.Map;
+import java.util.UUID;
 
-@Generated(
-        value = "org.mapstruct.ap.MappingProcessor"
-)
-@Component // Spring picks this up automatically
+@Generated(value = "org.mapstruct.ap.MappingProcessor")
+@Component
 public class PriceListMapperImpl extends PriceListMapper {
 
-    @Autowired // MapStruct uses your constructor to inject the ObjectMapper
+    @Autowired
     public PriceListMapperImpl(ObjectMapper jsonMapper) {
-        super( jsonMapper );
+        super(jsonMapper);
     }
 
     @Override
-    public PriceListAggregateLEGACY toAggregate(PriceListEntity entity) {
-        if ( entity == null ) {
-            return null;
-        }
+    public PriceListAggregate toAggregate(PriceListEntity entity) {
+        if (entity == null) return null;
 
-        // MapStruct calls your @Named methods automatically
-        PriceListId priceListId = toPriceListId( entity.getId() );
-        PriceListUuId priceListUuId = toPriceListUuId( entity.getUuid() );
-        PriceListBusinessUuId priceListBusinessUuId = toBusinessUuId( entity.getBusinessUuid() );
-        PricingStrategyType strategyBoundary = slugToEnum( entity.getStrategySlug() );
-        Map<UuId, Map<Currency, PurchasePricing>> multiCurrencyPrices = toPricingMap( entity.getPrices() );
-        AuditMetadata auditMetadata = toAuditMetadata( entity );
-        PriceListVersion priceListVersion = toVersion( entity.getVersion() );
+        // Use the protected helper methods from the abstract class
+        PriceListId id = toPriceListId(entity.getId());
+        PriceListUuId uuId = toPriceListUuId(entity.getUuid());
+        PriceListBusinessUuId businessUuId = toBusinessUuId(entity.getBusinessUuid());
+        PricingStrategyType strategyBoundary = slugToEnum(entity.getStrategySlug());
+        PriceListVersion version = toVersion(entity.getVersion());
+        Map<UuId, Map<Currency, PurchasePricing>> prices = toPricingMap(entity.getPrices());
+        AuditMetadata auditMetadata = toAuditMetadata(entity);
 
-        // MapStruct calls your Aggregate constructor
-        PriceListAggregateLEGACY priceListAggregate = new PriceListAggregateLEGACY(
-                priceListId,
-                priceListUuId,
+        // This matches the exact constructor in your updated Aggregate code
+        return new PriceListAggregate(
+                id,
+                uuId,
+                businessUuId,
                 strategyBoundary,
-                priceListBusinessUuId,
-                priceListVersion,
+                version,
                 entity.isActive(),
-                null, // You might need a helper for ProductBooleans
+                prices,
                 auditMetadata,
-                multiCurrencyPrices
+                null, // lifecycleState (Set to null or add field to Entity if missing)
+                entity.getVersion() != null ? entity.getVersion().longValue() : 0L, // optLockVer
+                1,    // schemaVer
+                entity.getLastModifiedAt() // lastSyncedAt
         );
-
-        return priceListAggregate;
     }
 
     @Override
-    public PriceListEntity toEntity(PriceListAggregateLEGACY aggregate) {
-        if ( aggregate == null ) {
-            return null;
+    public PriceListEntity toEntity(PriceListAggregate aggregate) {
+        if (aggregate == null) return null;
+
+        PriceListEntity entity = new PriceListEntity();
+
+        // Use the getters defined in BaseAggregateRoot and PriceListAggregate
+        if (aggregate.getId() != null) {
+            entity.setId(aggregate.getId().value().value());
         }
 
-        PriceListEntity priceListEntity = new PriceListEntity();
+        entity.setUuid(UUID.fromString(aggregate.getUuId().value().value()));
+        entity.setBusinessUuid(UUID.fromString(aggregate.getBusinessUuId().value().value()));
+        entity.setStrategySlug(enumToSlug(aggregate.getStrategyBoundary()));
+        entity.setActive(aggregate.isActive());
 
-        // Navigates your Domain Record paths (.value().id())
-        priceListEntity.setId( aggregate.getPriceListId().value().value() );
-        priceListEntity.setUuid( stringToUuid( aggregate.getPriceListUuId().value().value() ) );
-        priceListEntity.setBusinessUuid( stringToUuid( aggregate.getPriceListBusinessUuId().value().value() ) );
+        // Map the prices back to the DB format
+        entity.setPrices(fromPricingMap(aggregate.getMultiCurrencyPrices()));
 
-        // Calls your slug logic
-        priceListEntity.setStrategySlug( enumToSlug( aggregate.getStrategyBoundary() ) );
+        // Audit & Version mapping
+        entity.setVersion(aggregate.getPriceListVersion().value().value());
+        entity.setCreatedAt(aggregate.getAuditMetadata().createdAt().value());
+        entity.setLastModifiedAt(aggregate.getAuditMetadata().lastModified().value());
+        entity.setLastModifiedBy(aggregate.getAuditMetadata().lastModifiedBy().identity());
 
-        // Calls your JSONB/Jackson logic
-        priceListEntity.setPrices( fromPricingMap( aggregate.getMultiCurrencyPrices() ) );
-
-        // Maps the Audit fields from your records
-        priceListEntity.setVersion( aggregate.getPriceListVersion().value().value() );
-        priceListEntity.setCreatedAt( aggregate.getAuditMetadata().createdAt().value() );
-        priceListEntity.setLastModifiedAt( aggregate.getAuditMetadata().lastModified().value() );
-        priceListEntity.setLastModifiedBy( aggregate.getAuditMetadata().lastModifiedBy().identity() );
-
-        return priceListEntity;
+        return entity;
     }
 }

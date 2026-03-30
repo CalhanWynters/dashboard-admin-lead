@@ -18,25 +18,28 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 @Mapper(componentModel = "spring")
 public interface ProductMapper {
 
-    @Mapping(target = "productId", source = "id", qualifiedByName = "toProductId")
-    @Mapping(target = "productUuId", source = "uuid", qualifiedByName = "toProductUuId")
-    @Mapping(target = "productBusinessUuId", source = "businessUuid", qualifiedByName = "toBusinessUuId")
+    // --- RECONSTITUTION: Entity to Aggregate ---
+    @Mapping(target = "id", source = "id", qualifiedByName = "toProductId")
+    @Mapping(target = "uuId", source = "uuid", qualifiedByName = "toProductUuId")
+    @Mapping(target = "businessUuId", source = "businessUuid", qualifiedByName = "toBusinessUuId")
     @Mapping(target = "productVersion", source = "version", qualifiedByName = "toProductVersion")
     @Mapping(target = "productStatus", source = "status", qualifiedByName = "toProductStatus")
     @Mapping(target = "manifest", source = ".", qualifiedByName = "toManifest")
     @Mapping(target = "physicalSpecs", source = ".", qualifiedByName = "toProductPhysicalSpecs")
-    @Mapping(target = "productBooleans", source = ".", qualifiedByName = "toBooleans")
     @Mapping(target = "productThumbnailUrl", source = "thumbnailUrl", qualifiedByName = "toThumbnail")
     @Mapping(target = "galleryUuId", source = "galleryUuid", qualifiedByName = "toGalleryUuId")
     @Mapping(target = "variantListUuId", source = "variantListUuid", qualifiedByName = "toVariantListUuId")
     @Mapping(target = "typeListUuId", source = "typeListUuid", qualifiedByName = "toTypeListUuId")
     @Mapping(target = "priceListUuId", source = "priceListUuid", qualifiedByName = "toPriceListUuId")
     @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
-    ProductAggregateRootLEGACY toAggregate(ProductEntity entity);
+    // Reconstituting LifecycleState from legacy boolean flags
+    @Mapping(target = "lifecycleState", source = ".", qualifiedByName = "toLifecycleState")
+    ProductAggregate toAggregate(ProductEntity entity);
 
-    @Mapping(target = "id", source = "productId.value.id")
-    @Mapping(target = "uuid", source = "productUuId.value.value", qualifiedByName = "stringToUuid")
-    @Mapping(target = "businessUuid", source = "productBusinessUuId.value.value", qualifiedByName = "stringToUuid")
+    // --- PERSISTENCE: Aggregate to Entity ---
+    @Mapping(target = "id", source = "id.value.id")
+    @Mapping(target = "uuid", source = "uuId.value.value", qualifiedByName = "stringToUuid")
+    @Mapping(target = "businessUuid", source = "businessUuId.value.value", qualifiedByName = "stringToUuid")
     @Mapping(target = "version", source = "productVersion.value.value")
     @Mapping(target = "status", source = "productStatus.value.name")
     @Mapping(target = "name", source = "manifest.name.value.name")
@@ -49,8 +52,8 @@ public interface ProductMapper {
     @Mapping(target = "height", source = "physicalSpecs.value.dimensions.height")
     @Mapping(target = "dimensionUnit", source = "physicalSpecs.value.dimensions.sizeUnit.code")
     @Mapping(target = "careInstructions", source = "physicalSpecs.value.careInstructions.value.value")
-    @Mapping(target = "archived", source = "productBooleans.archived")
-    @Mapping(target = "softDeleted", source = "productBooleans.softDeleted")
+    @Mapping(target = "archived", source = "lifecycleState.archived")
+    @Mapping(target = "softDeleted", source = "lifecycleState.softDeleted")
     @Mapping(target = "thumbnailUrl", source = "productThumbnailUrl.value")
     @Mapping(target = "galleryUuid", source = "galleryUuId.value.value", qualifiedByName = "stringToUuid")
     @Mapping(target = "variantListUuid", source = "variantListUuId.value.value", qualifiedByName = "stringToUuid")
@@ -59,7 +62,7 @@ public interface ProductMapper {
     @Mapping(target = "createdAt", source = "auditMetadata.createdAt.value")
     @Mapping(target = "lastModifiedAt", source = "auditMetadata.lastModified.value")
     @Mapping(target = "lastModifiedBy", source = "auditMetadata.lastModifiedBy.identity")
-    ProductEntity toEntity(ProductAggregateRootLEGACY aggregate);
+    ProductEntity toEntity(ProductAggregate aggregate);
 
     // --- Complex Composite Construction ---
 
@@ -103,6 +106,7 @@ public interface ProductMapper {
 
     // --- Primitive to Value Object Helpers ---
 
+
     @Named("toProductId")
     default ProductId toProductId(Long id) { return id != null ? new ProductId(PkId.of(id)) : null; }
 
@@ -143,6 +147,11 @@ public interface ProductMapper {
                 new LastModified(entity.getLastModifiedAt()),
                 new Actor(entity.getLastModifiedBy(), Collections.emptySet())
         );
+    }
+
+    @Named("toLifecycleState")
+    default LifecycleState toLifecycleState(ProductEntity entity) {
+        return new LifecycleState(entity.isArchived(), entity.isSoftDeleted());
     }
 
     @Named("stringToUuid")
