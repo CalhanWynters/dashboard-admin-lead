@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 /**
  * Encapsulates the outcome of a compatibility check.
+ * 2026 Edition: Integrated with rich Domain Name and UuId wrappers.
  */
 public record SelectionValidationResult(
         boolean isValid,
@@ -20,23 +21,24 @@ public record SelectionValidationResult(
     }
 
     public static SelectionValidationResult invalid(Set<FeaturesAggregate> violations) {
+        // Corrected mapping: FeaturesName -> Name -> String value
         String names = violations.stream()
-                .map(f -> f.getFeaturesName().value().toString())
+                .map(f -> f.getFeaturesName().value().value())
                 .collect(Collectors.joining(", "));
 
         return new SelectionValidationResult(
                 false,
                 violations,
-                "The following features are incompatible with your current selections: " + names
+                "Incompatibility detected. The following features are forbidden under current constraints: " + names
         );
     }
 
     /**
-     * Helper for Application Layer to quickly extract UuIds of problematic features.
+     * Extracts the raw UuIds of problematic features for API error responses.
      */
     public Set<UuId> getConflictingIds() {
         return conflictingFeatures.stream()
-                .map(f -> f.getUuId().value()) // Corrected getter
+                .map(f -> f.getUuId().value()) // From BaseAggregateRoot.getUuId().value()
                 .collect(Collectors.toUnmodifiableSet());
     }
 }

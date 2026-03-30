@@ -1,4 +1,4 @@
-package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.interfaces;
+package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.ports.out;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.IncompatibilityRule;
 

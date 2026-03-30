@@ -8,6 +8,7 @@ import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.Lif
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.events.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.*;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.PriceListEntity;
 
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -165,5 +166,9 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate, Pr
         // Identifiers and Metadata are handled by BaseAggregateRoot getters:
         // getUuId(), getBusinessUuId(), getOptLockVer(), etc.
 
+    }
+
+    public LifecycleState getLifecycleState() {
+        return this.lifecycleState;
     }
 }

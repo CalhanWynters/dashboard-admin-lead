@@ -4,7 +4,7 @@ import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeatureCompatibilityPolicy;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesAggregate;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesAggregate;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.interfaces.IncompatibilityRuleRepository;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.ports.out.IncompatibilityRuleRepository;
 
 import java.util.Set;
 import java.util.stream.Collectors;

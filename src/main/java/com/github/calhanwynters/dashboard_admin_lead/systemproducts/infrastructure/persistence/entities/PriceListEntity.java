@@ -28,6 +28,12 @@ public class PriceListEntity {
     @Column(name = "is_active", nullable = false)
     private boolean active;
 
+    @Column(name = "is_archived", nullable = false)
+    private boolean archived = false;
+
+    @Column(name = "is_soft_deleted", nullable = false)
+    private boolean softDeleted = false;
+
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "price_list_entries", joinColumns = @JoinColumn(name = "price_list_id"))
     private List<PriceEntryEmbeddable> prices = new ArrayList<>();
@@ -40,6 +46,8 @@ public class PriceListEntity {
 
     @Column(name = "last_modified_by", nullable = false)
     private String lastModifiedBy;
+
+
 
     // --- Standard Getters & Setters ---
 
@@ -60,6 +68,12 @@ public class PriceListEntity {
 
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+
+    public boolean isArchived() { return archived; }
+    public void setArchived(boolean archived) { this.archived = archived; }
+
+    public boolean isSoftDeleted() { return softDeleted; }
+    public void setSoftDeleted(boolean softDeleted) { this.softDeleted = softDeleted; }
 
     public List<PriceEntryEmbeddable> getPrices() { return prices; }
     public void setPrices(List<PriceEntryEmbeddable> prices) { this.prices = prices; }

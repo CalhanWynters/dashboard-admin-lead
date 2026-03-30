@@ -10,17 +10,16 @@ import java.util.*;
  * High-performance policy engine using O(1) lookups to identify incompatible features.
  */
 public final class FeatureCompatibilityPolicy {
-    // Key is now TypedTrigger instead of raw UuId
     private final Map<TypedTrigger, Set<UuId>> rulesById;
 
     public FeatureCompatibilityPolicy(Set<IncompatibilityRule> rules) {
         Map<TypedTrigger, Set<UuId>> byId = new HashMap<>();
 
         for (IncompatibilityRule rule : rules) {
-            // You'll need to determine if the rule trigger is a Type or Feature here
-            // This might require a 'type' field on your IncompatibilityRule record
+            // Re-mapping triggers to the forbidden Feature IDs
             TypedTrigger key = new TypedTrigger(rule.triggerUuId(), rule.triggerType());
-            byId.computeIfAbsent(key, k -> new HashSet<>()).add(rule.forbiddenFeatureUuId().value());
+            byId.computeIfAbsent(key, k -> new HashSet<>())
+                    .add(rule.forbiddenFeatureUuId().value());
         }
         this.rulesById = Map.copyOf(byId);
     }
@@ -28,15 +27,18 @@ public final class FeatureCompatibilityPolicy {
     public Set<UuId> getIncompatibleWith(Set<FeaturesAggregate> selectedFeatures, Set<TypesAggregate> selectedTypes) {
         Set<UuId> forbiddenIds = new HashSet<>();
 
-        // Query using standardized getUuId() from BaseAggregateRoot
+        // 1. Check Feature-based triggers
         for (FeaturesAggregate feature : selectedFeatures) {
+            UuId featureId = feature.getUuId().value();
             forbiddenIds.addAll(rulesById.getOrDefault(
-                    TypedTrigger.feature(feature.getUuId().value()), Collections.emptySet()));
+                    TypedTrigger.feature(featureId), Collections.emptySet()));
         }
 
+        // 2. Check Type-based triggers
         for (TypesAggregate type : selectedTypes) {
+            UuId typeId = type.getUuId().value();
             forbiddenIds.addAll(rulesById.getOrDefault(
-                    TypedTrigger.type(type.getUuId().value()), Collections.emptySet()));
+                    TypedTrigger.type(typeId), Collections.emptySet()));
         }
 
         return Collections.unmodifiableSet(forbiddenIds);
