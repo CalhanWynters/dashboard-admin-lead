@@ -25,6 +25,12 @@ public class IncompatibilityRuleEntity {
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 
+    @Column(name = "trigger_tag")
+    private String triggerTag;
+
+    public String getTriggerTag() { return triggerTag; }
+    public void setTriggerTag(String triggerTag) { this.triggerTag = triggerTag; }
+
     // --- Standard Getters & Setters ---
     public UUID getTriggerUuid() { return triggerUuid; }
     public void setTriggerUuid(UUID triggerUuid) { this.triggerUuid = triggerUuid; }

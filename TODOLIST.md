@@ -11,6 +11,7 @@
 - Evaluate mutability of fields in aggregate roots and possible mechanisms of read and write.
 - Inconsistent "Soft Delete" Guarding with productbooleans in Aggregates.
 - Review the visibility of fields and constructors in aggregates
+- Test of Incompatibility Services
 - PriceListMapper Abstract Class. Review this please.
   - Possibly needs PriceListMapperImpl
   - Possibly needs PriceListRepository

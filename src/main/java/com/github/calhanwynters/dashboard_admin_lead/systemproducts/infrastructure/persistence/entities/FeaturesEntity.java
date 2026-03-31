@@ -40,6 +40,11 @@ public class FeaturesEntity {
     @Column(name = "last_modified_by", nullable = false)
     private String lastModifiedBy;
 
+    @Version
+    @Column(name = "version")
+    private Long version;
+
+
     public FeaturesEntity() {}
 
     // Standard Getters and Setters
@@ -63,4 +68,7 @@ public class FeaturesEntity {
     public void setLastModifiedAt(OffsetDateTime lastModifiedAt) { this.lastModifiedAt = lastModifiedAt; }
     public String getLastModifiedBy() { return lastModifiedBy; }
     public void setLastModifiedBy(String lastModifiedBy) { this.lastModifiedBy = lastModifiedBy; }
+    public Long getVersion() {return version;}
+    public void setVersion(Long version) {this.version = version;}
+
 }
