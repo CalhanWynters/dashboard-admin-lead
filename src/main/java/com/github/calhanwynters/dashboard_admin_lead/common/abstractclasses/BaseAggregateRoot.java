@@ -172,4 +172,5 @@ public abstract class BaseAggregateRoot<
     public Integer getSchemaVersion() { return schemaVersion; }
     public OffsetDateTime getLastSyncedAt() { return lastSyncedAt; }
     public AuditMetadata getAuditMetadata() { return auditMetadata; }
+    public LifecycleState getLifecycleState() { return this.lifecycleState; }
 }
