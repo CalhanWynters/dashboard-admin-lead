@@ -109,6 +109,31 @@ public class PriceListAggregate extends BaseAggregateRoot<PriceListAggregate, Pr
         );
     }
 
+    public void removePrice(UuId targetId, Currency currency, Actor actor) {
+        // 1. Mandatory Guards
+        ensureActive();
+        PriceListBehavior.ensureOperationalActive(this.isActive);
+
+        // NEW: Use the specific behavior guard
+        PriceListBehavior.verifyPriceRemovalAuthority(actor);
+
+        // 2. Orchestration
+        this.applyChange(actor,
+                new PriceRemovedEvent(this.uuId, targetId, currency, actor),
+                () -> {
+                    Optional.ofNullable(this.multiCurrencyPrices.get(targetId))
+                            .ifPresent(m -> {
+                                m.remove(currency);
+                                if (m.isEmpty()) {
+                                    this.multiCurrencyPrices.remove(targetId);
+                                }
+                            });
+
+                    this.priceListVersion = PriceListBehavior.incrementVersion(this.priceListVersion);
+                }
+        );
+    }
+
     public void applyBulkAdjustment(String reason, double percentage, Actor actor) {
         ensureActive();
         PriceListBehavior.verifyBulkAdjustmentAuthority(actor);

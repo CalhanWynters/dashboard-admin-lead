@@ -4,11 +4,11 @@ import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListDomainWrapper.PriceListUuId;
 
 /**
- * Command representing the intent to toggle a PriceList's operational status.
- * Handled by PriceListActivateHandler.
+ * Command representing a failed or unauthorized attempt to bypass pricing strategies.
+ * Handled by PriceListRecordStrategyViolationHandler for SOC 2 security auditing.
  */
-public record PriceListActivateCommand(
+public record PriceListRecordStrategyViolationCommand(
         PriceListUuId priceListUuId,
-        boolean targetStatus,
+        String attemptedStrategy, // e.g., "MARKDOWN_BELOW_COST"
         Actor actor
 ) {}

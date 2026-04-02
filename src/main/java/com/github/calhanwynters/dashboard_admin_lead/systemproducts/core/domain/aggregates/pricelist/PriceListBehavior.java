@@ -21,6 +21,18 @@ public final class PriceListBehavior {
         DomainGuard.notNull(bUuId, "Business UUID");
     }
 
+    // Inside PriceListBehavior.java
+
+    /**
+     * SOC 2: Verifies if the actor is authorized to purge pricing from the matrix.
+     * Typically follows the same rules as individual price modifications.
+     */
+    public static void verifyPriceRemovalAuthority(Actor actor) {
+        // Reuses the manager-level check for individual record changes
+        verifyPriceModificationAuthority(actor);
+    }
+
+
     // --- OPERATIONAL GUARDS ---
 
     public static void ensureOperationalActive(boolean isActive) {
