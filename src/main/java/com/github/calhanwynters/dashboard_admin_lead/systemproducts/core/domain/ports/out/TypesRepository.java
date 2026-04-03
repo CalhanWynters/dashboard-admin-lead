@@ -52,5 +52,5 @@ public interface TypesRepository {
     /**
      * Permanent removal of the Type record and its metadata.
      */
-    void hardDelete(TypesUuId typesUuId);
+    void hardDelete(TypesAggregate aggregate);
 }

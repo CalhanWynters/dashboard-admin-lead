@@ -3,6 +3,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastruct
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist.VariantListAggregate;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist.VariantListDomainWrapper.VariantListUuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variantlist.VariantListDomainWrapper.VariantListBusinessUuId;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants.VariantsAggregate;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants.VariantsDomainWrapper.VariantsUuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.ports.out.VariantListRepository;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.mapstructs.VariantListMapper;
@@ -72,7 +73,9 @@ public class VariantListPostgresqlRepositoryImpl implements VariantListRepositor
 
     @Override
     @Transactional
-    public void hardDelete(VariantListUuId variantListUuId) {
-        jpaRepository.deleteByUuid(UUID.fromString(variantListUuId.value().value()));
+    public void hardDelete(VariantListAggregate aggregate) {
+        // Extract the raw UUID from the hardened Domain Wrapper
+        UUID uuid = UUID.fromString(aggregate.getUuId().value().value());
+        jpaRepository.deleteByUuid(uuid);
     }
 }

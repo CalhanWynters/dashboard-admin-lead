@@ -1,6 +1,7 @@
 package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.ports.out;
 
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper.FeatureUuId;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesAggregate;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants.VariantsAggregate;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants.VariantsDomainWrapper.*;
 
@@ -51,7 +52,7 @@ public interface VariantsRepository {
     // --- 5. LIFECYCLE ---
 
     /**
-     * Permanent removal of the Variant record and its feature associations.
+     * Permanent removal of the Variant record and its metadata.
      */
-    void hardDelete(VariantsUuId variantsUuId);
+    void hardDelete(VariantsAggregate aggregate);
 }

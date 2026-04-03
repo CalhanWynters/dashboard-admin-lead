@@ -72,7 +72,10 @@ public class VariantsPostgresqlRepositoryImpl implements VariantsRepository {
 
     @Override
     @Transactional
-    public void hardDelete(VariantsUuId variantsUuId) {
-        jpaRepository.deleteByUuid(UUID.fromString(variantsUuId.value().value()));
+    public void hardDelete(VariantsAggregate aggregate) {
+        // Extract the raw UUID from the hardened Domain Wrapper
+        UUID uuid = UUID.fromString(aggregate.getUuId().value().value());
+        jpaRepository.deleteByUuid(uuid);
     }
+
 }

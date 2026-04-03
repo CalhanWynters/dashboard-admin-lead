@@ -71,7 +71,10 @@ public class TypesPostgresqlRepositoryImpl implements TypesRepository {
 
     @Override
     @Transactional
-    public void hardDelete(TypesUuId typesUuId) {
-        jpaRepository.deleteByUuid(UUID.fromString(typesUuId.value().value()));
+    public void hardDelete(TypesAggregate aggregate) {
+        // Convert domain UUID to standard Java UUID for the JPA call
+        UUID uuid = UUID.fromString(aggregate.getUuId().value().value());
+        jpaRepository.deleteByUuid(uuid);
     }
+
 }

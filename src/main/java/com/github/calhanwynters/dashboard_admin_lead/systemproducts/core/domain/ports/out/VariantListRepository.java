@@ -52,6 +52,7 @@ public interface VariantListRepository {
 
     /**
      * Permanent removal of the list and its membership associations.
+     * Passes the full aggregate to ensure the audit event is captured before purge.
      */
-    void hardDelete(VariantListUuId variantListUuId);
+    void hardDelete(VariantListAggregate aggregate);
 }
