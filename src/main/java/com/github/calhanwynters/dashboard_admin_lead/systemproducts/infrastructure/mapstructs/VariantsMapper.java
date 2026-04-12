@@ -3,6 +3,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastruct
 import com.github.calhanwynters.dashboard_admin_lead.common.*;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.LifecycleState;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper.FeatureUuId;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.ProductDomainWrapper;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.VariantsEntity;
 import org.mapstruct.Mapper;
@@ -23,6 +24,7 @@ public interface VariantsMapper {
     @Mapping(target = "uuId", source = "uuid", qualifiedByName = "toVariantsUuId")
     @Mapping(target = "businessUuId", source = "businessUuid", qualifiedByName = "toBusinessUuId")
     @Mapping(target = "variantsName", source = "name", qualifiedByName = "toVariantsName")
+    @Mapping(target = "variantsRegion", source = "region", qualifiedByName = "toVariantsRegion")
     @Mapping(target = "featureUuIds", source = "featureUuids", qualifiedByName = "toFeatureUuIdSet")
     @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
     @Mapping(target = "lifecycleState", source = ".", qualifiedByName = "toLifecycleState")
@@ -33,6 +35,7 @@ public interface VariantsMapper {
     @Mapping(target = "uuid", source = "uuId.value.value", qualifiedByName = "stringToUuid")
     @Mapping(target = "businessUuid", source = "businessUuId.value.value", qualifiedByName = "stringToUuid")
     @Mapping(target = "name", source = "variantsName.value.name")
+    @Mapping(target = "region", source = "variantsRegion.value.value")
     @Mapping(target = "featureUuids", source = "assignedFeatureUuIds", qualifiedByName = "fromFeatureUuIdSet")
     @Mapping(target = "archived", source = "lifecycleState.archived")
     @Mapping(target = "softDeleted", source = "lifecycleState.softDeleted")
@@ -57,6 +60,9 @@ public interface VariantsMapper {
     default VariantsName toVariantsName(String name) {
         return new VariantsName(new Name(name));
     }
+
+    @Named("toProductRegion")
+    default VariantsRegion toProductRegion(String r) { return (r == null) ? VariantsRegion.from(Region.GLOBAL) : VariantsRegion.from(Region.from(r)); }
 
     @Named("toFeatureUuIdSet")
     default Set<FeatureUuId> toFeatureUuIdSet(Set<java.util.UUID> uuids) {

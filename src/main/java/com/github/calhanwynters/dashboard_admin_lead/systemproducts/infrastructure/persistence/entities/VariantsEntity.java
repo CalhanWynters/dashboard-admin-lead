@@ -23,6 +23,9 @@ public class VariantsEntity {
     @Column(name = "name", nullable = false)
     private String name;
 
+    @Column(name = "region_code", nullable = false)
+    private String region;
+
     @Column(name = "is_archived", nullable = false)
     private boolean archived;
 
@@ -59,6 +62,9 @@ public class VariantsEntity {
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    public String getRegion() { return region; }
+    public void setRegion() { this.region = region;}
 
     public boolean isArchived() { return archived; }
     public void setArchived(boolean archived) { this.archived = archived; }

@@ -5,6 +5,7 @@ import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.Base
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper.FeatureUuId;
+
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants.VariantsDomainWrapper.*;
 import java.util.Set;
 
@@ -49,6 +50,24 @@ public final class VariantsBehavior {
             throw new IllegalArgumentException("New name must be different from current name.");
         }
         return next;
+    }
+
+    public static VariantsRegion evaluateRegionTransition(VariantsRegion current, VariantsRegion target, Actor actor) {
+        DomainGuard.notNull(target, "Target Variants Region");
+
+        // Example Authorization: Only Managers can change product regions
+        if (!actor.hasRole(Actor.ROLE_MANAGER)) {
+            throw new DomainAuthorizationException("Insufficient privileges to change variants region.", "SEC-403", actor);
+        }
+
+        // Invariants: Ensure the region isn't changing to the same value unnecessarily (Optional)
+        DomainGuard.ensure(
+                !current.equals(target),
+                "Variant is already assigned to region: %s".formatted(target.value()),
+                "VAL-016", "STATE_VIOLATION"
+        );
+
+        return target;
     }
 
     // --- FEATURE ASSIGNMENT INVARIANTS ---

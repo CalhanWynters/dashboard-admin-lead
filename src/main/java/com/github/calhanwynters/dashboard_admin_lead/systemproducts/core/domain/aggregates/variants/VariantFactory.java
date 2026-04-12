@@ -24,12 +24,13 @@ public class VariantFactory {
      * Delegates to the Aggregate static factory to ensure the VariantCreatedEvent
      * is registered and SOC 2 creation authority is verified.
      */
-    public static VariantsAggregate create(VariantsBusinessUuId bizId, VariantsName name, Actor creator) {
+    public static VariantsAggregate create(VariantsBusinessUuId bizId, VariantsName name, VariantsRegion region, Actor creator) {
         // Delegate to ensure the VariantCreatedEvent is registered
         return VariantsAggregate.create(
                 VariantsUuId.generate(),
                 bizId,
                 name,
+                region,
                 creator
         );
     }
@@ -43,6 +44,7 @@ public class VariantFactory {
             VariantsUuId uuId,
             VariantsBusinessUuId bizId,
             VariantsName name,
+            VariantsRegion region,
             Set<FeatureUuId> features,
             AuditMetadata audit,
             LifecycleState lifecycleState,
@@ -55,6 +57,7 @@ public class VariantFactory {
                 uuId,
                 bizId,
                 name,
+                region,
                 (features != null) ? features : new HashSet<>(),
                 audit,
                 lifecycleState,

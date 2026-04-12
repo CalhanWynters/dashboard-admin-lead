@@ -2,6 +2,7 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Name;
 import com.github.calhanwynters.dashboard_admin_lead.common.PkId;
+import com.github.calhanwynters.dashboard_admin_lead.common.Region;
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 
 /**
@@ -19,6 +20,17 @@ public interface VariantsDomainWrapper {
         public static final VariantsUuId NONE = new VariantsUuId(UuId.NONE);
         public static VariantsUuId generate() { return new VariantsUuId(UuId.generate()); }
         public boolean isNone() { return value != null && value.isNone(); }
+    }
+
+    record VariantsRegion(Region value) {
+        public static VariantsRegion of(VariantsRegion other) {
+            return new VariantsRegion(other.value());
+        }
+
+        // Allows creating directly from the common Region VO
+        public static VariantsRegion from(Region region) {
+            return new VariantsRegion(region);
+        }
     }
 
     record VariantsBusinessUuId(UuId value) {}

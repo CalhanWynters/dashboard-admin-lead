@@ -14,6 +14,7 @@ public record VariantsDTO(
         UUID uuid,
         String businessUuid,
         String name,
+        String region,
         Set<UUID> featureUuids,
         boolean isArchived,
         boolean isSoftDeleted,
@@ -34,12 +35,15 @@ public record VariantsDTO(
                 // 3. VariantsName -> Name -> String
                 aggregate.getVariantsName().value().value(),
 
-                // 4. Set<FeatureUuId> -> Set<UUID>
+                // 4. VariantsRegion -> Region -> String
+                aggregate.getVariantsRegion().value().value(),
+
+                // 5. Set<FeatureUuId> -> Set<UUID>
                 aggregate.getAssignedFeatureUuIds().stream()
                         .map(fUuId -> fUuId.value().asUUID())
                         .collect(Collectors.toUnmodifiableSet()),
 
-                // 5. LifecycleState accessors
+                // 6. LifecycleState accessors
                 aggregate.getLifecycleState().archived(),
                 aggregate.getLifecycleState().softDeleted(),
 

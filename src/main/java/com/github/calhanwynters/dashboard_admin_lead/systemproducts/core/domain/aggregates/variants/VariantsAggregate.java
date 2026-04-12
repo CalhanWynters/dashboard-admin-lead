@@ -26,10 +26,11 @@ public class VariantsAggregate extends BaseAggregateRoot<
         > {
 
     private VariantsName variantsName;
+    private VariantsRegion variantsRegion;
     private final Set<FeatureUuId> assignedFeatureUuIds;
 
     public VariantsAggregate(VariantsId id, VariantsUuId uuId, VariantsBusinessUuId businessUuId,
-                             VariantsName name, Set<FeatureUuId> featureUuIds,
+                             VariantsName name, VariantsRegion region, Set<FeatureUuId> featureUuIds,
                              AuditMetadata auditMetadata, LifecycleState lifecycleState,
                              Long optLockVer, Integer schemaVer, OffsetDateTime lastSyncedAt) {
         super(id, uuId, businessUuId, auditMetadata, optLockVer, schemaVer, lastSyncedAt);
@@ -41,12 +42,12 @@ public class VariantsAggregate extends BaseAggregateRoot<
     // --- FACTORY ---
 
     public static VariantsAggregate create(VariantsUuId uuId, VariantsBusinessUuId bUuId,
-                                           VariantsName name, Actor actor) {
+                                           VariantsName name, VariantsRegion region, Actor actor) {
         // Standardized validation call (requires the 3-arg fix in VariantsBehavior)
         VariantsBehavior.validateCreation(uuId, bUuId, actor);
 
         VariantsAggregate aggregate = new VariantsAggregate(
-                null, uuId, bUuId, name, new HashSet<>(),
+                null, uuId, bUuId, name, region, new HashSet<>(),
                 AuditMetadata.create(actor), new LifecycleState(false, false),
                 0L, 1, null
         );
@@ -62,6 +63,14 @@ public class VariantsAggregate extends BaseAggregateRoot<
                 (next, auth) -> VariantsBehavior.evaluateRename(this.variantsName, next, auth),
                 val -> new VariantRenamedEvent(this.uuId, val, actor),
                 val -> this.variantsName = val
+        );
+    }
+
+    public void updateRegion(VariantsRegion newRegion, Actor actor) {
+        this.applyDomainChange(actor, VariantsRegion.from(newRegion.value()), // Use .from() based on your record definition
+                (next, auth) -> VariantsBehavior.evaluateRegionTransition(this.variantsRegion, next, auth),
+                val -> new VariantsRegionUpdatedEvent(this.uuId, this.variantsRegion, val, actor),
+                val -> this.variantsRegion = val
         );
     }
 
@@ -142,6 +151,6 @@ public class VariantsAggregate extends BaseAggregateRoot<
 
     // --- GETTERS ---
     public VariantsName getVariantsName() { return variantsName; }
+    public VariantsRegion getVariantsRegion() {return variantsRegion; }
     public Set<FeatureUuId> getAssignedFeatureUuIds() { return Collections.unmodifiableSet(assignedFeatureUuIds); }
-    public LifecycleState getLifecycleState() { return lifecycleState; }
 }
