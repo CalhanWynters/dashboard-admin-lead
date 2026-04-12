@@ -12,6 +12,7 @@ public record ProductDTO(
         UUID uuid,
         String businessUuid,
         String status,
+        String region,
         int version,
         String thumbnailUrl,
 
@@ -36,6 +37,7 @@ public record ProductDTO(
                 aggregate.getUuId().value().asUUID(),
                 aggregate.getBusinessUuId().value().value(),
                 aggregate.getProductStatus().value().name(),
+                aggregate.getProductRegion().value().value(),
                 aggregate.getProductVersion().value().value(),
                 aggregate.getProductThumbnailUrl().value(),
 

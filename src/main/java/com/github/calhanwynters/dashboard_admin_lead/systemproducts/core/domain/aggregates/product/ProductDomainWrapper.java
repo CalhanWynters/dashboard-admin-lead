@@ -64,6 +64,17 @@ public interface ProductDomainWrapper {
         }
     }
 
+    record ProductRegion(Region value) {
+        public static ProductRegion of(ProductRegion other) {
+            return new ProductRegion(other.value());
+        }
+
+        // Allows creating directly from the common Region VO
+        public static ProductRegion from(Region region) {
+            return new ProductRegion(region);
+        }
+    }
+
     // --- Physical Traits with Null Object Constants ---
 
     /**

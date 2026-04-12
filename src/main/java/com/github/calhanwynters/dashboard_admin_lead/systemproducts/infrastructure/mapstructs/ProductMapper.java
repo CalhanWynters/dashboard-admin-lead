@@ -24,6 +24,7 @@ public interface ProductMapper {
     @Mapping(target = "businessUuId", source = "businessUuid", qualifiedByName = "toBusinessUuId")
     @Mapping(target = "productVersion", source = "version", qualifiedByName = "toProductVersion")
     @Mapping(target = "productStatus", source = "status", qualifiedByName = "toProductStatus")
+    @Mapping(target = "productRegion", source = "region", qualifiedByName = "toProductRegion")
     @Mapping(target = "manifest", source = ".", qualifiedByName = "toManifest")
     @Mapping(target = "physicalSpecs", source = ".", qualifiedByName = "toProductPhysicalSpecs")
     @Mapping(target = "productThumbnailUrl", source = "thumbnailUrl", qualifiedByName = "toThumbnail")
@@ -42,6 +43,7 @@ public interface ProductMapper {
     @Mapping(target = "businessUuid", source = "businessUuId.value.value", qualifiedByName = "stringToUuid")
     @Mapping(target = "version", source = "productVersion.value.value")
     @Mapping(target = "status", source = "productStatus.value.name")
+    @Mapping(target = "region", source = "productRegion.value.value")
     @Mapping(target = "name", source = "manifest.name.value.name")
     @Mapping(target = "category", source = "manifest.category.value.value")
     @Mapping(target = "description", source = "manifest.description.value.value")
@@ -121,6 +123,9 @@ public interface ProductMapper {
 
     @Named("toProductStatus")
     default ProductStatus toProductStatus(String s) { return new ProductStatus(StatusEnums.valueOf(s)); }
+
+    @Named("toProductRegion")
+    default ProductRegion toProductRegion(String r) { return (r == null) ? ProductRegion.from(Region.GLOBAL) : ProductRegion.from(Region.from(r)); }
 
     @Named("toThumbnail")
     default ProductThumbnailUrl toThumbnail(String url) { return new ProductThumbnailUrl(url); }

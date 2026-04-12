@@ -30,6 +30,7 @@ public class ProductFactory {
             ProductPhysicalSpecs physicalSpecs,
             PriceListUuId priceListId,
             VariantListUuId variantListId,
+            ProductRegion region,
             Actor actor) {
 
         // Validate via Behavior before instantiation
@@ -39,6 +40,7 @@ public class ProductFactory {
         return new ProductAggregate(
                 null, newUuId, businessId, manifest,
                 ProductVersion.INITIAL, ProductStatus.DRAFT,
+                region,
                 physicalSpecs, thumbnail,
                 GalleryUuId.generate(),
                 (variantListId != null) ? variantListId : VariantListUuId.NONE,
@@ -59,6 +61,7 @@ public class ProductFactory {
             ProductThumbnailUrl thumbnail,
             TypeListUuId typeListId,
             VariantListUuId variantListId,
+            ProductRegion region,
             Actor actor) {
 
         ProductUuId newUuId = ProductUuId.generate();
@@ -67,6 +70,7 @@ public class ProductFactory {
         return new ProductAggregate(
                 null, newUuId, businessId, manifest,
                 ProductVersion.INITIAL, ProductStatus.DRAFT,
+                region,
                 ProductPhysicalSpecs.NONE, thumbnail,
                 GalleryUuId.generate(),
                 (variantListId != null) ? variantListId : VariantListUuId.NONE,
@@ -84,6 +88,7 @@ public class ProductFactory {
     public static ProductAggregate reconstitute(
             ProductId id, ProductUuId uuId, ProductBusinessUuId businessId,
             ProductManifest manifest, ProductVersion version, ProductStatus status,
+            ProductRegion region, // <--- New Parameter
             ProductPhysicalSpecs physicalSpecs, LifecycleState lifecycleState,
             ProductThumbnailUrl thumbnail, GalleryUuId galleryId,
             VariantListUuId variantId, TypeListUuId typeId, PriceListUuId priceId,
@@ -92,7 +97,7 @@ public class ProductFactory {
 
         return new ProductAggregate(
                 id, uuId, businessId, manifest, version, status,
-                physicalSpecs, thumbnail, galleryId, variantId,
+                region, physicalSpecs, thumbnail, galleryId, variantId,
                 typeId, priceId, auditMetadata, lifecycleState,
                 optLockVer, schemaVer, lastSyncedAt
         );

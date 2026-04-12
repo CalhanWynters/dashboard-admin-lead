@@ -91,4 +91,22 @@ public final class ProductBehavior {
         DomainGuard.notNull(next, "New Thumbnail URL");
         return next;
     }
+
+    public static ProductRegion evaluateRegionTransition(ProductRegion current, ProductRegion target, Actor actor) {
+        DomainGuard.notNull(target, "Target Product Region");
+
+        // Example Authorization: Only Managers can change product regions
+        if (!actor.hasRole(Actor.ROLE_MANAGER)) {
+            throw new DomainAuthorizationException("Insufficient privileges to change product region.", "SEC-403", actor);
+        }
+
+        // Invariants: Ensure the region isn't changing to the same value unnecessarily (Optional)
+        DomainGuard.ensure(
+                !current.equals(target),
+                "Product is already assigned to region: %s".formatted(target.value()),
+                "VAL-016", "STATE_VIOLATION"
+        );
+
+        return target;
+    }
 }

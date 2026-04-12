@@ -25,6 +25,9 @@ public class ProductEntity {
     @Column(name = "status_code", nullable = false)
     private String status;
 
+    @Column(name = "region_code", nullable = false)
+    private String region;
+
     // --- Flattened Manifest ---
     @Column(name = "name", nullable = false)
     private String name;
@@ -108,6 +111,9 @@ public class ProductEntity {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getRegion() { return region; }
+    public void setRegion() { this.region = region;}
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

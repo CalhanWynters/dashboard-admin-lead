@@ -7,6 +7,7 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListDomainWrapper.PriceListUuId;
 
 import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
+import com.github.calhanwynters.dashboard_admin_lead.common.Region;
 import com.github.calhanwynters.dashboard_admin_lead.common.StatusEnums;
 import com.github.calhanwynters.dashboard_admin_lead.common.UuId;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
@@ -28,6 +29,7 @@ public class ProductAggregate extends BaseAggregateRoot<
 
     private final ProductVersion productVersion;
     private ProductStatus productStatus;
+    private ProductRegion productRegion;
     private ProductManifest manifest;
     private ProductPhysicalSpecs physicalSpecs;
     private ProductThumbnailUrl productThumbnailUrl;
@@ -39,16 +41,17 @@ public class ProductAggregate extends BaseAggregateRoot<
 
     public ProductAggregate(ProductId id, ProductUuId uuId, ProductBusinessUuId businessUuId,
                             ProductManifest manifest, ProductVersion version, ProductStatus status,
-                            ProductPhysicalSpecs specs, ProductThumbnailUrl thumbnail,
-                            GalleryUuId gallery, VariantListUuId variants, TypeListUuId types,
-                            PriceListUuId prices, AuditMetadata auditMetadata,
-                            LifecycleState lifecycleState, Long optLockVer,
-                            Integer schemaVer, OffsetDateTime lastSyncedAt) {
+                            ProductRegion region, ProductPhysicalSpecs specs,
+                            ProductThumbnailUrl thumbnail, GalleryUuId gallery,
+                            VariantListUuId variants, TypeListUuId types, PriceListUuId prices,
+                            AuditMetadata auditMetadata, LifecycleState lifecycleState,
+                            Long optLockVer, Integer schemaVer, OffsetDateTime lastSyncedAt) {
 
         super(id, uuId, businessUuId, auditMetadata, optLockVer, schemaVer, lastSyncedAt);
         this.manifest = manifest;
         this.productVersion = version;
         this.productStatus = status;
+        this.productRegion = (region != null) ? region : ProductRegion.from(Region.GLOBAL);
         this.physicalSpecs = (specs != null) ? specs : ProductPhysicalSpecs.NONE;
         this.productThumbnailUrl = thumbnail;
 
@@ -66,16 +69,17 @@ public class ProductAggregate extends BaseAggregateRoot<
 
     public static ProductAggregate create(ProductUuId uuId, ProductBusinessUuId bUuId,
                                           ProductManifest manifest, ProductThumbnailUrl thumbnail,
-                                          ProductStatus status, GalleryUuId gallery,
-                                          VariantListUuId variants, TypeListUuId types,
-                                          PriceListUuId prices, ProductPhysicalSpecs specs,
+                                          ProductStatus status, ProductRegion region,
+                                          GalleryUuId gallery, VariantListUuId variants,
+                                          TypeListUuId types, PriceListUuId prices,
+                                          ProductPhysicalSpecs specs,
                                           Actor actor) {
 
         ProductBehavior.validateCreation(uuId, bUuId, actor);
 
         ProductAggregate product = new ProductAggregate(
                 null, uuId, bUuId, manifest, ProductVersion.INITIAL, status,
-                specs, thumbnail, gallery, variants, types, prices,
+                region, specs, thumbnail, gallery, variants, types, prices,
                 AuditMetadata.create(actor), new LifecycleState(false, false),
                 0L, 1, null
         );
@@ -99,6 +103,15 @@ public class ProductAggregate extends BaseAggregateRoot<
                 val -> this.productStatus = val
         );
     }
+
+    public void updateRegion(ProductRegion newRegion, Actor actor) {
+        this.applyDomainChange(actor, ProductRegion.from(newRegion.value()), // Use .from() based on your record definition
+                (next, auth) -> ProductBehavior.evaluateRegionTransition(this.productRegion, next, auth),
+                val -> new ProductRegionUpdatedEvent(this.uuId, this.productRegion, val, actor),
+                val -> this.productRegion = val
+        );
+    }
+
 
     public void recordMissingDependency(String dependencyType, UuId missingId, Actor actor) {
         // SOC 2: Verify authority (allows Actor.SYSTEM)
@@ -219,6 +232,7 @@ public class ProductAggregate extends BaseAggregateRoot<
     // --- GETTERS ---
     public ProductManifest getManifest() { return manifest; }
     public ProductStatus getProductStatus() { return productStatus; }
+    public ProductRegion getProductRegion() {return productRegion; }
     public ProductVersion getProductVersion() { return productVersion; }
     public TypeListUuId getTypeListUuId() { return typeListUuId; }
     public PriceListUuId getPriceListUuId() { return priceListUuId; }

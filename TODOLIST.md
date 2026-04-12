@@ -12,6 +12,8 @@
 - Inconsistent "Soft Delete" Guarding with productbooleans in Aggregates.
 - Review the visibility of fields and constructors in aggregates
 - Test of Incompatibility Services
+- Code consistency: harddelete application layer code across all aggregates
+- add region based code to product and variant aggregates
 - PriceListMapper Abstract Class. Review this please.
   - Possibly needs PriceListMapperImpl
   - Possibly needs PriceListRepository
