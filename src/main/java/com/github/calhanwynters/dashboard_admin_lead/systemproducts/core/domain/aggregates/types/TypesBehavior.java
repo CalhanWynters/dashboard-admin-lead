@@ -4,6 +4,7 @@ import com.github.calhanwynters.dashboard_admin_lead.common.Actor;
 import com.github.calhanwynters.dashboard_admin_lead.common.abstractclasses.BaseAggregateRoot;
 import com.github.calhanwynters.dashboard_admin_lead.common.exceptions.DomainAuthorizationException;
 import com.github.calhanwynters.dashboard_admin_lead.common.validationchecks.DomainGuard;
+
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesDomainWrapper.*;
 
 /**
@@ -47,6 +48,24 @@ public final class TypesBehavior {
             throw new IllegalArgumentException("New name must be different from current name.");
         }
         return next;
+    }
+
+    public static TypesRegion evaluateRegionTransition(TypesRegion current, TypesRegion target, Actor actor) {
+        DomainGuard.notNull(target, "Target Types Region");
+
+        // Example Authorization: Only Managers can change product regions
+        if (!actor.hasRole(Actor.ROLE_MANAGER)) {
+            throw new DomainAuthorizationException("Insufficient privileges to change types region.", "SEC-403", actor);
+        }
+
+        // Invariants: Ensure the region isn't changing to the same value unnecessarily (Optional)
+        DomainGuard.ensure(
+                !current.equals(target),
+                "Type is already assigned to region: %s".formatted(target.value()),
+                "VAL-016", "STATE_VIOLATION"
+        );
+
+        return target;
     }
 
     public static void validateSpecs(TypesPhysicalSpecs specs, Actor actor) {

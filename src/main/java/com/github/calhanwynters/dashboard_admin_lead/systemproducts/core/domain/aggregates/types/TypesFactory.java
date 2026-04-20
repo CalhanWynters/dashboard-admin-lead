@@ -24,6 +24,7 @@ public class TypesFactory {
     public static TypesAggregate create(
             TypesBusinessUuId bizId,
             TypesName name,
+            TypesRegion region,
             TypesPhysicalSpecs physicalSpecs,
             Actor creator) {
 
@@ -32,6 +33,7 @@ public class TypesFactory {
                 TypesUuId.generate(),
                 bizId,
                 name,
+                region,
                 physicalSpecs,
                 creator
         );
@@ -46,6 +48,7 @@ public class TypesFactory {
             TypesUuId uuId,
             TypesBusinessUuId bizId,
             TypesName name,
+            TypesRegion region,
             TypesPhysicalSpecs physicalSpecs,
             AuditMetadata audit,
             LifecycleState lifecycleState,
@@ -58,6 +61,7 @@ public class TypesFactory {
                 uuId,
                 bizId,
                 name,
+                region,
                 physicalSpecs,
                 audit,
                 lifecycleState,

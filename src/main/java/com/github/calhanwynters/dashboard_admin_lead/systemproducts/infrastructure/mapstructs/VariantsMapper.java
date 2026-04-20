@@ -61,8 +61,8 @@ public interface VariantsMapper {
         return new VariantsName(new Name(name));
     }
 
-    @Named("toProductRegion")
-    default VariantsRegion toProductRegion(String r) { return (r == null) ? VariantsRegion.from(Region.GLOBAL) : VariantsRegion.from(Region.from(r)); }
+    @Named("toVariantsRegion")
+    default VariantsRegion toVariantsRegion(String r) { return (r == null) ? VariantsRegion.from(Region.GLOBAL) : VariantsRegion.from(Region.from(r)); }
 
     @Named("toFeatureUuIdSet")
     default Set<FeatureUuId> toFeatureUuIdSet(Set<java.util.UUID> uuids) {

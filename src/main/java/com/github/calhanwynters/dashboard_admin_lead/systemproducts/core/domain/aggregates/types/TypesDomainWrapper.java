@@ -23,4 +23,15 @@ public interface TypesDomainWrapper {
             return value == null || value.isNone();
         }
     }
+
+    record TypesRegion(Region value) {
+        public static TypesRegion of(TypesRegion other) {
+            return new TypesRegion(other.value());
+        }
+
+        // Allows creating directly from the common Region VO
+        public static TypesRegion from(Region region) {
+            return new TypesRegion(region);
+        }
+    }
 }

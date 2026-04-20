@@ -22,6 +22,9 @@ public class TypesEntity {
     @Column(name = "name", nullable = false)
     private String name;
 
+    @Column(name = "region_code", nullable = false)
+    private String region;
+
     // --- Flattened Physical Specs ---
     @Column(name = "weight_amount", precision = 19, scale = 5)
     private BigDecimal weightAmount;
@@ -71,6 +74,8 @@ public class TypesEntity {
     public void setBusinessUuid(UUID businessUuid) { this.businessUuid = businessUuid; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+    public String getRegion() { return region; }
+    public void setRegion() { this.region = region;}
     public BigDecimal getWeightAmount() { return weightAmount; }
     public void setWeightAmount(BigDecimal weightAmount) { this.weightAmount = weightAmount; }
     public String getWeightUnit() { return weightUnit; }

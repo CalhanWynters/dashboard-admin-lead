@@ -23,10 +23,11 @@ public class TypesAggregate extends BaseAggregateRoot<
         > {
 
     private TypesName typesName;
+    private TypesRegion typesRegion;
     private TypesPhysicalSpecs typesPhysicalSpecs;
 
     public TypesAggregate(TypesId id, TypesUuId uuId, TypesBusinessUuId businessUuId,
-                          TypesName name, TypesPhysicalSpecs specs,
+                          TypesName name, TypesRegion region, TypesPhysicalSpecs specs,
                           AuditMetadata auditMetadata, LifecycleState lifecycleState,
                           Long optLockVer, Integer schemaVer, OffsetDateTime lastSyncedAt) {
         super(id, uuId, businessUuId, auditMetadata, optLockVer, schemaVer, lastSyncedAt);
@@ -38,11 +39,12 @@ public class TypesAggregate extends BaseAggregateRoot<
     // --- FACTORY ---
 
     public static TypesAggregate create(TypesUuId uuId, TypesBusinessUuId bUuId,
-                                        TypesName name, TypesPhysicalSpecs specs, Actor actor) {
+                                        TypesName name, TypesRegion region,
+                                        TypesPhysicalSpecs specs, Actor actor) {
         TypesBehavior.validateCreation(uuId, bUuId, actor);
 
         TypesAggregate aggregate = new TypesAggregate(
-                null, uuId, bUuId, name, specs,
+                null, uuId, bUuId, name, region, specs,
                 AuditMetadata.create(actor), new LifecycleState(false, false),
                 0L, 1, null
         );
@@ -64,6 +66,14 @@ public class TypesAggregate extends BaseAggregateRoot<
                 (next, auth) -> TypesBehavior.evaluateRename(this.typesName, next, auth),
                 val -> new TypeRenamedEvent(this.uuId, val, actor),
                 val -> this.typesName = val
+        );
+    }
+
+    public void updateRegion(TypesRegion newRegion, Actor actor) {
+        this.applyDomainChange(actor, TypesRegion.from(newRegion.value()), // Use .from() based on your record definition
+                (next, auth) -> TypesBehavior.evaluateRegionTransition(this.typesRegion, next, auth),
+                val -> new TypesRegionUpdatedEvent(this.uuId, this.typesRegion, val, actor),
+                val -> this.typesRegion = val
         );
     }
 
@@ -128,6 +138,6 @@ public class TypesAggregate extends BaseAggregateRoot<
 
     // --- GETTERS ---
     public TypesName getTypesName() { return typesName; }
+    public TypesRegion getTypesRegion() {return typesRegion; }
     public TypesPhysicalSpecs getTypesPhysicalSpecs() { return typesPhysicalSpecs; }
-    public LifecycleState getLifecycleState() { return lifecycleState; }
 }

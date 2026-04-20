@@ -18,6 +18,7 @@ public interface TypesMapper {
     @Mapping(target = "uuId", source = "uuid", qualifiedByName = "toTypesUuId")
     @Mapping(target = "businessUuId", source = "businessUuid", qualifiedByName = "toBusinessUuId")
     @Mapping(target = "typesName", source = "name", qualifiedByName = "toTypesName")
+    @Mapping(target = "typesRegion", source = "region", qualifiedByName = "toTypesRegion")
     @Mapping(target = "typesPhysicalSpecs", source = ".", qualifiedByName = "toTypesPhysicalSpecs")
     @Mapping(target = "auditMetadata", source = ".", qualifiedByName = "toAuditMetadata")
     @Mapping(target = "lifecycleState", source = ".", qualifiedByName = "toLifecycleState")
@@ -28,6 +29,7 @@ public interface TypesMapper {
     @Mapping(target = "uuid", source = "uuId.value.value", qualifiedByName = "stringToUuid")
     @Mapping(target = "businessUuid", source = "businessUuId.value.value", qualifiedByName = "stringToUuid")
     @Mapping(target = "name", source = "typesName.value.name")
+    @Mapping(target = "region", source = "typesRegion.value.value")
     @Mapping(target = "weightAmount", source = "typesPhysicalSpecs.value.weight.amount")
     @Mapping(target = "weightUnit", source = "typesPhysicalSpecs.value.weight.weightUnit.name")
     @Mapping(target = "length", source = "typesPhysicalSpecs.value.dimensions.length")
@@ -52,6 +54,10 @@ public interface TypesMapper {
 
     @Named("toTypesName")
     default TypesName toTypesName(String name) { return new TypesName(new Name(name)); }
+
+    @Named("toTypesRegion")
+    default TypesRegion toTypesRegion(String r) { return (r == null) ? TypesRegion.from(Region.GLOBAL) : TypesRegion.from(Region.from(r)); }
+
 
     @Named("toTypesPhysicalSpecs")
     default TypesPhysicalSpecs toTypesPhysicalSpecs(TypesEntity entity) {
