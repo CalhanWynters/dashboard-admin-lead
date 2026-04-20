@@ -6,7 +6,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
-public interface AuditMapper {
+public interface AuditMapStruct {
 
     // Entity -> Domain Record
     @Mapping(target = "createdAt", expression = "java(new CreatedAt(entity.getCreatedAt()))")

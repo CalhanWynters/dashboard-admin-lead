@@ -5,7 +5,7 @@ import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.ImagesBusinessUuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.ImageUrl;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.ports.out.ImagesRepository;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.mapstructs.ImagesMapper;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.mapstructs.ImagesMapStruct;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.ImagesEntity;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.jpa.ImagesJpaRepository;
 import org.springframework.stereotype.Repository;
@@ -20,9 +20,9 @@ import java.util.stream.Collectors;
 public class ImagesPostgresqlRepositoryImpl implements ImagesRepository {
 
     private final ImagesJpaRepository jpaRepository;
-    private final ImagesMapper mapper;
+    private final ImagesMapStruct mapper;
 
-    public ImagesPostgresqlRepositoryImpl(ImagesJpaRepository jpaRepository, ImagesMapper mapper) {
+    public ImagesPostgresqlRepositoryImpl(ImagesJpaRepository jpaRepository, ImagesMapStruct mapper) {
         this.jpaRepository = jpaRepository;
         this.mapper = mapper;
     }

@@ -5,7 +5,7 @@ import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.typelist.TypeListDomainWrapper.TypeListBusinessUuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesDomainWrapper.TypesUuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.ports.out.TypeListRepository;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.mapstructs.TypeListMapper;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.mapstructs.TypeListMapStruct;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.TypeListEntity;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.jpa.TypeListJpaRepository;
 import org.springframework.stereotype.Repository;
@@ -24,9 +24,9 @@ import java.util.stream.Collectors;
 public class TypeListPostgresqlRepositoryImpl implements TypeListRepository {
 
     private final TypeListJpaRepository jpaRepository;
-    private final TypeListMapper mapper;
+    private final TypeListMapStruct mapper;
 
-    public TypeListPostgresqlRepositoryImpl(TypeListJpaRepository jpaRepository, TypeListMapper mapper) {
+    public TypeListPostgresqlRepositoryImpl(TypeListJpaRepository jpaRepository, TypeListMapStruct mapper) {
         this.jpaRepository = jpaRepository;
         this.mapper = mapper;
     }

@@ -17,7 +17,7 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.ImageUuId;
 
 @Mapper(componentModel = "spring")
-public interface GalleryMapper {
+public interface GalleryMapStruct {
 
     // TO AGGREGATE
     @Mapping(target = "id", source = "id", qualifiedByName = "toGalleryId")

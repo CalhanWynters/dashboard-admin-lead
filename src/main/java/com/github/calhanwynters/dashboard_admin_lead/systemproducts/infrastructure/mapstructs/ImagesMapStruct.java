@@ -14,7 +14,7 @@ import java.util.Collections;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.*;
 
 @Mapper(componentModel = "spring")
-public interface ImagesMapper {
+public interface ImagesMapStruct {
 
     // TO AGGREGATE
     @Mapping(target = "id", source = "id", qualifiedByName = "toImageId")

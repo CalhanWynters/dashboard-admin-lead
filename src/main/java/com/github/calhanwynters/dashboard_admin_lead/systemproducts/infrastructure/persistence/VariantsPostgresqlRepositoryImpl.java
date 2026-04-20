@@ -5,7 +5,7 @@ import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants.VariantsDomainWrapper.VariantsUuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants.VariantsDomainWrapper.VariantsBusinessUuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.ports.out.VariantsRepository;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.mapstructs.VariantsMapper;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.mapstructs.VariantsMapStruct;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.VariantsEntity;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.jpa.VariantsJpaRepository;
 import org.springframework.stereotype.Repository;
@@ -24,9 +24,9 @@ import java.util.stream.Collectors;
 public class VariantsPostgresqlRepositoryImpl implements VariantsRepository {
 
     private final VariantsJpaRepository jpaRepository;
-    private final VariantsMapper mapper;
+    private final VariantsMapStruct mapper;
 
-    public VariantsPostgresqlRepositoryImpl(VariantsJpaRepository jpaRepository, VariantsMapper mapper) {
+    public VariantsPostgresqlRepositoryImpl(VariantsJpaRepository jpaRepository, VariantsMapStruct mapper) {
         this.jpaRepository = jpaRepository;
         this.mapper = mapper;
     }

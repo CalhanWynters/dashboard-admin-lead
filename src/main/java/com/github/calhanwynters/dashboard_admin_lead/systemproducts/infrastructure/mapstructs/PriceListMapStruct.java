@@ -18,7 +18,7 @@ import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.
 import java.util.*;
 
 @Mapper(componentModel = "spring")
-public abstract class PriceListMapper {
+public abstract class PriceListMapStruct {
 
     protected final ObjectMapper jsonMapper;
 
@@ -34,7 +34,7 @@ public abstract class PriceListMapper {
             Map.entry(PricingStrategyType.INT_TIERED_VOL, PriceIntTieredVolPurchase.class)
     );
 
-    public PriceListMapper(ObjectMapper jsonMapper) {
+    public PriceListMapStruct(ObjectMapper jsonMapper) {
         this.jsonMapper = jsonMapper;
     }
 

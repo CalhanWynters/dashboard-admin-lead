@@ -5,7 +5,7 @@ import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.gallery.GalleryDomainWrapper.GalleryBusinessUuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.images.ImagesDomainWrapper.ImageUuId;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.ports.out.GalleryRepository;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.mapstructs.GalleryMapper;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.mapstructs.GalleryMapStruct;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.GalleryEntity;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.jpa.GalleryJpaRepository;
 import org.springframework.stereotype.Repository;
@@ -20,9 +20,9 @@ import java.util.stream.Collectors;
 public class GalleryPostgresqlRepositoryImpl implements GalleryRepository {
 
     private final GalleryJpaRepository jpaRepository;
-    private final GalleryMapper mapper;
+    private final GalleryMapStruct mapper;
 
-    public GalleryPostgresqlRepositoryImpl(GalleryJpaRepository jpaRepository, GalleryMapper mapper) {
+    public GalleryPostgresqlRepositoryImpl(GalleryJpaRepository jpaRepository, GalleryMapStruct mapper) {
         this.jpaRepository = jpaRepository;
         this.mapper = mapper;
     }

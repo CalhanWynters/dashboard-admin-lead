@@ -19,10 +19,10 @@ import java.util.UUID;
 
 @Generated(value = "org.mapstruct.ap.MappingProcessor")
 @Component
-public class PriceListMapperImpl extends PriceListMapper {
+public class PriceListMapStructImpl extends PriceListMapStruct {
 
     @Autowired
-    public PriceListMapperImpl(ObjectMapper jsonMapper) {
+    public PriceListMapStructImpl(ObjectMapper jsonMapper) {
         super(jsonMapper);
     }
 

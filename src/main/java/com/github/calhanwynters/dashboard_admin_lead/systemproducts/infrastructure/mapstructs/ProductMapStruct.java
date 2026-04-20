@@ -16,7 +16,7 @@ import java.util.Collections;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.ProductDomainWrapper.*;
 
 @Mapper(componentModel = "spring")
-public interface ProductMapper {
+public interface ProductMapStruct {
 
     // --- RECONSTITUTION: Entity to Aggregate ---
     @Mapping(target = "id", source = "id", qualifiedByName = "toProductId")

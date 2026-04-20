@@ -3,7 +3,6 @@ package com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastruct
 import com.github.calhanwynters.dashboard_admin_lead.common.*;
 import com.github.calhanwynters.dashboard_admin_lead.common.compositeclasses.LifecycleState;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper.FeatureUuId;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.product.ProductDomainWrapper;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants.*;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.VariantsEntity;
 import org.mapstruct.Mapper;
@@ -17,7 +16,7 @@ import java.util.stream.Collectors;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.variants.VariantsDomainWrapper.*;
 
 @Mapper(componentModel = "spring", imports = {Collectors.class, HashSet.class})
-public interface VariantsMapper {
+public interface VariantsMapStruct {
 
     // --- RECONSTITUTION: Entity to Aggregate ---
     @Mapping(target = "id", source = "id", qualifiedByName = "toVariantsId")

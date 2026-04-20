@@ -6,7 +6,7 @@ import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.PriceListDomainWrapper.PriceListVersion;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.pricelist.purchasepricingmodel.PricingStrategyType;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.ports.out.PriceListRepository;
-import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.mapstructs.PriceListMapper;
+import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.mapstructs.PriceListMapStruct;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.entities.PriceListEntity;
 import com.github.calhanwynters.dashboard_admin_lead.systemproducts.infrastructure.persistence.jpa.PriceListJpaRepository;
 import org.springframework.stereotype.Repository;
@@ -25,9 +25,9 @@ import java.util.stream.Collectors;
 public class PriceListPostgresqlRepositoryImpl implements PriceListRepository {
 
     private final PriceListJpaRepository jpaRepository;
-    private final PriceListMapper mapper;
+    private final PriceListMapStruct mapper;
 
-    public PriceListPostgresqlRepositoryImpl(PriceListJpaRepository jpaRepository, PriceListMapper mapper) {
+    public PriceListPostgresqlRepositoryImpl(PriceListJpaRepository jpaRepository, PriceListMapStruct mapper) {
         this.jpaRepository = jpaRepository;
         this.mapper = mapper;
     }

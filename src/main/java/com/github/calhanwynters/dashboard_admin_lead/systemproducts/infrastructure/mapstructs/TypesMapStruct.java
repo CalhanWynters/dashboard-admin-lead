@@ -11,7 +11,7 @@ import org.mapstruct.Named;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.types.TypesDomainWrapper.*;
 
 @Mapper(componentModel = "spring")
-public interface TypesMapper {
+public interface TypesMapStruct {
 
     // --- RECONSTITUTION: Entity to Aggregate ---
     @Mapping(target = "id", source = "id", qualifiedByName = "toTypesId")

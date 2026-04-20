@@ -13,7 +13,7 @@ import java.util.Collections;
 import static com.github.calhanwynters.dashboard_admin_lead.systemproducts.core.domain.aggregates.features.FeaturesDomainWrapper.*;
 
 @Mapper(componentModel = "spring")
-public interface FeaturesMapper {
+public interface FeaturesMapStruct {
 
     // TO AGGREGATE
     @Mapping(target = "id", source = "id", qualifiedByName = "toFeatureId")
